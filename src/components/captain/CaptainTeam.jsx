@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
-import { Users, Star } from 'lucide-react';
+import { generateCaptainCode } from '../../contexts/AuthContext';
+import { Users, Star, Copy, Check } from 'lucide-react';
 import { Card, CardBody, CardHeader } from '../common/Card';
 import { CategoryBadge } from '../common/Badge';
 
 export function CaptainTeam() {
   const { user } = useAuth();
   const { teams, athletes, captains, groups, getAthletesByTeam } = useApp();
+  const [copied, setCopied] = useState(false);
 
   const myTeam = teams.find(t => t.id === user.teamId);
   const myAthletes = getAthletesByTeam(user.teamId);
@@ -15,6 +18,14 @@ export function CaptainTeam() {
 
   const maleAthletes = myAthletes.filter(a => a.gender === 'M');
   const femaleAthletes = myAthletes.filter(a => a.gender === 'F');
+  const captainCode = myTeam ? generateCaptainCode(myTeam.name, myTeam.category) : '';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(captainCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -39,13 +50,18 @@ export function CaptainTeam() {
       {/* Login Info */}
       <Card>
         <CardBody>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Acesso</p>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Usuário</span>
-              <span className="font-mono font-semibold text-gray-800 bg-gray-100 px-2 py-0.5 rounded">{myCaptain?.username}</span>
-            </div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Seu Código de Acesso</p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono font-bold text-xl tracking-widest text-blue-800">{captainCode}</span>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              {copied ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
+              {copied ? 'Copiado!' : 'Copiar'}
+            </button>
           </div>
+          <p className="text-xs text-gray-400 mt-1.5">Use este código para entrar no painel</p>
         </CardBody>
       </Card>
 

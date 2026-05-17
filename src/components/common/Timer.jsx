@@ -3,7 +3,7 @@ import { Timer as TimerIcon } from 'lucide-react';
 
 const WARMUP_DURATION = 6 * 60 * 1000;
 
-export function WarmupTimer({ startedAt, onFinish }) {
+export function WarmupTimer({ startedAt, onFinish, compact = false }) {
   const [remaining, setRemaining] = useState(0);
   const [finished, setFinished] = useState(false);
 
@@ -31,12 +31,31 @@ export function WarmupTimer({ startedAt, onFinish }) {
   const isUrgent = remaining < 60000;
 
   if (finished || remaining === 0) {
+    if (compact) {
+      return <p className="text-xs font-bold text-green-700">✓ Aquecimento concluído — pronto para jogar!</p>;
+    }
     return (
       <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
         <TimerIcon size={20} className="text-green-600" />
         <div>
           <p className="text-green-700 font-bold text-sm">Aquecimento concluído!</p>
           <p className="text-green-600 text-xs">Pronto para iniciar o jogo</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className={`text-lg font-bold tabular-nums ${isUrgent ? 'text-red-700' : 'text-orange-700'}`}>
+          {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        </span>
+        <div className="flex-1 bg-orange-200 rounded-full h-1.5">
+          <div
+            className={`h-1.5 rounded-full transition-all duration-500 ${isUrgent ? 'bg-red-500' : 'bg-orange-500'}`}
+            style={{ width: `${percent}%` }}
+          />
         </div>
       </div>
     );

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronUp, MapPin, Clock } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ChevronDown, ChevronUp, MapPin, Clock, AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { MATCH_STATUS } from '../../data/mockData';
@@ -13,7 +13,7 @@ import { MatchScoreHistory } from '../common/MatchScoreHistory';
 
 export function CaptainMatches() {
   const { user } = useAuth();
-  const { matches, teams, groups, courts, addAlert } = useApp();
+  const { matches, teams, athletes, groups, courts, addAlert } = useApp();
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [lineupModal, setLineupModal] = useState(null);
   const [resultModal, setResultModal] = useState(null);
@@ -23,6 +23,25 @@ export function CaptainMatches() {
   const myMatches = matches.filter(m => m.team1Id === user.teamId || m.team2Id === user.teamId);
 
   const typeLabels = { male: '♂ Masculino', female: '♀ Feminino', mixed: '⚥ Misto' };
+
+  const pendingActions = useMemo(() => {
+    const result = [];
+    for (const m of myMatches) {
+      const isTeam1 = m.team1Id === user.teamId;
+      for (const g of m.games) {
+        const myLineup = isTeam1 ? g.lineup1 : g.lineup2;
+        if (myLineup.length === 0 && [MATCH_STATUS.WAITING_LINEUP, MATCH_STATUS.LINEUP_SENT].includes(g.status)) {
+          const opponent = teams.find(t => t.id === (isTeam1 ? m.team2Id : m.team1Id));
+          result.push({ type: 'lineup', label: typeLabels[g.type], opponent: opponent?.name, matchId: m.id });
+        }
+        if (g.status === MATCH_STATUS.IN_PROGRESS) {
+          const opponent = teams.find(t => t.id === (isTeam1 ? m.team2Id : m.team1Id));
+          result.push({ type: 'result', label: typeLabels[g.type], opponent: opponent?.name, matchId: m.id });
+        }
+      }
+    }
+    return result;
+  }, [myMatches, user.teamId, teams]);
 
   const canEditLineup = (game, match) => {
     const isMyTeam1 = match.team1Id === user.teamId;
@@ -71,6 +90,26 @@ export function CaptainMatches() {
       {myGroup && (
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
           <p className="text-sm text-blue-700 font-medium">{myGroup.name} • Categoria {myGroup.category}</p>
+        </div>
+      )}
+
+      {pendingActions.length > 0 && (
+        <div className="bg-orange-50 border border-orange-300 rounded-xl p-3 space-y-1">
+          <p className="text-sm font-bold text-orange-800 flex items-center gap-1.5">
+            <AlertCircle size={15} /> Ação necessária
+          </p>
+          {pendingActions.map((a, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                const m = myMatches.find(m => m.id === a.matchId);
+                if (m) { setSelectedMatch(m); }
+              }}
+              className="w-full text-left text-xs text-orange-700 bg-orange-100 rounded-lg px-2.5 py-1.5 font-medium hover:bg-orange-200 transition-colors"
+            >
+              {a.type === 'lineup' ? '📋 Enviar escalação' : '🏆 Inserir resultado'} — {a.label} vs {a.opponent}
+            </button>
+          ))}
         </div>
       )}
 
@@ -173,8 +212,14 @@ export function CaptainMatches() {
                               </Button>
                             )}
                             {myLineup.length > 0 && game.status !== MATCH_STATUS.FINISHED && (
-                              <div className="flex-1 bg-green-50 border border-green-200 rounded-lg px-2 py-1.5 text-xs text-green-700 font-medium text-center">
-                                ✓ Escalação enviada ({myLineup.length} atleta(s))
+                              <div className="flex-1 bg-green-50 border border-green-200 rounded-lg px-2 py-1.5">
+                                <p className="text-xs text-green-700 font-semibold mb-0.5">✓ Escalação enviada</p>
+                                {myLineup.map(id => {
+                                  const a = athletes.find(x => x.id === id);
+                                  return a ? (
+                                    <p key={id} className="text-xs text-green-800 leading-tight">{a.name}</p>
+                                  ) : null;
+                                })}
                               </div>
                             )}
                             {canSubmitResult(game) && (
