@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Analysis, ScoutEvent, FilterOptions } from '../types';
 import { storageService } from '../services/storageService';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId as uuidv4 } from '../utils/uuid';
 
 interface AnalysisState {
   analyses: Analysis[];

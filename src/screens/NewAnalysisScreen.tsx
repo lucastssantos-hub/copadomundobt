@@ -11,6 +11,7 @@ import { Button } from '../components/common/Button';
 import { AnalysisType, Athlete, TeamSide } from '../types';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/uuid';
 
 const TYPES: { label: string; value: AnalysisType; icon: string }[] = [
   { label: 'Treino', value: 'treino', icon: 'fitness' },
@@ -55,7 +56,7 @@ export function NewAnalysisScreen() {
     setLoading(true);
     try {
       const athletes: Athlete[] = athleteNames
-        .map((name, i) => ({ id: uuidv4(), name: name.trim(), side: athleteSides[i] }))
+        .map((name, i) => ({ id: generateId(), name: name.trim(), side: athleteSides[i] }))
         .filter(a => a.name.length > 0);
 
       const analysis = await createAnalysis({
@@ -68,6 +69,9 @@ export function NewAnalysisScreen() {
       });
 
       navigation.replace('AnalysisDetail', { analysisId: analysis.id });
+    } catch (err) {
+      console.error('[NewAnalysis] erro ao criar:', err);
+      Alert.alert('Erro', 'Não foi possível criar a análise. Tente novamente.');
     } finally {
       setLoading(false);
     }
