@@ -9,6 +9,7 @@ import { AdmStandings } from '../components/adm/AdmStandings';
 import { AdmElimination } from '../components/adm/AdmElimination';
 import { AdmPrint } from '../components/adm/AdmPrint';
 import { NotificationCenter } from '../components/common/NotificationCenter';
+import { FirebaseStatus } from '../components/common/FirebaseStatus';
 import {
   LayoutDashboard, Users, Grid3X3, Swords, MapPin, Trophy, Zap, Printer, LogOut
 } from 'lucide-react';
@@ -52,6 +53,7 @@ export function AdmPanel() {
               <p className="text-sm font-bold text-gray-900 leading-none">ADM</p>
               <p className="text-xs text-gray-500 leading-none">Copa do Mundo BT</p>
             </div>
+            <FirebaseStatus />
           </div>
           <div className="flex items-center gap-1">
             <NotificationCenter forRole="admin" />

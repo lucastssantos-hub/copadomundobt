@@ -5,6 +5,7 @@ import { CaptainMatches } from '../components/captain/CaptainMatches';
 import { CaptainCourt } from '../components/captain/CaptainCourt';
 import { CaptainStandings } from '../components/captain/CaptainStandings';
 import { NotificationCenter } from '../components/common/NotificationCenter';
+import { FirebaseStatus } from '../components/common/FirebaseStatus';
 import { User, Swords, MapPin, Trophy, LogOut } from 'lucide-react';
 
 const tabs = [
@@ -38,6 +39,7 @@ export function CaptainPanel() {
             <div>
               <p className="text-sm font-bold text-gray-900 leading-none">{user.team?.name}</p>
               <p className="text-xs text-gray-500 leading-none">Capitão: {user.name}</p>
+            <FirebaseStatus />
             </div>
           </div>
           <div className="flex items-center gap-1">

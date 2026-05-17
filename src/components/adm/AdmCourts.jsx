@@ -9,7 +9,7 @@ import { StatusBadge } from '../common/Badge';
 import { WarmupTimer } from '../common/Timer';
 
 export function AdmCourts() {
-  const { courts, matches, teams, setCourts, addNotification } = useApp();
+  const { courts, matches, teams, addCourtToList, updateCourtActive, addNotification } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', location: '' });
 
@@ -27,14 +27,15 @@ export function AdmCourts() {
   const handleAdd = () => {
     if (!form.name) return;
     const id = `court${Date.now()}`;
-    setCourts(prev => [...prev, { ...form, id, active: true }]);
+    addCourtToList({ ...form, id, active: true });
     addNotification('Quadra adicionada!', 'success');
     setForm({ name: '', location: '' });
     setShowModal(false);
   };
 
   const toggleActive = (courtId) => {
-    setCourts(prev => prev.map(c => c.id === courtId ? { ...c, active: !c.active } : c));
+    const court = courts.find(c => c.id === courtId);
+    if (court) updateCourtActive(courtId, !court.active);
   };
 
   const typeLabels = { male: '♂ Masculino', female: '♀ Feminino', mixed: '⚥ Misto' };

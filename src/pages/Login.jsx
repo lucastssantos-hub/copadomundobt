@@ -99,30 +99,45 @@ export function Login() {
               </div>
             ) : (
               <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                  <p className="text-xs text-blue-700 font-medium">Entre com seu código de equipe</p>
+                  <p className="text-xs text-blue-500 mt-0.5">Ex: BRA-A-2026 · ARG-A-2026 · POR-A-2026</p>
+                </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Usuário</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Código da Equipe</label>
                   <input
                     type="text"
                     value={captainUser}
-                    onChange={e => setCaptainUser(e.target.value)}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none"
-                    placeholder="Ex: brasil_cap"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Senha</label>
-                  <input
-                    type="password"
-                    value={captainPass}
-                    onChange={e => setCaptainPass(e.target.value)}
+                    onChange={e => setCaptainUser(e.target.value.toUpperCase())}
                     onKeyDown={e => e.key === 'Enter' && handleCaptain()}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none"
-                    placeholder="••••••••"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none uppercase tracking-widest font-mono"
+                    placeholder="BRA-A-2026"
+                    autoCapitalize="characters"
                   />
-                  <p className="text-xs text-gray-400 mt-1">Demo: brasil_cap / 1234</p>
                 </div>
+                <details className="text-xs text-gray-400">
+                  <summary className="cursor-pointer hover:text-gray-600">Acesso alternativo (usuário + senha)</summary>
+                  <div className="mt-2 space-y-2">
+                    <input
+                      type="text"
+                      value={captainUser}
+                      onChange={e => setCaptainUser(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                      placeholder="usuário (ex: brasil_cap)"
+                    />
+                    <input
+                      type="password"
+                      value={captainPass}
+                      onChange={e => setCaptainPass(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleCaptain()}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                      placeholder="senha"
+                    />
+                    <p className="text-gray-400">Demo: brasil_cap / 1234</p>
+                  </div>
+                </details>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
-                <Button fullWidth size="lg" onClick={handleCaptain}>Entrar como Capitão</Button>
+                <Button fullWidth size="lg" onClick={handleCaptain}>Entrar</Button>
               </div>
             )}
           </div>

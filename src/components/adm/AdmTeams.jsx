@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Plus, Users, ChevronRight, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Users, ChevronRight, Share2, Copy, Check } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { CATEGORIES } from '../../data/mockData';
 import { Card, CardBody, CardHeader } from '../common/Card';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { CategoryBadge } from '../common/Badge';
+import { generateCaptainCode } from '../../contexts/AuthContext';
 
 export function AdmTeams() {
   const { teams, athletes, captains, addTeam, addAthlete, getAthletesByTeam } = useApp();
@@ -16,6 +17,7 @@ export function AdmTeams() {
 
   const [teamForm, setTeamForm] = useState({ name: '', flag: '', category: 'A', color: '#3B82F6' });
   const [athleteForm, setAthleteForm] = useState({ name: '', gender: 'M', number: '' });
+  const [copied, setCopied] = useState(false);
 
   const filteredTeams = filterCategory === 'all' ? teams : teams.filter(t => t.category === filterCategory);
 
@@ -35,6 +37,21 @@ export function AdmTeams() {
 
   const captain = selectedTeam ? captains.find(c => c.teamId === selectedTeam.id) : null;
   const teamAthletes = selectedTeam ? getAthletesByTeam(selectedTeam.id) : [];
+  const captainCode = selectedTeam ? generateCaptainCode(selectedTeam.name, selectedTeam.category) : '';
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(captainCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleWhatsApp = () => {
+    const msg = encodeURIComponent(
+      `🎾 *Copa do Mundo de Beach Tennis 2026*\n\nOlá! Seu código de acesso ao painel do capitão é:\n\n*${captainCode}*\n\nAcesse: https://lucastssantos-hub.github.io/copadomundobt/`
+    );
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  };
 
   return (
     <div className="space-y-4">
@@ -97,6 +114,29 @@ export function AdmTeams() {
               <div>
                 <CategoryBadge category={selectedTeam.category} />
                 {captain && <p className="text-sm text-gray-600 mt-1">Capitão: <strong>{captain.name}</strong> ({captain.username})</p>}
+              </div>
+            </div>
+
+            {/* Captain Access Code */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+              <p className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
+                <Share2 size={12} /> Código de Acesso do Capitão
+              </p>
+              <p className="font-mono font-bold text-xl tracking-widest text-blue-900 mb-2">{captainCode}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopyCode}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-medium text-blue-700 hover:bg-blue-50 transition-colors"
+                >
+                  {copied ? <Check size={13} className="text-green-600" /> : <Copy size={13} />}
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+                <button
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 rounded-lg text-xs font-medium text-white hover:bg-green-600 transition-colors"
+                >
+                  <Share2 size={13} /> Enviar WhatsApp
+                </button>
               </div>
             </div>
 
