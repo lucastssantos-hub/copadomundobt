@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "BT Vision",
+    "slug": "bt-vision",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0A0A0A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "BT Vision precisa acessar a câmera para gravar partidas.",
+        "NSMicrophoneUsageDescription": "BT Vision precisa acessar o microfone para gravar vídeos.",
+        "NSPhotoLibraryUsageDescription": "BT Vision precisa acessar a galeria para importar vídeos.",
+        "NSPhotoLibraryAddUsageDescription": "BT Vision precisa salvar vídeos na sua galeria."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-av",
+      "expo-image-picker",
+      "expo-media-library",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
+    ]
+  }
+}
