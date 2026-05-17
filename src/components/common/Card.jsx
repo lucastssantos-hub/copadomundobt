@@ -17,9 +17,12 @@ export function CardHeader({ children, className = '' }) {
   );
 }
 
-export function CardBody({ children, className = '' }) {
+export function CardBody({ children, className = '', onClick }) {
   return (
-    <div className={`p-4 ${className}`}>
+    <div
+      onClick={onClick}
+      className={`p-4 ${onClick ? 'cursor-pointer active:bg-gray-50 select-none' : ''} ${className}`}
+    >
       {children}
     </div>
   );
