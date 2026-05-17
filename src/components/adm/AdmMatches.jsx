@@ -7,9 +7,10 @@ import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { StatusBadge, CategoryBadge } from '../common/Badge';
 import { WarmupTimer } from '../common/Timer';
+import { MatchScoreHistory } from '../common/MatchScoreHistory';
 
 export function AdmMatches() {
-  const { matches, groups, teams, courts, addMatch, releaseCourt, startGame, validateResult, assignCourt, editResult, addMixedGame } = useApp();
+  const { matches, groups, teams, courts, addMatch, releaseCourt, startGame, validateResult, assignCourt, editResult, addMixedGame, addAlert } = useApp();
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditResult, setShowEditResult] = useState(null);
@@ -36,12 +37,33 @@ export function AdmMatches() {
     setShowCreateModal(false);
   };
 
-  const handleValidateResult = (matchId, gameId, approved) => {
+  const handleValidateResult = (matchId, gameId, approved, match, game) => {
     validateResult(matchId, gameId, approved);
     setSelectedMatch(prev => {
       if (!prev || prev.id !== matchId) return prev;
       return matches.find(m => m.id === matchId) || null;
     });
+    if (match && game) {
+      const typeLabels2 = { male: 'Masculino', female: 'Feminino', mixed: 'Misto' };
+      const t1 = teams.find(t => t.id === match.team1Id);
+      const t2 = teams.find(t => t.id === match.team2Id);
+      const msg = approved
+        ? `✅ Resultado ${typeLabels2[game.type]} validado: ${t1?.name} ${game.pendingScore1}×${game.pendingScore2} ${t2?.name}`
+        : `❌ Resultado ${typeLabels2[game.type]} rejeitado — ${t1?.name} vs ${t2?.name}`;
+      addAlert(msg, 'validation', match.team1Id);
+      addAlert(msg, 'validation', match.team2Id);
+    }
+  };
+
+  const handleReleaseCourt = (matchId, gameId, match, game) => {
+    releaseCourt(matchId, gameId);
+    if (match && game) {
+      const court = courts.find(c => c.id === game.courtId);
+      const typeLabels2 = { male: 'Masculino', female: 'Feminino', mixed: 'Misto' };
+      const msg = `📍 Quadra ${court?.name || ''} liberada — Aquecimento iniciado (${typeLabels2[game.type]})`;
+      addAlert(msg, 'court', match.team1Id);
+      addAlert(msg, 'court', match.team2Id);
+    }
   };
 
   const handleEditResult = (matchId, gameId) => {
@@ -151,6 +173,9 @@ export function AdmMatches() {
 
                 {isSelected && (
                   <div className="border-t border-gray-100 px-3 pb-3 space-y-3">
+                    {match.status === MATCH_STATUS.FINISHED && (
+                      <MatchScoreHistory match={match} team1={team1} team2={team2} />
+                    )}
                     {match.games.map(game => (
                       <GameCard
                         key={game.id}
@@ -160,9 +185,9 @@ export function AdmMatches() {
                         team2={team2}
                         courts={courts}
                         typeLabels={typeLabels}
-                        onRelease={() => releaseCourt(match.id, game.id)}
+                        onRelease={() => handleReleaseCourt(match.id, game.id, match, game)}
                         onStart={() => startGame(match.id, game.id)}
-                        onValidate={(approved) => handleValidateResult(match.id, game.id, approved)}
+                        onValidate={(approved) => handleValidateResult(match.id, game.id, approved, match, game)}
                         onEditResult={() => {
                           setShowEditResult({ matchId: match.id, gameId: game.id, game });
                           setEditScores({ score1: game.score1 || '', score2: game.score2 || '' });

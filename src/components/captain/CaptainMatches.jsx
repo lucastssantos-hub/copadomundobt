@@ -9,17 +9,17 @@ import { Button } from '../common/Button';
 import { WarmupTimer } from '../common/Timer';
 import { LineupModal } from './LineupModal';
 import { ResultModal } from './ResultModal';
+import { MatchScoreHistory } from '../common/MatchScoreHistory';
 
 export function CaptainMatches() {
   const { user } = useAuth();
-  const { matches, teams, groups, courts, getAthletesByTeam } = useApp();
+  const { matches, teams, groups, courts, addAlert } = useApp();
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [lineupModal, setLineupModal] = useState(null);
   const [resultModal, setResultModal] = useState(null);
 
   const myTeam = teams.find(t => t.id === user.teamId);
   const myGroup = groups.find(g => g.teamIds.includes(user.teamId));
-
   const myMatches = matches.filter(m => m.team1Id === user.teamId || m.team2Id === user.teamId);
 
   const typeLabels = { male: '♂ Masculino', female: '♀ Feminino', mixed: '⚥ Misto' };
@@ -38,12 +38,31 @@ export function CaptainMatches() {
     const male = match.games.find(g => g.type === 'male');
     const female = match.games.find(g => g.type === 'female');
     if (!male || !female) return false;
-    const maleFinished = male.status === MATCH_STATUS.FINISHED;
-    const femaleFinished = female.status === MATCH_STATUS.FINISHED;
-    if (!maleFinished || !femaleFinished) return false;
+    if (male.status !== MATCH_STATUS.FINISHED || female.status !== MATCH_STATUS.FINISHED) return false;
     const malWin = (match.team1Id === user.teamId) ? male.score1 > male.score2 : male.score2 > male.score1;
     const femWin = (match.team1Id === user.teamId) ? female.score1 > female.score2 : female.score2 > female.score1;
     return malWin !== femWin;
+  };
+
+  const handleLineupSubmitted = (match, game) => {
+    const opponent = teams.find(t => t.id === (match.team1Id === user.teamId ? match.team2Id : match.team1Id));
+    addAlert(
+      `📋 ${myTeam?.flag} ${myTeam?.name} enviou escalação ${typeLabels[game.type]} vs ${opponent?.name} (CAT ${match.category})`,
+      'lineup',
+      'admin'
+    );
+  };
+
+  const handleResultSubmitted = (match, game, score1, score2) => {
+    const opponent = teams.find(t => t.id === (match.team1Id === user.teamId ? match.team2Id : match.team1Id));
+    const isTeam1 = match.team1Id === user.teamId;
+    const myScore = isTeam1 ? score1 : score2;
+    const oppScore = isTeam1 ? score2 : score1;
+    addAlert(
+      `🏆 ${myTeam?.flag} ${myTeam?.name} enviou resultado ${typeLabels[game.type]}: ${myScore}×${oppScore} vs ${opponent?.name}`,
+      'result',
+      'admin'
+    );
   };
 
   return (
@@ -65,6 +84,7 @@ export function CaptainMatches() {
             const court = courts.find(c => c.id === match.courtId);
             const isExpanded = selectedMatch?.id === match.id;
             const tied = isTied(match);
+            const isFinished = match.status === MATCH_STATUS.FINISHED;
 
             return (
               <Card key={match.id}>
@@ -81,8 +101,11 @@ export function CaptainMatches() {
                             {isTeam1 ? `${match.result.team1Score} × ${match.result.team2Score}` : `${match.result.team2Score} × ${match.result.team1Score}`}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {match.result.team1Score > match.result.team2Score ? (isTeam1 ? '🏆 Vitória' : '❌ Derrota') :
-                             match.result.team2Score > match.result.team1Score ? (isTeam1 ? '❌ Derrota' : '🏆 Vitória') : '🤝 Empate'}
+                            {match.result.team1Score > match.result.team2Score
+                              ? (isTeam1 ? '🏆 Vitória' : '❌ Derrota')
+                              : match.result.team2Score > match.result.team1Score
+                              ? (isTeam1 ? '❌ Derrota' : '🏆 Vitória')
+                              : '🤝 Empate'}
                           </span>
                         </div>
                       )}
@@ -99,10 +122,19 @@ export function CaptainMatches() {
 
                 {isExpanded && (
                   <div className="border-t border-gray-100 px-3 pb-3 space-y-3">
-                    {match.games.map(game => {
+                    {/* Detailed score history for finished matches */}
+                    {isFinished && (
+                      <MatchScoreHistory
+                        match={match}
+                        team1={teams.find(t => t.id === match.team1Id)}
+                        team2={teams.find(t => t.id === match.team2Id)}
+                        myTeamId={user.teamId}
+                      />
+                    )}
+
+                    {!isFinished && match.games.map(game => {
                       if (game.type === 'mixed' && !tied && game.status === MATCH_STATUS.WAITING_LINEUP) return null;
                       const myLineup = isTeam1 ? game.lineup1 : game.lineup2;
-                      const oppLineup = isTeam1 ? game.lineup2 : game.lineup1;
                       const myScore = isTeam1 ? game.score1 : game.score2;
                       const oppScore = isTeam1 ? game.score2 : game.score1;
 
@@ -155,7 +187,7 @@ export function CaptainMatches() {
                       );
                     })}
 
-                    {tied && (
+                    {tied && !isFinished && (
                       <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
                         <p className="text-sm font-semibold text-orange-800">⚥ Confronto empatado 1×1</p>
                         <p className="text-xs text-orange-600 mt-0.5">Jogo misto disponível para escalação</p>
@@ -175,6 +207,7 @@ export function CaptainMatches() {
         match={lineupModal?.match}
         game={lineupModal?.game}
         isTeam1={lineupModal?.isTeam1}
+        onSubmitted={handleLineupSubmitted}
       />
       <ResultModal
         isOpen={!!resultModal}
@@ -182,6 +215,7 @@ export function CaptainMatches() {
         match={resultModal?.match}
         game={resultModal?.game}
         isTeam1={resultModal?.isTeam1}
+        onSubmitted={handleResultSubmitted}
       />
     </div>
   );

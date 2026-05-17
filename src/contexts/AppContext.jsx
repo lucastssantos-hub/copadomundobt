@@ -16,11 +16,30 @@ export function AppProvider({ children }) {
   const [matches, setMatches] = useState(mockMatches);
   const [standings, setStandings] = useState(mockStandings);
   const [notifications, setNotifications] = useState([]);
+  const [alerts, setAlerts] = useState([]);
 
   const addNotification = useCallback((message, type = 'info') => {
     const id = Date.now();
     setNotifications(prev => [...prev, { id, message, type }]);
     setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
+  }, []);
+
+  // Persistent alerts routed by role: 'admin' or a teamId
+  const addAlert = useCallback((message, type = 'info', forRole = 'admin', meta = {}) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setAlerts(prev => [{ id, message, type, forRole, read: false, timestamp: Date.now(), ...meta }, ...prev.slice(0, 99)]);
+  }, []);
+
+  const markAlertRead = useCallback((id) => {
+    setAlerts(prev => prev.map(a => a.id === id ? { ...a, read: true } : a));
+  }, []);
+
+  const markAllAlertsRead = useCallback((forRole) => {
+    setAlerts(prev => prev.map(a => a.forRole === forRole ? { ...a, read: true } : a));
+  }, []);
+
+  const dismissAlert = useCallback((id) => {
+    setAlerts(prev => prev.filter(a => a.id !== id));
   }, []);
 
   const updateGame = useCallback((matchId, gameId, updates) => {
@@ -274,6 +293,11 @@ export function AppProvider({ children }) {
       standings, setStandings,
       notifications,
       addNotification,
+      alerts,
+      addAlert,
+      markAlertRead,
+      markAllAlertsRead,
+      dismissAlert,
       updateGame,
       submitLineup,
       releaseCourt,

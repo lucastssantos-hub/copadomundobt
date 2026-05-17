@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 
-export function LineupModal({ isOpen, onClose, match, game, isTeam1 }) {
+export function LineupModal({ isOpen, onClose, match, game, isTeam1, onSubmitted }) {
   const { getAthletesByTeam, submitLineup } = useApp();
   const { user } = useAuth();
   const [selected, setSelected] = useState([]);
@@ -28,6 +28,7 @@ export function LineupModal({ isOpen, onClose, match, game, isTeam1 }) {
   const handleSubmit = () => {
     if (selected.length !== 2) return;
     submitLineup(match.id, game.id, isTeam1 ? 1 : 2, selected);
+    onSubmitted?.(match, game);
     setSelected([]);
     onClose();
   };

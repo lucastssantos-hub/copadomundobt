@@ -3,7 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 
-export function ResultModal({ isOpen, onClose, match, game, isTeam1 }) {
+export function ResultModal({ isOpen, onClose, match, game, isTeam1, onSubmitted }) {
   const { submitResult, teams } = useApp();
   const [score1, setScore1] = useState('');
   const [score2, setScore2] = useState('');
@@ -22,6 +22,7 @@ export function ResultModal({ isOpen, onClose, match, game, isTeam1 }) {
     const finalScore1 = isTeam1 ? s1 : s2;
     const finalScore2 = isTeam1 ? s2 : s1;
     submitResult(match.id, game.id, finalScore1, finalScore2);
+    onSubmitted?.(match, game, s1, s2);
     setScore1('');
     setScore2('');
     onClose();

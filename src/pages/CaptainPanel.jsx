@@ -4,6 +4,7 @@ import { CaptainTeam } from '../components/captain/CaptainTeam';
 import { CaptainMatches } from '../components/captain/CaptainMatches';
 import { CaptainCourt } from '../components/captain/CaptainCourt';
 import { CaptainStandings } from '../components/captain/CaptainStandings';
+import { NotificationCenter } from '../components/common/NotificationCenter';
 import { User, Swords, MapPin, Trophy, LogOut } from 'lucide-react';
 
 const tabs = [
@@ -39,10 +40,12 @@ export function CaptainPanel() {
               <p className="text-xs text-gray-500 leading-none">Capitão: {user.name}</p>
             </div>
           </div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 text-sm font-medium transition-colors">
-            <LogOut size={16} />
-            Sair
-          </button>
+          <div className="flex items-center gap-1">
+            <NotificationCenter forRole={user.teamId} />
+            <button onClick={logout} className="p-2 text-gray-500 hover:text-red-600 transition-colors">
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
