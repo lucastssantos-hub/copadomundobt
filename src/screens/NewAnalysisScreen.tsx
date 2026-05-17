@@ -70,8 +70,9 @@ export function NewAnalysisScreen() {
 
       navigation.replace('AnalysisDetail', { analysisId: analysis.id });
     } catch (err) {
-      console.error('[NewAnalysis] erro ao criar:', err);
-      Alert.alert('Erro', 'Não foi possível criar a análise. Tente novamente.');
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[NewAnalysis] erro ao criar:', msg);
+      Alert.alert('Erro ao criar', msg);
     } finally {
       setLoading(false);
     }
