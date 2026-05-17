@@ -117,7 +117,7 @@ export function PerformanceScreen() {
                 <TouchableOpacity
                   key={analysis.id}
                   style={styles.trendRow}
-                  onPress={() => navigation.navigate('Home', { screen: 'AnalysisDetail', params: { analysisId: analysis.id } })}
+                  onPress={() => navigation.navigate('AnalysisDetail', { analysisId: analysis.id })}
                   activeOpacity={0.8}
                 >
                   <View style={styles.trendLeft}>

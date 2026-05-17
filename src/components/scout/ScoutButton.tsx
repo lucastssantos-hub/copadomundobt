@@ -23,7 +23,7 @@ export function ScoutButton({ type, onPress, count = 0, disabled = false }: Scou
   }
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={[styles.wrapper, { transform: [{ scale }] }]}>
       <TouchableOpacity
         onPress={handlePress}
         disabled={disabled}
@@ -48,6 +48,10 @@ export function ScoutButton({ type, onPress, count = 0, disabled = false }: Scou
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flexBasis: '31%',
+    flexGrow: 1,
+  },
   button: {
     borderWidth: 1.5,
     borderRadius: borderRadius.md,
@@ -57,6 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 56,
     position: 'relative',
+    width: '100%',
   },
   label: {
     fontSize: 13,

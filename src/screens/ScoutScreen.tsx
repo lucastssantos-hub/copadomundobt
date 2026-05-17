@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator, Modal, TextInput,
+  Alert, ActivityIndicator, Modal, TextInput, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -33,6 +33,8 @@ export function ScoutScreen() {
   const [note, setNote] = useState('');
   const [timer, setTimer] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [lastEvent, setLastEvent] = useState<ScoutEventType | null>(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadAnalysis(route.params.analysisId);
@@ -58,6 +60,16 @@ export function ScoutScreen() {
     setSelectedTeam(side);
   }
 
+  function showToast(type: ScoutEventType) {
+    setLastEvent(type);
+    toastAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(toastAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.delay(800),
+      Animated.timing(toastAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start();
+  }
+
   async function handleEvent(type: ScoutEventType) {
     if (!activeAnalysis) return;
     await addEvent(activeAnalysis.id, {
@@ -66,6 +78,7 @@ export function ScoutScreen() {
       player: selectedPlayer,
       team: selectedTeam,
     });
+    showToast(type);
   }
 
   function handleLongPress(type: ScoutEventType) {
@@ -120,6 +133,25 @@ export function ScoutScreen() {
           onPress: () => navigation.navigate('Report', { analysisId: activeAnalysis.id }),
         }}
       />
+
+      {/* Event toast */}
+      {lastEvent && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.toast,
+            {
+              opacity: toastAnim,
+              transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }],
+              backgroundColor: SCOUT_EVENT_CONFIG[lastEvent].color,
+            },
+          ]}
+        >
+          <Text style={styles.toastText}>
+            {SCOUT_EVENT_CONFIG[lastEvent].label} — {selectedPlayer} @ {formatTimestamp(timer)}
+          </Text>
+        </Animated.View>
+      )}
 
       <ScrollView
         style={styles.scroll}
@@ -260,6 +292,20 @@ const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.md, paddingBottom: 40 },
+
+  toast: {
+    marginHorizontal: spacing.md,
+    marginTop: 4,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  toastText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
 
   timerCard: {
     backgroundColor: colors.surface,

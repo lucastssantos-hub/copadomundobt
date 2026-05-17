@@ -9,7 +9,8 @@ export const storageService = {
       const data = await AsyncStorage.getItem(ANALYSES_KEY);
       if (!data) return [];
       return JSON.parse(data) as Analysis[];
-    } catch {
+    } catch (err) {
+      console.warn('[storageService] getAll failed:', err);
       return [];
     }
   },
