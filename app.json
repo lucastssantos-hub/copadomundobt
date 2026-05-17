@@ -42,7 +42,9 @@
         {
           "iCloudContainerEnvironment": "Production"
         }
-      ]
+      ],
+      "expo-print",
+      "expo-sharing"
     ]
   }
 }

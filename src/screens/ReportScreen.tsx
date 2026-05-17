@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -9,8 +9,9 @@ import { Header } from '../components/common/Header';
 import { StatCard } from '../components/reports/StatCard';
 import { InsightCard } from '../components/reports/InsightCard';
 import { generateReport } from '../utils/analytics';
+import { pdfService } from '../services/pdfService';
 import { colors, spacing, borderRadius, typography } from '../theme';
-import { formatPercentage, formatDuration } from '../utils/formatters';
+import { formatDuration } from '../utils/formatters';
 import { SCOUT_EVENT_CONFIG } from '../types';
 
 type RouteParams = { analysisId: string };
@@ -19,6 +20,7 @@ export function ReportScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const { activeAnalysis, loadAnalysis } = useAnalysisStore();
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadAnalysis(route.params.analysisId);
@@ -28,6 +30,18 @@ export function ReportScreen() {
     if (!activeAnalysis) return null;
     return generateReport(activeAnalysis);
   }, [activeAnalysis]);
+
+  async function handleExport() {
+    if (!activeAnalysis || !report) return;
+    setExporting(true);
+    try {
+      await pdfService.generateAndShare(activeAnalysis, report);
+    } catch (err) {
+      Alert.alert('Erro ao exportar', 'Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   if (!activeAnalysis || !report) {
     return (
@@ -47,6 +61,7 @@ export function ReportScreen() {
         title="Relatório"
         subtitle={activeAnalysis.title}
         onBack={() => navigation.goBack()}
+        rightAction={{ icon: 'share-outline', onPress: handleExport }}
       />
 
       <ScrollView
@@ -221,6 +236,25 @@ export function ReportScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Export bar */}
+      <View style={styles.exportBar}>
+        <TouchableOpacity
+          style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
+          onPress={handleExport}
+          disabled={exporting}
+          activeOpacity={0.85}
+        >
+          {exporting ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Ionicons name="share-outline" size={20} color={colors.white} />
+          )}
+          <Text style={styles.exportBtnText}>
+            {exporting ? 'Gerando PDF...' : 'Exportar Relatório PDF'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -228,6 +262,34 @@ export function ReportScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   loading: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+
+  exportBar: {
+    padding: spacing.md,
+    paddingBottom: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  exportBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 10,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  exportBtnDisabled: { opacity: 0.6 },
+  exportBtnText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.md, paddingBottom: 40 },
 
