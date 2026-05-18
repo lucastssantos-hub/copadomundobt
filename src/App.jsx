@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './pages/Login';
 import { AdmPanel } from './pages/AdmPanel';
 import { CaptainPanel } from './pages/CaptainPanel';
+import { PublicDisplay } from './pages/PublicDisplay';
 import { Notifications } from './components/common/Notifications';
 
 class ErrorBoundary extends Component {
@@ -47,6 +48,15 @@ function AppContent() {
 }
 
 export default function App() {
+  // Serve the public display at /display without any auth
+  if (window.location.pathname.endsWith('/display')) {
+    return (
+      <ErrorBoundary>
+        <PublicDisplay />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <AppProvider>

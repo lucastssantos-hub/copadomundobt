@@ -8,11 +8,18 @@ import { AdmCourts } from '../components/adm/AdmCourts';
 import { AdmStandings } from '../components/adm/AdmStandings';
 import { AdmElimination } from '../components/adm/AdmElimination';
 import { AdmPrint } from '../components/adm/AdmPrint';
+import { AdmRanking } from '../components/adm/AdmRanking';
+import { AdmPdfImport } from '../components/adm/AdmPdfImport';
+import { CsvExport } from '../components/adm/CsvExport';
 import { NotificationCenter } from '../components/common/NotificationCenter';
 import { FirebaseStatus } from '../components/common/FirebaseStatus';
 import {
-  LayoutDashboard, Users, Grid3X3, Swords, MapPin, Trophy, Zap, Printer, LogOut
+  LayoutDashboard, Users, Grid3X3, Swords, MapPin, Trophy, Zap, Printer, LogOut,
+  Monitor, FileUp, FileDown
 } from 'lucide-react';
+
+const BASE = import.meta.env.BASE_URL || '/';
+const DISPLAY_URL = `${window.location.origin}${BASE}display`;
 
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -22,6 +29,9 @@ const tabs = [
   { id: 'courts', label: 'Quadras', icon: MapPin },
   { id: 'standings', label: 'Classificação', icon: Trophy },
   { id: 'elimination', label: 'Eliminatórias', icon: Zap },
+  { id: 'ranking', label: 'Ranking', icon: Trophy },
+  { id: 'import', label: 'Importar', icon: FileUp },
+  { id: 'export', label: 'Exportar', icon: FileDown },
   { id: 'print', label: 'Impressão', icon: Printer },
 ];
 
@@ -38,6 +48,9 @@ export function AdmPanel() {
       case 'courts': return <AdmCourts />;
       case 'standings': return <AdmStandings />;
       case 'elimination': return <AdmElimination />;
+      case 'ranking': return <AdmRanking />;
+      case 'import': return <AdmPdfImport />;
+      case 'export': return <CsvExport />;
       case 'print': return <AdmPrint />;
       default: return <AdmDashboard />;
     }
@@ -56,6 +69,15 @@ export function AdmPanel() {
             <FirebaseStatus />
           </div>
           <div className="flex items-center gap-1">
+            <a
+              href={DISPLAY_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="Abrir Telão"
+              className="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-medium transition-colors p-2"
+            >
+              <Monitor size={16} />
+            </a>
             <NotificationCenter forRole="admin" />
             <button
               onClick={logout}
