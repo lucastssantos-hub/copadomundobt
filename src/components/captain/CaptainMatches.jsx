@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { MapPin, Clock, AlertCircle, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
+import { MapPin, Clock, AlertCircle, ChevronDown, ChevronUp, ChevronRight, Trophy } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { MATCH_STATUS, CATEGORIES } from '../../data/mockData';
