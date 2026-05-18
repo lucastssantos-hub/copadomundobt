@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { MATCH_STATUS, CATEGORIES } from '../../data/mockData';
 import { Card, CardBody } from '../common/Card';
 
 // Points awarded per elimination phase
@@ -30,92 +29,32 @@ function getPhaseLabel(match, eliminationMatchesByCategory) {
   return 'semis';
 }
 
-function buildRanking(teams, groups, matches) {
-  // Map: teamName (lower-cased key) → { name, flag, categories: Set, points: number, breakdown: {cat: pts} }
+function buildRanking(eqs, jogos) {
   const countryMap = {};
 
-  // 1. Award group-stage participation points (10 pts per team per group)
-  const groupTeamIds = new Set();
-  groups.forEach(group => {
-    (group.teamIds || []).forEach(teamId => groupTeamIds.add(teamId));
-  });
-
-  teams.forEach(team => {
-    if (!groupTeamIds.has(team.id)) return;
-    const key = team.name.toLowerCase();
+  for (const eq of eqs) {
+    const key = eq.nome.toLowerCase();
     if (!countryMap[key]) {
-      countryMap[key] = { name: team.name, flag: team.flag || '', categories: new Set(), points: 0, breakdown: {} };
+      countryMap[key] = { name: eq.nome, flag: eq.bandeira || '', categories: new Set(), points: 0, breakdown: {} };
     }
-    countryMap[key].categories.add(team.category);
+    countryMap[key].categories.add(eq.catId);
     countryMap[key].points += 10;
-    countryMap[key].breakdown[team.category] = (countryMap[key].breakdown[team.category] || 0) + 10;
-  });
+    countryMap[key].breakdown[eq.catId] = (countryMap[key].breakdown[eq.catId] || 0) + 10;
+  }
 
-  // 2. Award elimination-phase bonus points
-  const eliminationMatches = matches.filter(m => m.phase === 'elimination' && m.result);
-
-  // Group elimination matches by category for phase detection
-  const eliminationByCategory = {};
-  eliminationMatches.forEach(m => {
-    if (!eliminationByCategory[m.category]) eliminationByCategory[m.category] = [];
-    eliminationByCategory[m.category].push(m);
-  });
-
-  eliminationMatches.forEach(match => {
-    const phase = getPhaseLabel(match, eliminationByCategory);
-
-    // Determine winner and loser team IDs
-    const { team1Score, team2Score } = match.result;
-    const winnerId = team1Score > team2Score ? match.team1Id : match.team2Id;
-    const loserId = team1Score > team2Score ? match.team2Id : match.team1Id;
-
-    const winner = teams.find(t => t.id === winnerId);
-    const loser = teams.find(t => t.id === loserId);
-
-    // Award points to winner
-    if (winner) {
-      const wKey = winner.name.toLowerCase();
-      if (!countryMap[wKey]) {
-        countryMap[wKey] = { name: winner.name, flag: winner.flag || '', categories: new Set(), points: 0, breakdown: {} };
-      }
-      countryMap[wKey].categories.add(match.category);
-
-      let bonus = PHASE_POINTS[phase] || 0;
-      // If this is the final, also add champion bonus for the winner
-      if (phase === 'final') {
-        bonus += PHASE_POINTS.champion;
-      }
-      countryMap[wKey].points += bonus;
-      countryMap[wKey].breakdown[match.category] = (countryMap[wKey].breakdown[match.category] || 0) + bonus;
+  for (const jogo of jogos) {
+    if (!jogo.venc || !jogo.res) continue;
+    const winEq = eqs.find(e => e.id === jogo.venc);
+    const loseId = jogo.venc === jogo.e1 ? jogo.e2 : jogo.e1;
+    const loseEq = eqs.find(e => e.id === loseId);
+    if (!winEq) continue;
+    const wKey = winEq.nome.toLowerCase();
+    if (countryMap[wKey]) {
+      countryMap[wKey].points += 3;
+      countryMap[wKey].breakdown[winEq.catId] = (countryMap[wKey].breakdown[winEq.catId] || 0) + 3;
     }
+  }
 
-    // Award semi bonus to loser too (they reached the semis)
-    if (loser && phase === 'semis') {
-      const lKey = loser.name.toLowerCase();
-      if (!countryMap[lKey]) {
-        countryMap[lKey] = { name: loser.name, flag: loser.flag || '', categories: new Set(), points: 0, breakdown: {} };
-      }
-      countryMap[lKey].categories.add(match.category);
-      // Semis loser still gets the semis participation bonus
-      const bonus = PHASE_POINTS.semis;
-      countryMap[lKey].points += bonus;
-      countryMap[lKey].breakdown[match.category] = (countryMap[lKey].breakdown[match.category] || 0) + bonus;
-    }
-
-    // Final loser gets the final bonus (runner-up)
-    if (loser && phase === 'final') {
-      const lKey = loser.name.toLowerCase();
-      if (!countryMap[lKey]) {
-        countryMap[lKey] = { name: loser.name, flag: loser.flag || '', categories: new Set(), points: 0, breakdown: {} };
-      }
-      countryMap[lKey].categories.add(match.category);
-      const bonus = PHASE_POINTS.final;
-      countryMap[lKey].points += bonus;
-      countryMap[lKey].breakdown[match.category] = (countryMap[lKey].breakdown[match.category] || 0) + bonus;
-    }
-  });
-
-  // Convert to sorted array
   return Object.values(countryMap)
     .map(entry => ({ ...entry, categories: Array.from(entry.categories).sort() }))
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
@@ -201,9 +140,11 @@ function RankingRow({ entry, position }) {
 }
 
 export function AdmRanking() {
-  const { teams, groups, matches } = useApp();
+  const { state } = useApp();
+  const eqs = state.eqs || [];
+  const jogos = state.jogos || [];
 
-  const ranking = buildRanking(teams, groups, matches);
+  const ranking = buildRanking(eqs, jogos);
 
   return (
     <div className="space-y-4">

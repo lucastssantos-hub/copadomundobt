@@ -25,7 +25,11 @@ function sectionHeader(title) {
 }
 
 export function CsvExport() {
-  const { teams, athletes, groups, matches, standings } = useApp();
+  const { state } = useApp();
+  const teams = (state.eqs || []).map(e => ({ id: e.id, name: e.nome, category: e.catId, flag: e.bandeira }));
+  const athletes = (state.atls || []).map(a => ({ id: a.id, name: a.nome, teamId: a.eqId, gender: a.sexo, number: 0 }));
+  const matches = (state.jogos || []);
+  const eqsById = Object.fromEntries((state.eqs || []).map(e => [e.id, e]));
   const [exporting, setExporting] = useState(false);
 
   const handleExport = () => {
@@ -60,45 +64,19 @@ export function CsvExport() {
         lines.push(sectionHeader('CONFRONTOS'));
         lines.push(row('id', 'categoria', 'equipe1', 'equipe2', 'status', 'resultado'));
 
-        const teamById = Object.fromEntries(teams.map(t => [t.id, t.name]));
-
-        for (const match of matches) {
-          const team1 = teamById[match.team1Id] ?? match.team1Id;
-          const team2 = teamById[match.team2Id] ?? match.team2Id;
-          const result = match.result
-            ? `${match.result.team1Score} x ${match.result.team2Score}`
-            : '';
+        for (const jogo of matches) {
+          const eq1 = eqsById[jogo.e1];
+          const eq2 = eqsById[jogo.e2];
+          const det = jogo.det || {};
+          const resultStr = jogo.res || '';
           lines.push(row(
-            match.id,
-            match.category,
-            team1,
-            team2,
-            match.status,
-            result,
+            jogo.id,
+            jogo.catId,
+            eq1?.nome ?? jogo.e1,
+            eq2?.nome ?? jogo.e2,
+            jogo.res ? 'finalizado' : jogo.quadra ? 'em_quadra' : 'pendente',
+            resultStr,
           ));
-        }
-
-        // ── Section 4: Standings ───────────────────────────────────────────
-        lines.push(sectionHeader('CLASSIFICAÇÃO'));
-        lines.push(row('grupo', 'posicao', 'equipe', 'jogados', 'vitorias', 'derrotas', 'pontos'));
-
-        const groupById = Object.fromEntries(groups.map(g => [g.id, g]));
-
-        for (const [groupId, rows] of Object.entries(standings)) {
-          const group = groupById[groupId];
-          const groupLabel = group ? group.name : groupId;
-          rows.forEach((entry, index) => {
-            const teamName = teamById[entry.teamId] ?? entry.teamId;
-            lines.push(row(
-              groupLabel,
-              index + 1,
-              teamName,
-              entry.played,
-              entry.wins,
-              entry.losses,
-              entry.points,
-            ));
-          });
         }
 
         const csv = lines.join('\n');

@@ -1,424 +1,317 @@
 import { useState } from 'react';
-import { Plus, ChevronDown, ChevronUp, MapPin, Clock, MessageCircle, Layers, CheckSquare, Square } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { CATEGORIES, MATCH_STATUS } from '../../data/mockData';
-import { Card, CardBody, CardHeader } from '../common/Card';
-import { Button } from '../common/Button';
-import { Modal } from '../common/Modal';
-import { StatusBadge, CategoryBadge } from '../common/Badge';
-import { WarmupTimer } from '../common/Timer';
-import { MatchScoreHistory } from '../common/MatchScoreHistory';
+import { calcResultStatus } from '../../data/mockData';
+import { MapPin, X, CheckCircle2, MessageCircle, Edit2 } from 'lucide-react';
 
-const APP_URL = 'https://lucastssantos-hub.github.io/copadomundobt/';
+const WARMUP_MS = 6 * 60 * 1000;
+const APP_URL = window.location.origin + (import.meta.env.BASE_URL || '/');
 
-function waLink(team1, team2, match, role = 'geral') {
-  const msg = role === 'geral'
-    ? `🎾 *Copa do Mundo de Beach Tennis 2026*\n\n${team1?.flag} *${team1?.name}* vs ${team2?.flag} *${team2?.name}*\nCategoria ${match.category}\n\nPor favor acesse o app e envie sua escalação:\n${APP_URL}`
-    : `🎾 *BT World Cup 2026*\n\n${team1?.flag} *${team1?.name}* vs ${team2?.flag} *${team2?.name}*\nCat ${match.category} — quadra atribuída!\n\nAcesse: ${APP_URL}`;
-  return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+function waLink(eq1, eq2, jogo, cap) {
+  const texto = `🎾 *Copa do Mundo Beach Tennis 2026*\n\n${eq1?.bandeira || ''} *${eq1?.nome}* vs ${eq2?.bandeira || ''} *${eq2?.nome}*\nCategoria ${jogo.catId} · Grupo ${jogo.gnome}\n\n${cap ? `Código do capitão: *${cap.codigo}*` : ''}\nAcesse: ${APP_URL}`;
+  return `https://wa.me/?text=${encodeURIComponent(texto)}`;
 }
 
-export function AdmMatches() {
-  const { matches, groups, teams, courts, captains, addMatch, releaseCourt, startGame,
-    validateResult, assignCourt, editResult, addMixedGame, addAlert } = useApp();
+function fmtTimer(ms) {
+  if (ms <= 0) return '00:00';
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditResult, setShowEditResult] = useState(null);
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [editScores, setEditScores] = useState({ score1: '', score2: '' });
-  const [batchMode, setBatchMode] = useState(false);
-  const [batchSelected, setBatchSelected] = useState(new Set());
-  const [batchCourt, setBatchCourt] = useState('');
+function ResultModal({ jogo, eq1, eq2, onClose, onSave }) {
+  const det = jogo.det || {};
+  const [fd1, setFd1] = useState(det.fd1 ?? '');
+  const [fd2, setFd2] = useState(det.fd2 ?? '');
+  const [md1, setMd1] = useState(det.md1 ?? '');
+  const [md2, setMd2] = useState(det.md2 ?? '');
+  const [mx1, setMx1] = useState(det.mx1 ?? '');
+  const [mx2, setMx2] = useState(det.mx2 ?? '');
+  const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({ groupId: '', team1Id: '', team2Id: '', courtId: '', scheduledTime: '' });
+  const n = v => parseInt(v) || 0;
+  const fdW = fd1 !== '' && fd2 !== '' ? (n(fd1) > n(fd2) ? eq1 : n(fd2) > n(fd1) ? eq2 : null) : null;
+  const mdW = md1 !== '' && md2 !== '' ? (n(md1) > n(md2) ? eq1 : n(md2) > n(md1) ? eq2 : null) : null;
+  const needMX = !!(fdW && mdW && fdW.id !== mdW.id);
+  const canSave = fd1 !== '' && fd2 !== '' && md1 !== '' && md2 !== '' && (!needMX || (mx1 !== '' && mx2 !== ''));
 
-  const filteredMatches = matches.filter(m => {
-    if (filterCategory !== 'all' && m.category !== filterCategory) return false;
-    if (filterStatus !== 'all' && m.status !== filterStatus) return false;
-    return true;
-  });
+  async function handleSave() {
+    const newDet = { fd1: n(fd1), fd2: n(fd2), md1: n(md1), md2: n(md2) };
+    if (needMX) { newDet.mx1 = n(mx1); newDet.mx2 = n(mx2); }
+    setSaving(true);
+    await onSave(newDet);
+    setSaving(false);
+    onClose();
+  }
 
-  const selectedGroup = groups.find(g => g.id === form.groupId);
-  const groupTeams = selectedGroup ? teams.filter(t => selectedGroup.teamIds.includes(t.id)) : [];
-
-  const handleCreate = () => {
-    if (!form.groupId || !form.team1Id || !form.team2Id || form.team1Id === form.team2Id) return;
-    const group = groups.find(g => g.id === form.groupId);
-    addMatch({ ...form, category: group?.category });
-    setForm({ groupId: '', team1Id: '', team2Id: '', courtId: '', scheduledTime: '' });
-    setShowCreateModal(false);
-  };
-
-  const handleValidateResult = (matchId, gameId, approved, match, game) => {
-    validateResult(matchId, gameId, approved);
-    setSelectedMatch(prev => prev?.id === matchId ? (matches.find(m => m.id === matchId) || null) : prev);
-    if (match && game) {
-      const typeL = { male: 'Masculino', female: 'Feminino', mixed: 'Misto' };
-      const t1 = teams.find(t => t.id === match.team1Id);
-      const t2 = teams.find(t => t.id === match.team2Id);
-      const msg = approved
-        ? `✅ Resultado ${typeL[game.type]} validado: ${t1?.name} ${game.pendingScore1}×${game.pendingScore2} ${t2?.name}`
-        : `❌ Resultado ${typeL[game.type]} rejeitado — ${t1?.name} vs ${t2?.name}`;
-      addAlert(msg, 'validation', match.team1Id);
-      addAlert(msg, 'validation', match.team2Id);
-    }
-  };
-
-  const handleReleaseCourt = (matchId, gameId, match, game) => {
-    releaseCourt(matchId, gameId);
-    if (match && game) {
-      const court = courts.find(c => c.id === game.courtId);
-      const typeL = { male: 'Masculino', female: 'Feminino', mixed: 'Misto' };
-      const msg = `📍 Quadra ${court?.name || ''} liberada — Aquecimento iniciado (${typeL[game.type]})`;
-      addAlert(msg, 'court', match.team1Id);
-      addAlert(msg, 'court', match.team2Id);
-    }
-  };
-
-  const handleEditResult = (matchId, gameId) => {
-    editResult(matchId, gameId, parseInt(editScores.score1), parseInt(editScores.score2));
-    setShowEditResult(null);
-    setEditScores({ score1: '', score2: '' });
-  };
-
-  const checkShouldAddMixed = (match) => {
-    const male = match.games.find(g => g.type === 'male');
-    const female = match.games.find(g => g.type === 'female');
-    const maleWon = male?.score1 > male?.score2;
-    const femaleWon = female?.score1 > female?.score2;
-    if (male?.status === MATCH_STATUS.FINISHED && female?.status === MATCH_STATUS.FINISHED && maleWon !== femaleWon) {
-      if (!match.games.some(g => g.type === 'mixed')) addMixedGame(match.id);
-    }
-  };
-
-  const toggleBatch = (matchId) => {
-    setBatchSelected(prev => {
-      const next = new Set(prev);
-      next.has(matchId) ? next.delete(matchId) : next.add(matchId);
-      return next;
-    });
-  };
-
-  const handleBatchAssign = () => {
-    if (!batchCourt || batchSelected.size === 0) return;
-    batchSelected.forEach(matchId => {
-      const match = matches.find(m => m.id === matchId);
-      if (match) {
-        match.games.filter(g => g.status !== MATCH_STATUS.FINISHED && !g.courtId)
-          .forEach(g => assignCourt(matchId, g.id, batchCourt));
-      }
-    });
-    setBatchSelected(new Set());
-    setBatchMode(false);
-    setBatchCourt('');
-  };
-
-  const typeLabels = { male: '♂ Masculino', female: '♀ Feminino', mixed: '⚥ Misto' };
+  function ScoreRow({ label, v1, setV1, v2, setV2, winner, color }) {
+    return (
+      <div className="mb-3">
+        <p className="text-xs font-bold uppercase tracking-wider mb-2 px-1" style={{ color }}>{label}</p>
+        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-3">
+          <span className="flex-1 text-sm font-medium text-gray-700 truncate">{eq1.nome}</span>
+          <input type="number" min="0" value={v1} onChange={e => setV1(e.target.value)}
+            className="w-14 text-center text-lg font-bold border-2 border-gray-200 rounded-lg py-1 outline-none focus:border-blue-500" />
+          <span className="text-gray-400 font-bold">×</span>
+          <input type="number" min="0" value={v2} onChange={e => setV2(e.target.value)}
+            className="w-14 text-center text-lg font-bold border-2 border-gray-200 rounded-lg py-1 outline-none focus:border-blue-500" />
+          <span className="flex-1 text-sm font-medium text-gray-700 truncate text-right">{eq2.nome}</span>
+        </div>
+        {winner && <p className="text-xs text-green-600 font-bold text-center mt-1">🏆 {winner.nome}</p>}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 pb-24">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Confrontos</h2>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant={batchMode ? 'warning' : 'ghost'}
-            onClick={() => { setBatchMode(b => !b); setBatchSelected(new Set()); }}
-          >
-            <Layers size={14} className="mr-1" />
-            {batchMode ? `Batch (${batchSelected.size})` : 'Batch'}
-          </Button>
-          <Button onClick={() => setShowCreateModal(true)} size="sm">
-            <Plus size={16} className="mr-1" /> Novo
-          </Button>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b">
+          <h3 className="font-bold text-gray-900">Lançar Resultado</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="space-y-2">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {['all', ...CATEGORIES].map(cat => (
-            <button key={cat} onClick={() => setFilterCategory(cat)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filterCategory === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-              {cat === 'all' ? 'Todas' : `Cat ${cat}`}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {[
-            { val: 'all', label: 'Todos' },
-            { val: MATCH_STATUS.WAITING_LINEUP, label: 'Ag. Escalação' },
-            { val: MATCH_STATUS.LINEUP_SENT, label: 'Escalado' },
-            { val: MATCH_STATUS.WARMING_UP, label: 'Aquecendo' },
-            { val: MATCH_STATUS.IN_PROGRESS, label: 'Em Jogo' },
-            { val: MATCH_STATUS.WAITING_RESULT, label: 'Ag. Resultado' },
-            { val: MATCH_STATUS.FINISHED, label: 'Finalizado' },
-          ].map(({ val, label }) => (
-            <button key={val} onClick={() => setFilterStatus(val)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${filterStatus === val ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Matches List */}
-      {filteredMatches.length === 0 ? (
-        <Card><CardBody><p className="text-center text-gray-500 py-8">Nenhum confronto encontrado.</p></CardBody></Card>
-      ) : (
-        <div className="space-y-2">
-          {filteredMatches.map(match => {
-            const team1 = teams.find(t => t.id === match.team1Id);
-            const team2 = teams.find(t => t.id === match.team2Id);
-            const court = courts.find(c => c.id === match.courtId);
-            const isSelected = selectedMatch?.id === match.id;
-            const isBatchChecked = batchSelected.has(match.id);
-
-            return (
-              <Card key={match.id} className={isBatchChecked ? 'border-blue-400' : ''}>
-                <CardBody className="p-3" onClick={() => {
-                  if (batchMode) { toggleBatch(match.id); return; }
-                  setSelectedMatch(isSelected ? null : match);
-                  checkShouldAddMixed(match);
-                }}>
-                  <div className="flex items-center gap-2">
-                    {/* Batch checkbox */}
-                    {batchMode && (
-                      <div className="flex-shrink-0 text-blue-600">
-                        {isBatchChecked ? <CheckSquare size={20} /> : <Square size={20} className="text-gray-300" />}
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-gray-900 text-sm">{team1?.flag} {team1?.name}</span>
-                        {match.result && (
-                          <span className="bg-gray-900 text-white text-xs font-bold px-2 py-0.5 rounded">
-                            {match.result.team1Score} × {match.result.team2Score}
-                          </span>
-                        )}
-                        <span className="font-bold text-gray-900 text-sm">{team2?.name} {team2?.flag}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <CategoryBadge category={match.category} />
-                        <StatusBadge status={match.status} />
-                        {court && <span className="text-xs text-gray-500 flex items-center gap-1"><MapPin size={10} /> {court.name}</span>}
-                        {match.scheduledTime && <span className="text-xs text-gray-500 flex items-center gap-1"><Clock size={10} /> {match.scheduledTime}</span>}
-                      </div>
-                    </div>
-                    {!batchMode && (isSelected ? <ChevronUp size={18} className="text-gray-400 flex-shrink-0" /> : <ChevronDown size={18} className="text-gray-400 flex-shrink-0" />)}
-                  </div>
-                </CardBody>
-
-                {isSelected && !batchMode && (
-                  <div className="border-t border-gray-100 px-3 pb-3 space-y-3">
-                    {/* WhatsApp reminder buttons */}
-                    <div className="flex gap-2 pt-1">
-                      <a href={waLink(team1, team2, match)} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold rounded-xl py-2 hover:bg-green-100 transition-colors">
-                        <MessageCircle size={13} /> WA {team1?.name}
-                      </a>
-                      <a href={waLink(team2, team1, match)} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold rounded-xl py-2 hover:bg-green-100 transition-colors">
-                        <MessageCircle size={13} /> WA {team2?.name}
-                      </a>
-                    </div>
-
-                    {match.status === MATCH_STATUS.FINISHED && (
-                      <MatchScoreHistory match={match} team1={team1} team2={team2} />
-                    )}
-
-                    {match.games.map(game => (
-                      <GameCard
-                        key={game.id}
-                        game={game}
-                        match={match}
-                        team1={team1}
-                        team2={team2}
-                        courts={courts}
-                        typeLabels={typeLabels}
-                        onRelease={() => handleReleaseCourt(match.id, game.id, match, game)}
-                        onStart={() => startGame(match.id, game.id)}
-                        onValidate={(approved) => handleValidateResult(match.id, game.id, approved, match, game)}
-                        onEditResult={() => {
-                          setShowEditResult({ matchId: match.id, gameId: game.id, game });
-                          setEditScores({ score1: game.score1 || '', score2: game.score2 || '' });
-                        }}
-                        onAssignCourt={(courtId) => assignCourt(match.id, game.id, courtId)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Batch assignment bar */}
-      {batchMode && batchSelected.size > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 z-50 px-4">
-          <div className="max-w-2xl mx-auto bg-blue-600 rounded-2xl p-3 shadow-xl flex items-center gap-3">
-            <div className="flex-1">
-              <p className="text-white text-xs font-semibold mb-1">{batchSelected.size} confronto(s) selecionado(s)</p>
-              <select
-                value={batchCourt}
-                onChange={e => setBatchCourt(e.target.value)}
-                className="w-full bg-blue-700 text-white border border-blue-400 rounded-xl px-3 py-1.5 text-sm"
-              >
-                <option value="">Selecionar quadra...</option>
-                {courts.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <Button
-              onClick={handleBatchAssign}
-              disabled={!batchCourt}
-              className="bg-white text-blue-700 font-bold px-4 py-2 rounded-xl text-sm whitespace-nowrap"
-            >
-              Atribuir
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Create Match Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Novo Confronto" size="lg">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
-            <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={form.groupId} onChange={e => setForm(p => ({ ...p, groupId: e.target.value, team1Id: '', team2Id: '' }))}>
-              <option value="">Selecione um grupo</option>
-              {groups.map(g => <option key={g.id} value={g.id}>{g.name} (Cat {g.category})</option>)}
-            </select>
-          </div>
-          {form.groupId && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Equipe 1</label>
-                  <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={form.team1Id} onChange={e => setForm(p => ({ ...p, team1Id: e.target.value }))}>
-                    <option value="">Selecione</option>
-                    {groupTeams.filter(t => t.id !== form.team2Id).map(t => <option key={t.id} value={t.id}>{t.flag} {t.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Equipe 2</label>
-                  <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={form.team2Id} onChange={e => setForm(p => ({ ...p, team2Id: e.target.value }))}>
-                    <option value="">Selecione</option>
-                    {groupTeams.filter(t => t.id !== form.team1Id).map(t => <option key={t.id} value={t.id}>{t.flag} {t.name}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quadra</label>
-                  <select className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={form.courtId} onChange={e => setForm(p => ({ ...p, courtId: e.target.value }))}>
-                    <option value="">Não definida</option>
-                    {courts.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Horário</label>
-                  <input type="time" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" value={form.scheduledTime} onChange={e => setForm(p => ({ ...p, scheduledTime: e.target.value }))} />
-                </div>
-              </div>
-            </>
+        <div className="p-5">
+          <p className="text-sm text-gray-500 mb-4 text-center font-medium">{eq1.nome} × {eq2.nome} · CAT {jogo.catId}</p>
+          <ScoreRow label="FD — Feminino Dupla" v1={fd1} setV1={setFd1} v2={fd2} setV2={setFd2} winner={fdW} color="#db2777" />
+          <ScoreRow label="MD — Masculino Dupla" v1={md1} setV1={setMd1} v2={md2} setV2={setMd2} winner={mdW} color="#0ea5e9" />
+          {needMX && <ScoreRow label="MX — Misto (decisivo)" v1={mx1} setV1={setMx1} v2={mx2} setV2={setMx2}
+            winner={mx1 !== '' && mx2 !== '' ? (n(mx1) > n(mx2) ? eq1 : n(mx2) > n(mx1) ? eq2 : null) : null} color="#7c3aed" />}
+          {!needMX && (fdW || mdW) && (
+            <p className="text-xs text-gray-400 text-center mb-3 italic">MX só jogado se FD e MD ficarem 1×1</p>
           )}
-          <Button fullWidth onClick={handleCreate} disabled={!form.team1Id || !form.team2Id}>Criar Confronto</Button>
+          <button onClick={handleSave} disabled={!canSave || saving}
+            className={`w-full py-3 rounded-xl font-bold transition-all ${canSave && !saving ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>
+            {saving ? 'Salvando...' : '💾 Salvar Resultado'}
+          </button>
         </div>
-      </Modal>
-
-      {/* Edit Result Modal */}
-      <Modal isOpen={!!showEditResult} onClose={() => setShowEditResult(null)} title="Editar Resultado">
-        {showEditResult && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">Corrigir placar do jogo {typeLabels[showEditResult.game.type]}</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Placar Equipe 1</label>
-                <input type="number" min="0" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-lg text-center font-bold" value={editScores.score1} onChange={e => setEditScores(p => ({ ...p, score1: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Placar Equipe 2</label>
-                <input type="number" min="0" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-lg text-center font-bold" value={editScores.score2} onChange={e => setEditScores(p => ({ ...p, score2: e.target.value }))} />
-              </div>
-            </div>
-            <Button fullWidth onClick={() => handleEditResult(showEditResult.matchId, showEditResult.gameId)} variant="warning">
-              Corrigir Resultado
-            </Button>
-          </div>
-        )}
-      </Modal>
+      </div>
     </div>
   );
 }
 
-function GameCard({ game, match, team1, team2, courts, typeLabels, onRelease, onStart, onValidate, onEditResult, onAssignCourt }) {
-  const court = courts.find(c => c.id === game.courtId);
+function AssignQuadraModal({ jogo, state, onClose }) {
+  const { assignQuadra, liberarQuadra } = useApp();
+  const numQ = state.numQuadras || 4;
+  const occupied = {};
+  state.jogos.forEach(j => { if (j.quadra && j.id !== jogo.id && !j.res) occupied[String(j.quadra)] = j; });
 
   return (
-    <div className="bg-gray-50 rounded-xl p-3 mt-2 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-bold text-gray-800">{typeLabels[game.type]}</span>
-        <StatusBadge status={game.status} />
-      </div>
-
-      {/* Lineup */}
-      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-        <div>
-          <p className="font-semibold text-gray-600">{team1?.flag} {team1?.name}</p>
-          {(game.lineup1 || []).length > 0
-            ? <p className="text-green-700">✓ Escalação enviada</p>
-            : <p className="italic text-gray-400">Sem escalação</p>}
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between p-5 border-b">
+          <h3 className="font-bold text-gray-900">Atribuir Quadra</h3>
+          <button onClick={onClose} className="text-gray-400"><X size={20} /></button>
         </div>
-        <div>
-          <p className="font-semibold text-gray-600">{team2?.flag} {team2?.name}</p>
-          {(game.lineup2 || []).length > 0
-            ? <p className="text-green-700">✓ Escalação enviada</p>
-            : <p className="italic text-gray-400">Sem escalação</p>}
-        </div>
-      </div>
-
-      {/* Score */}
-      {(game.score1 !== null || game.pendingScore1 !== null) && (
-        <div className="flex items-center justify-center gap-3 py-2">
-          <span className="text-2xl font-bold text-gray-900">{game.score1 ?? game.pendingScore1}</span>
-          <span className="text-gray-400">×</span>
-          <span className="text-2xl font-bold text-gray-900">{game.score2 ?? game.pendingScore2}</span>
-          {game.pendingScore1 !== null && game.score1 === null && (
-            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Pendente</span>
+        <div className="p-5">
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {Array.from({ length: numQ }, (_, i) => i + 1).map(q => {
+              const isSel = String(jogo.quadra) === String(q);
+              const isOcup = !!occupied[String(q)];
+              const ocuJogo = occupied[String(q)];
+              return (
+                <button key={q}
+                  onClick={async () => {
+                    if (isOcup) return;
+                    await assignQuadra(jogo.id, isSel ? null : String(q));
+                    onClose();
+                  }}
+                  title={isOcup && ocuJogo ? `Ocupada: ${state.eqs.find(e => e.id === ocuJogo.e1)?.nome}` : ''}
+                  className={`py-3 rounded-xl font-bold text-sm transition-all ${
+                    isSel ? 'bg-blue-600 text-white' :
+                    isOcup ? 'bg-red-100 text-red-400 cursor-not-allowed' :
+                    'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}>
+                  Q{q}
+                  {isOcup && <div className="text-xs font-normal opacity-70 truncate">
+                    {state.eqs.find(e => e.id === ocuJogo?.e1)?.nome?.slice(0, 3)}
+                  </div>}
+                </button>
+              );
+            })}
+          </div>
+          {jogo.quadra && (
+            <button onClick={async () => { await liberarQuadra(jogo.id); onClose(); }}
+              className="w-full py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50">
+              🔓 Liberar Quadra {jogo.quadra}
+            </button>
           )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
 
-      {game.status === MATCH_STATUS.WARMING_UP && <WarmupTimer startedAt={game.warmupStartedAt} />}
+function JogoAdmCard({ jogo, state }) {
+  const { submitResultado } = useApp();
+  const [modal, setModal] = useState(null);
+  const now = Date.now();
 
-      {!game.courtId && game.status !== MATCH_STATUS.FINISHED && (
-        <select className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm" onChange={e => onAssignCourt(e.target.value)} defaultValue="">
-          <option value="">Definir quadra...</option>
-          {courts.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+  const eq1 = state.eqs.find(e => e.id === jogo.e1) || { nome: jogo.e1, bandeira: '', id: jogo.e1 };
+  const eq2 = state.eqs.find(e => e.id === jogo.e2) || { nome: jogo.e2, bandeira: '', id: jogo.e2 };
+  const cap1 = state.caps.find(c => c.eqId === jogo.e1);
+  const cap2 = state.caps.find(c => c.eqId === jogo.e2);
+
+  const esc = jogo.esc || {};
+  const esc1ok = !!(esc.fd1a || esc.fd1b || esc.md1a || esc.md1b);
+  const esc2ok = !!(esc.fd2a || esc.fd2b || esc.md2a || esc.md2b);
+  const concluido = !!jogo.res;
+  const temWarmup = !!jogo.timerInicio && !concluido;
+  const remaining = temWarmup ? Math.max(0, WARMUP_MS - (now - jogo.timerInicio)) : null;
+
+  let borderCls = 'border-gray-200';
+  if (concluido) borderCls = 'border-gray-100';
+  else if (jogo.quadra) borderCls = 'border-green-300';
+  else if (esc1ok && esc2ok) borderCls = 'border-blue-300';
+
+  return (
+    <>
+      <div className={`bg-white border-2 ${borderCls} rounded-2xl p-4 shadow-sm transition-all`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {jogo.bloq && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-medium">🔒 Bloqueado</span>}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {concluido && <span className="text-xs bg-gray-100 text-gray-600 font-bold px-2 py-0.5 rounded">✅ {jogo.res}</span>}
+            {!concluido && jogo.quadra && <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">🎾 Q{jogo.quadra}</span>}
+            {temWarmup && remaining !== null && <span className="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded">🔥 {fmtTimer(remaining)}</span>}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">{eq1.bandeira}</span>
+          <span className="font-semibold text-gray-900 text-sm flex-1">{eq1.nome}</span>
+          <span className="text-gray-400 text-sm font-bold shrink-0">vs</span>
+          <span className="font-semibold text-gray-900 text-sm flex-1 text-right">{eq2.nome}</span>
+          <span className="text-xl">{eq2.bandeira}</span>
+        </div>
+
+        {!concluido && (
+          <div className="flex gap-2 mb-3">
+            <span className={`flex items-center gap-1 flex-1 text-xs px-2 py-1.5 rounded-lg ${esc1ok ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
+              {esc1ok ? '✅' : '⏳'} {eq1.nome.split(' ')[0]}
+            </span>
+            <span className={`flex items-center gap-1 flex-1 text-xs px-2 py-1.5 rounded-lg justify-end ${esc2ok ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
+              {eq2.nome.split(' ')[0]} {esc2ok ? '✅' : '⏳'}
+            </span>
+          </div>
+        )}
+
+        {concluido && jogo.det && (
+          <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mb-3">
+            FD: {jogo.det.fd1}×{jogo.det.fd2} · MD: {jogo.det.md1}×{jogo.det.md2}
+            {jogo.det.mx1 != null ? ` · MX: ${jogo.det.mx1}×${jogo.det.mx2}` : ''}
+            {jogo.venc && ` · 🏆 ${state.eqs.find(e => e.id === jogo.venc)?.nome}`}
+          </div>
+        )}
+
+        <div className="flex gap-2 flex-wrap">
+          {!concluido && (
+            <button onClick={() => setModal('quadra')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100">
+              <MapPin size={13} />{jogo.quadra ? `Q${jogo.quadra}` : 'Quadra'}
+            </button>
+          )}
+          <button onClick={() => setModal('resultado')}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-semibold hover:bg-amber-100">
+            <Edit2 size={13} />{concluido ? 'Editar' : 'Resultado'}
+          </button>
+          {cap1 && (
+            <a href={waLink(eq1, eq2, jogo, cap1)} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-50 text-green-700 text-xs font-semibold hover:bg-green-100">
+              <MessageCircle size={13} />{eq1.nome.split(' ')[0]}
+            </a>
+          )}
+          {cap2 && (
+            <a href={waLink(eq1, eq2, jogo, cap2)} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-50 text-green-700 text-xs font-semibold hover:bg-green-100">
+              <MessageCircle size={13} />{eq2.nome.split(' ')[0]}
+            </a>
+          )}
+        </div>
+      </div>
+
+      {modal === 'quadra' && (
+        <AssignQuadraModal jogo={jogo} state={state} onClose={() => setModal(null)} />
       )}
-      {court && <p className="text-xs text-gray-500 flex items-center gap-1"><MapPin size={10} /> {court.name}</p>}
+      {modal === 'resultado' && (
+        <ResultModal jogo={jogo} eq1={eq1} eq2={eq2} onClose={() => setModal(null)}
+          onSave={det => submitResultado(jogo.id, det)} />
+      )}
+    </>
+  );
+}
+
+export function AdmMatches() {
+  const { state } = useApp();
+  const [catFilter, setCatFilter] = useState('all');
+  const [search, setSearch] = useState('');
+
+  const activeCats = [...new Set(state.jogos.map(j => j.catId))].sort();
+
+  let jogos = state.jogos;
+  if (catFilter !== 'all') jogos = jogos.filter(j => j.catId === catFilter);
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    jogos = jogos.filter(j => {
+      const e1 = state.eqs.find(e => e.id === j.e1);
+      const e2 = state.eqs.find(e => e.id === j.e2);
+      return e1?.nome.toLowerCase().includes(q) || e2?.nome.toLowerCase().includes(q) ||
+        j.catId.toLowerCase().includes(q) || String(j.gnome).toLowerCase().includes(q);
+    });
+  }
+
+  const grouped = {};
+  jogos.forEach(j => {
+    const k = `${j.catId}|${j.gnome}`;
+    if (!grouped[k]) grouped[k] = { catId: j.catId, gnome: j.gnome, jogos: [] };
+    grouped[k].jogos.push(j);
+  });
+
+  const total = state.jogos.length;
+  const done = state.jogos.filter(j => j.res).length;
+  const live = state.jogos.filter(j => j.quadra && !j.res).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-xl font-bold text-gray-900">Confrontos</h2>
+        <div className="flex gap-3 text-sm">
+          <span className="text-green-600 font-semibold">{done}/{total} concluídos</span>
+          {live > 0 && <span className="text-blue-600 font-semibold">{live} em quadra</span>}
+        </div>
+      </div>
 
       <div className="flex gap-2 flex-wrap">
-        {game.status === MATCH_STATUS.LINEUP_SENT && (
-          <Button size="sm" variant="success" onClick={onRelease}>Liberar Quadra</Button>
-        )}
-        {game.status === MATCH_STATUS.WARMING_UP && (
-          <Button size="sm" variant="primary" onClick={onStart}>Iniciar Jogo</Button>
-        )}
-        {game.status === MATCH_STATUS.WAITING_RESULT && (
-          <>
-            <Button size="sm" variant="success" onClick={() => onValidate(true)}>✓ Validar</Button>
-            <Button size="sm" variant="danger" onClick={() => onValidate(false)}>✗ Rejeitar</Button>
-          </>
-        )}
-        {game.status === MATCH_STATUS.FINISHED && (
-          <Button size="sm" variant="ghost" onClick={onEditResult}>Editar Resultado</Button>
-        )}
+        {['all', ...activeCats].map(cat => (
+          <button key={cat} onClick={() => setCatFilter(cat)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+              catFilter === cat ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}>
+            {cat === 'all' ? 'Todos' : `CAT ${cat}`}
+          </button>
+        ))}
       </div>
+
+      <input value={search} onChange={e => setSearch(e.target.value)}
+        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+        placeholder="Buscar equipe ou grupo..." />
+
+      {Object.values(grouped).map(group => (
+        <div key={`${group.catId}-${group.gnome}`} className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">CAT {group.catId}</span>
+            <span className="text-xs font-semibold text-gray-500">Grupo {group.gnome}</span>
+            <span className="text-xs text-gray-400">({group.jogos.filter(j => j.res).length}/{group.jogos.length})</span>
+          </div>
+          {group.jogos.map(j => <JogoAdmCard key={j.id} jogo={j} state={state} />)}
+        </div>
+      ))}
+
+      {jogos.length === 0 && (
+        <div className="text-center py-12 text-gray-400">
+          <MapPin size={40} className="mx-auto mb-3 opacity-40" />
+          <p className="font-medium">Nenhum confronto</p>
+          <p className="text-sm mt-1">Configure grupos nas abas anteriores</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -245,7 +245,9 @@ function DropZone({ onFile, loading, accept = '.pdf' }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function AdmPdfImport() {
-  const { teams, athletes, addTeam, addAthlete, addNotification } = useApp();
+  const { state, addEq, addAtl, addCap, addNotification } = useApp();
+  const teams = (state.eqs || []).map(e => ({ id: e.id, name: e.nome, category: e.catId }));
+  const athletes = (state.atls || []).map(a => ({ id: a.id, name: a.nome, teamId: a.eqId }));
 
   const [activeTab, setActiveTab] = useState('teams'); // 'teams' | 'athletes'
   const [loading, setLoading] = useState(false);
@@ -296,7 +298,9 @@ export function AdmPdfImport() {
       const category = CATEGORIES.includes(group.category) ? group.category : 'A';
       for (const teamName of group.teams) {
         if (!existingNames.includes(teamName.toLowerCase())) {
-          await addTeam({ name: teamName, category, flag: '' });
+          const id = teamName.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now() + '-' + count;
+          await addEq({ id, nome: teamName, bandeira: '', catId: category, grupo: 1 });
+          await addCap({ codigo: teamName.toUpperCase().slice(0, 3).replace(/\s/g, '') + '-' + category + '-2026', eqId: id, catId: category });
           existingNames.push(teamName.toLowerCase());
           count++;
         }
@@ -345,7 +349,8 @@ export function AdmPdfImport() {
 
     for (const entry of parsedAthletes) {
       if (entry.teamId) {
-        await addAthlete({ name: entry.athleteName, teamId: entry.teamId, gender: 'M', number: 0 });
+        const eq = state.eqs?.find(e => e.id === entry.teamId);
+        await addAtl({ id: `${entry.teamId}-${Date.now()}-${count}`, eqId: entry.teamId, catId: eq?.catId || 'A', nome: entry.athleteName, sexo: 'M' });
         count++;
       }
     }
