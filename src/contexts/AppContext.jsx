@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import {
   mockTeams, mockAthletes, mockCaptains, mockCourts,
-  mockGroups, mockMatches, mockStandings, mockEvent, MATCH_STATUS,
+  mockGroups, mockMatches, mockStandings, mockEvent, MATCH_STATUS, CATEGORIES,
 } from '../data/mockData';
 import { isFirebaseConfigured, db } from '../firebase/config';
 import {
@@ -10,7 +10,7 @@ import {
   addGroupFS, addMatchFS,
   submitLineupFS, releaseCourtFS, startGameFS,
   submitResultFS, validateResultFS, editResultFS,
-  addMixedGameFS, assignCourtFS,
+  addMixedGameFS, assignCourtFS, updateEventFS,
 } from '../firebase/collections';
 
 const AppContext = createContext(null);
@@ -294,6 +294,18 @@ export function AppProvider({ children }) {
     addNotification('Quadra adicionada!', 'success');
   }, [addNotification]);
 
+  const toggleCategoryActive = useCallback(async (category) => {
+    const current = event.activeCategories ?? CATEGORIES;
+    const next = current.includes(category)
+      ? current.filter(c => c !== category)
+      : [...current, category];
+    const updatedEvent = { ...event, activeCategories: next };
+    setEvent(updatedEvent);
+    if (isFirebaseConfigured) {
+      await updateEventFS(updatedEvent).catch(console.error);
+    }
+  }, [event]);
+
   // ── Selectors ──────────────────────────────────────────────────────────────
   const getTeamById = useCallback((id) => teams.find(t => t.id === id), [teams]);
   const getAthletesByTeam = useCallback((teamId) => athletes.filter(a => a.teamId === teamId), [athletes]);
@@ -305,7 +317,7 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       firebaseReady, isFirebaseConfigured,
-      event, setEvent,
+      event, setEvent, toggleCategoryActive,
       teams, setTeams, addTeam,
       athletes, setAthletes, addAthlete,
       captains, setCaptains,

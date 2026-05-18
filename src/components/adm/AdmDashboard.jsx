@@ -1,11 +1,12 @@
 import { Trophy, Users, MapPin, Activity, CheckCircle, Clock, Play, Flag } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { MATCH_STATUS } from '../../data/mockData';
+import { MATCH_STATUS, CATEGORIES } from '../../data/mockData';
 import { Card, CardBody } from '../common/Card';
 import { StatusBadge } from '../common/Badge';
 
 export function AdmDashboard() {
-  const { event, matches, teams, groups, courts } = useApp();
+  const { event, matches, teams, groups, courts, toggleCategoryActive } = useApp();
+  const activeCategories = event.activeCategories ?? CATEGORIES;
 
   const allGames = matches.flatMap(m => m.games);
   const stats = {
@@ -39,6 +40,36 @@ export function AdmDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Categorias do Dia */}
+      <Card>
+        <CardBody className="p-3">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+            Categorias Ativas Hoje
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(cat => {
+              const isActive = activeCategories.includes(cat);
+              return (
+                <button
+                  key={cat}
+                  onClick={() => toggleCategoryActive(cat)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${
+                    isActive
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-gray-100 border-gray-200 text-gray-400 line-through'
+                  }`}
+                >
+                  CAT {cat}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Toque para ativar/bloquear • {activeCategories.length} de {CATEGORIES.length} ativas
+          </p>
+        </CardBody>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

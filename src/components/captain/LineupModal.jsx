@@ -34,6 +34,7 @@ export function LineupModal({ isOpen, onClose, match, game, isTeam1, onSubmitted
   };
 
   const typeLabels = { male: 'Masculina', female: 'Feminina', mixed: 'Mista' };
+  const typeIcons = { male: '♂', female: '♀', mixed: '⚥' };
   const genderLabels = { M: 'Masculino', F: 'Feminino' };
 
   const groupedAthletes = game.type === 'mixed'
@@ -44,8 +45,15 @@ export function LineupModal({ isOpen, onClose, match, game, isTeam1, onSubmitted
     : { [genderLabels[genderFilter] || 'Atletas']: availableAthletes };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => { setSelected([]); onClose(); }} title={`Escalação ${typeLabels[game?.type]}`} size="lg">
+    <Modal isOpen={isOpen} onClose={() => { setSelected([]); onClose(); }} title="Escalação" size="lg">
       <div className="space-y-4">
+        {/* Category + game type highlight */}
+        <div className="bg-blue-600 rounded-xl px-4 py-3 text-white text-center">
+          <p className="text-xs font-semibold text-blue-200 uppercase tracking-widest mb-0.5">
+            {typeIcons[game?.type]} Dupla {typeLabels[game?.type]}
+          </p>
+          <p className="text-2xl font-bold tracking-wider">CAT {match?.category}</p>
+        </div>
         <p className="text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
           Selecione <strong>2 atletas</strong> para a dupla {typeLabels[game?.type]}.
           {game?.type === 'mixed' && ' Selecione 1 masculino e 1 feminino.'}

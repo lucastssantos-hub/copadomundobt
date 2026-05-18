@@ -259,3 +259,7 @@ export async function assignCourtFS(matchId, gameId, courtId) {
     games: match.games.map(g => g.id === gameId ? { ...g, courtId } : g),
   }));
 }
+
+export async function updateEventFS(eventData) {
+  await setDoc(ref('meta', 'event'), eventData);
+}

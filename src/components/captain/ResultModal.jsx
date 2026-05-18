@@ -29,12 +29,20 @@ export function ResultModal({ isOpen, onClose, match, game, isTeam1, onSubmitted
   };
 
   const typeLabels = { male: 'Masculino', female: 'Feminino', mixed: 'Misto' };
+  const typeIcons = { male: '♂', female: '♀', mixed: '⚥' };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => { setScore1(''); setScore2(''); onClose(); }} title={`Resultado — ${typeLabels[game?.type]}`}>
+    <Modal isOpen={isOpen} onClose={() => { setScore1(''); setScore2(''); onClose(); }} title="Inserir Resultado">
       <div className="space-y-6">
+        {/* Category + game type highlight */}
+        <div className="bg-green-600 rounded-xl px-4 py-3 text-white text-center">
+          <p className="text-xs font-semibold text-green-200 uppercase tracking-widest mb-0.5">
+            {typeIcons[game?.type]} {typeLabels[game?.type]}
+          </p>
+          <p className="text-2xl font-bold tracking-wider">CAT {match?.category}</p>
+        </div>
         <p className="text-sm text-gray-600 text-center">
-          Informe o placar final do jogo. O resultado será validado pelo ADM.
+          Informe o placar final. O resultado será validado pelo ADM.
         </p>
 
         <div className="grid grid-cols-2 gap-4">

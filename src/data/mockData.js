@@ -344,4 +344,5 @@ export const mockEvent = {
   startDate: '2026-05-20',
   endDate: '2026-05-24',
   status: 'active',
+  activeCategories: ['A', 'B', 'C', 'D', 'E', '+35', '+60'],
 };

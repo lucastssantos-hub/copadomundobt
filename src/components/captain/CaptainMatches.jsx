@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, MapPin, Clock, AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { MATCH_STATUS } from '../../data/mockData';
+import { MATCH_STATUS, CATEGORIES } from '../../data/mockData';
 import { Card, CardBody } from '../common/Card';
 import { StatusBadge, CategoryBadge } from '../common/Badge';
 import { Button } from '../common/Button';
@@ -13,14 +13,17 @@ import { MatchScoreHistory } from '../common/MatchScoreHistory';
 
 export function CaptainMatches() {
   const { user } = useAuth();
-  const { matches, teams, athletes, groups, courts, addAlert } = useApp();
+  const { matches, teams, athletes, groups, courts, addAlert, event } = useApp();
+  const activeCategories = event?.activeCategories ?? CATEGORIES;
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [lineupModal, setLineupModal] = useState(null);
   const [resultModal, setResultModal] = useState(null);
 
   const myTeam = teams.find(t => t.id === user.teamId);
   const myGroup = groups.find(g => g.teamIds.includes(user.teamId));
-  const myMatches = matches.filter(m => m.team1Id === user.teamId || m.team2Id === user.teamId);
+  const allMyMatches = matches.filter(m => m.team1Id === user.teamId || m.team2Id === user.teamId);
+  const myMatches = allMyMatches.filter(m => activeCategories.includes(m.category));
+  const blockedMatches = allMyMatches.filter(m => !activeCategories.includes(m.category));
 
   const typeLabels = { male: '♂ Masculino', female: '♀ Feminino', mixed: '⚥ Misto' };
 
@@ -113,8 +116,19 @@ export function CaptainMatches() {
         </div>
       )}
 
+      {blockedMatches.length > 0 && (
+        <div className="bg-gray-100 border border-gray-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
+          <span className="text-gray-400 text-sm">🔒</span>
+          <p className="text-xs text-gray-500">
+            {blockedMatches.length === 1
+              ? `Categoria ${blockedMatches[0].category} bloqueada pelo ADM hoje`
+              : `Categorias ${[...new Set(blockedMatches.map(m => m.category))].join(', ')} bloqueadas pelo ADM hoje`}
+          </p>
+        </div>
+      )}
+
       {myMatches.length === 0 ? (
-        <Card><CardBody><p className="text-center text-gray-500 py-8">Nenhum confronto programado.</p></CardBody></Card>
+        <Card><CardBody><p className="text-center text-gray-500 py-8">Nenhum confronto ativo no momento.</p></CardBody></Card>
       ) : (
         <div className="space-y-2">
           {myMatches.map(match => {
@@ -149,7 +163,7 @@ export function CaptainMatches() {
                         </div>
                       )}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <CategoryBadge category={match.category} />
+                        <span className="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">CAT {match.category}</span>
                         <StatusBadge status={match.status} />
                         {court && <span className="text-xs text-gray-500 flex items-center gap-1"><MapPin size={10} /> {court.name}</span>}
                         {match.scheduledTime && <span className="text-xs text-gray-500 flex items-center gap-1"><Clock size={10} /> {match.scheduledTime}</span>}
@@ -180,7 +194,10 @@ export function CaptainMatches() {
                       return (
                         <div key={game.id} className="bg-gray-50 rounded-xl p-3 space-y-2 mt-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-bold text-gray-800">{typeLabels[game.type]}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-gray-800">{typeLabels[game.type]}</span>
+                              <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">CAT {match.category}</span>
+                            </div>
                             <StatusBadge status={game.status} />
                           </div>
 
