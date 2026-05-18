@@ -146,6 +146,23 @@ export function Login() {
         <p className="text-center text-blue-300 text-xs mt-6">
           🎾 Copa do Mundo de Beach Tennis 2026
         </p>
+
+        <button
+          onClick={async () => {
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(k => caches.delete(k)));
+            }
+            if ('serviceWorker' in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(r => r.unregister()));
+            }
+            window.location.reload(true);
+          }}
+          className="block mx-auto text-blue-400/60 text-xs mt-3 underline underline-offset-2"
+        >
+          Problemas? Limpar cache e recarregar
+        </button>
       </div>
     </div>
   );
