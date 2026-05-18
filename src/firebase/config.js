@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,9 +17,8 @@ export const isFirebaseConfigured = !!(
 let _db = null;
 
 if (isFirebaseConfigured) {
-  const app = initializeApp(firebaseConfig);
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   _db = getFirestore(app);
-  enableIndexedDbPersistence(_db).catch(() => {});
 }
 
 export const db = _db;

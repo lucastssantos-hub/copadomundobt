@@ -1,5 +1,6 @@
 export const CATEGORIES = ['A', 'B', 'C', 'D', 'E', '+35', '+60'];
 
+// Keep old exports for backward compat with components that haven't been updated yet
 export const MATCH_STATUS = {
   WAITING_LINEUP: 'waiting_lineup',
   LINEUP_SENT: 'lineup_sent',
@@ -27,322 +28,180 @@ export const MATCH_STATUS_COLORS = {
   finished: 'bg-slate-100 text-slate-600',
 };
 
-export const GAME_TYPES = {
-  MALE: 'male',
-  FEMALE: 'female',
-  MIXED: 'mixed',
+// ─── Round-robin jogo generator ───────────────────────────────────────────────
+let _jogoCounter = 0;
+
+export function gerarJogos(eqs) {
+  const jogos = [];
+  for (let i = 0; i < eqs.length; i++) {
+    for (let j = i + 1; j < eqs.length; j++) {
+      _jogoCounter++;
+      jogos.push({
+        id: `j${_jogoCounter}`,
+        e1: eqs[i].id,
+        e2: eqs[j].id,
+        catId: eqs[i].catId,
+        grupo: eqs[i].grupo,
+        gnome: `${eqs[i].grupo}`,
+        bloq: false,
+        quadra: null,
+        esc: null,
+        timerInicio: null,
+        res: null,
+        det: null,
+        venc: null,
+      });
+    }
+  }
+  return jogos;
+}
+
+// ─── Result status calculator ─────────────────────────────────────────────────
+export function calcResultStatus(jogo) {
+  if (!jogo.det) return { done: false, needMX: false };
+  const det = jogo.det;
+  const fd = det.fd1 != null && det.fd2 != null
+    ? { s1: det.fd1, s2: det.fd2, winner: det.fd1 > det.fd2 ? jogo.e1 : det.fd2 > det.fd1 ? jogo.e2 : null }
+    : null;
+  const md = det.md1 != null && det.md2 != null
+    ? { s1: det.md1, s2: det.md2, winner: det.md1 > det.md2 ? jogo.e1 : det.md2 > det.md1 ? jogo.e2 : null }
+    : null;
+  let e1wins = 0, e2wins = 0;
+  if (fd?.winner === jogo.e1) e1wins++; else if (fd?.winner === jogo.e2) e2wins++;
+  if (md?.winner === jogo.e1) e1wins++; else if (md?.winner === jogo.e2) e2wins++;
+  const needMX = fd && md && fd.winner && md.winner && e1wins === 1 && e2wins === 1;
+  const mx = needMX && det.mx1 != null
+    ? { s1: det.mx1, s2: det.mx2, winner: det.mx1 > det.mx2 ? jogo.e1 : jogo.e2 }
+    : null;
+  if (needMX && mx?.winner === jogo.e1) e1wins++;
+  else if (needMX && mx?.winner === jogo.e2) e2wins++;
+  const done = e1wins >= 2 || e2wins >= 2;
+  const winner = done ? (e1wins > e2wins ? jogo.e1 : jogo.e2) : null;
+  const res = done ? `${e1wins}-${e2wins}` : null;
+  return { fd, md, mx, e1wins, e2wins, needMX: !!needMX, done, winner, res };
+}
+
+// ─── Teams ────────────────────────────────────────────────────────────────────
+const eqsCatA = [
+  { id: 'bra', nome: 'Brasil',    catId: 'A', grupo: 1, bandeira: '🇧🇷' },
+  { id: 'arg', nome: 'Argentina', catId: 'A', grupo: 1, bandeira: '🇦🇷' },
+  { id: 'por', nome: 'Portugal',  catId: 'A', grupo: 1, bandeira: '🇵🇹' },
+  { id: 'esp', nome: 'Espanha',   catId: 'A', grupo: 2, bandeira: '🇪🇸' },
+  { id: 'ita', nome: 'Itália',    catId: 'A', grupo: 2, bandeira: '🇮🇹' },
+  { id: 'fra', nome: 'França',    catId: 'A', grupo: 2, bandeira: '🇫🇷' },
+];
+
+const eqsCatB = [
+  { id: 'eua', nome: 'EUA',       catId: 'B', grupo: 1, bandeira: '🇺🇸' },
+  { id: 'aus', nome: 'Austrália', catId: 'B', grupo: 1, bandeira: '🇦🇺' },
+  { id: 'col', nome: 'Colômbia',  catId: 'B', grupo: 1, bandeira: '🇨🇴' },
+  { id: 'chi', nome: 'Chile',     catId: 'B', grupo: 2, bandeira: '🇨🇱' },
+  { id: 'mex', nome: 'México',    catId: 'B', grupo: 2, bandeira: '🇲🇽' },
+  { id: 'uru', nome: 'Uruguai',   catId: 'B', grupo: 2, bandeira: '🇺🇾' },
+];
+
+// ─── Athletes ─────────────────────────────────────────────────────────────────
+function makeAtletas(eqId, catId, prefix, mNames, fNames) {
+  const atls = [];
+  mNames.forEach((nome, i) => atls.push({ id: `${eqId}-m${i+1}`, eqId, catId, nome, sexo: 'M' }));
+  fNames.forEach((nome, i) => atls.push({ id: `${eqId}-f${i+1}`, eqId, catId, nome, sexo: 'F' }));
+  return atls;
+}
+
+const atlsCatA = [
+  ...makeAtletas('bra', 'A', 'bra', ['Carlos Silva', 'Rafael Souza', 'Pedro Costa', 'João Santos'], ['Ana Lima', 'Maria Oliveira', 'Beatriz Alves', 'Fernanda Rocha']),
+  ...makeAtletas('arg', 'A', 'arg', ['Diego Martínez', 'Nicolás García', 'Facundo López', 'Maximiliano Torres'], ['Valentina Rodríguez', 'Luciana Fernández', 'Camila González', 'Sofía Herrera']),
+  ...makeAtletas('por', 'A', 'por', ['Tiago Ferreira', 'André Rodrigues', 'Gonçalo Pereira', 'Rui Carvalho'], ['Inês Santos', 'Margarida Silva', 'Catarina Lopes', 'Joana Costa']),
+  ...makeAtletas('esp', 'A', 'esp', ['Alejandro Ruiz', 'Pablo Sánchez', 'Sergio Moreno', 'Miguel Jiménez'], ['Laura García', 'Carmen López', 'Isabel Martínez', 'Pilar Torres']),
+  ...makeAtletas('ita', 'A', 'ita', ['Marco Rossi', 'Luca Ferrari', 'Giovanni Bianchi', 'Matteo Romano'], ['Sofia Ricci', 'Giulia Marino', 'Chiara Greco', 'Valentina Bruno']),
+  ...makeAtletas('fra', 'A', 'fra', ['Pierre Dupont', 'Jean Martin', 'Louis Bernard', 'Paul Leroy'], ['Marie Dubois', 'Sophie Laurent', 'Camille Michel', 'Claire Moreau']),
+];
+
+const atlsCatB = [
+  ...makeAtletas('eua', 'B', 'eua', ['John Smith', 'Mike Johnson', 'Chris Williams', 'James Brown'], ['Sarah Davis', 'Emma Wilson', 'Olivia Jones', 'Ava Taylor']),
+  ...makeAtletas('aus', 'B', 'aus', ['Jack Wilson', 'Liam Anderson', 'Noah Thomas', 'Oliver Jackson'], ['Charlotte Moore', 'Amelia White', 'Harper Harris', 'Evelyn Martin']),
+  ...makeAtletas('col', 'B', 'col', ['Andrés Torres', 'Camilo Díaz', 'Sebastián Vargas', 'Felipe Morales'], ['Valentina Gómez', 'Isabella Ramírez', 'Sofía Castro', 'Daniela Ortiz']),
+  ...makeAtletas('chi', 'B', 'chi', ['Felipe Vargas', 'Diego Muñoz', 'Matías Fernández', 'Sebastián González'], ['Catalina López', 'Fernanda Martínez', 'Paula Rodríguez', 'Andrea Sánchez']),
+  ...makeAtletas('mex', 'B', 'mex', ['Luis Hernández', 'Carlos García', 'Jorge Martínez', 'Manuel López'], ['Ana González', 'Carmen Rodríguez', 'Isabel Sánchez', 'María Fernández']),
+  ...makeAtletas('uru', 'B', 'uru', ['Sebastian Díaz', 'Pablo Álvarez', 'Nicolás López', 'Mateo González'], ['Florencia Rodríguez', 'Valentina Martínez', 'Lucía Fernández', 'Camila Sánchez']),
+];
+
+// ─── Captain codes ────────────────────────────────────────────────────────────
+const caps = [
+  { codigo: 'BRA-A-2026', eqId: 'bra', catId: 'A' },
+  { codigo: 'ARG-A-2026', eqId: 'arg', catId: 'A' },
+  { codigo: 'POR-A-2026', eqId: 'por', catId: 'A' },
+  { codigo: 'ESP-A-2026', eqId: 'esp', catId: 'A' },
+  { codigo: 'ITA-A-2026', eqId: 'ita', catId: 'A' },
+  { codigo: 'FRA-A-2026', eqId: 'fra', catId: 'A' },
+  { codigo: 'EUA-B-2026', eqId: 'eua', catId: 'B' },
+  { codigo: 'AUS-B-2026', eqId: 'aus', catId: 'B' },
+  { codigo: 'COL-B-2026', eqId: 'col', catId: 'B' },
+  { codigo: 'CHI-B-2026', eqId: 'chi', catId: 'B' },
+  { codigo: 'MEX-B-2026', eqId: 'mex', catId: 'B' },
+  { codigo: 'URU-B-2026', eqId: 'uru', catId: 'B' },
+];
+
+// ─── Jogos (round-robin per group) ───────────────────────────────────────────
+_jogoCounter = 0;
+const jogosA1 = gerarJogos(eqsCatA.filter(e => e.grupo === 1)); // BRA, ARG, POR
+const jogosA2 = gerarJogos(eqsCatA.filter(e => e.grupo === 2)); // ESP, ITA, FRA
+const jogosB1 = gerarJogos(eqsCatB.filter(e => e.grupo === 1)); // EUA, AUS, COL
+const jogosB2 = gerarJogos(eqsCatB.filter(e => e.grupo === 2)); // CHI, MEX, URU
+
+const allJogos = [...jogosA1, ...jogosA2, ...jogosB1, ...jogosB2];
+
+// ─── INITIAL_STATE ────────────────────────────────────────────────────────────
+export const INITIAL_STATE = {
+  event: {
+    nome: 'Copa do Mundo de Beach Tennis 2026',
+    subtitulo: 'Circuito de Equipes',
+  },
+  cats: [
+    { id: 'A', nome: 'Categoria A', ativa: true },
+    { id: 'B', nome: 'Categoria B', ativa: true },
+    { id: 'C', nome: 'Categoria C', ativa: false },
+    { id: 'D', nome: 'Categoria D', ativa: false },
+    { id: 'E', nome: 'Categoria E', ativa: false },
+    { id: '+35', nome: 'Categoria +35', ativa: false },
+    { id: '+60', nome: 'Categoria +60', ativa: false },
+  ],
+  eqs: [...eqsCatA, ...eqsCatB],
+  caps,
+  atls: [...atlsCatA, ...atlsCatB],
+  jogos: allJogos,
+  elim: {},
+  numQuadras: 4,
 };
 
-export const mockTeams = [
-  { id: 't1', name: 'Brasil', flag: '🇧🇷', category: 'A', captainId: 'cap1', color: '#009C3B' },
-  { id: 't2', name: 'Argentina', flag: '🇦🇷', category: 'A', captainId: 'cap2', color: '#74ACDF' },
-  { id: 't3', name: 'Portugal', flag: '🇵🇹', category: 'A', captainId: 'cap3', color: '#006600' },
-  { id: 't4', name: 'Espanha', flag: '🇪🇸', category: 'A', captainId: 'cap4', color: '#AA151B' },
-  { id: 't5', name: 'Itália', flag: '🇮🇹', category: 'B', captainId: 'cap5', color: '#009246' },
-  { id: 't6', name: 'França', flag: '🇫🇷', category: 'B', captainId: 'cap6', color: '#002395' },
-  { id: 't7', name: 'EUA', flag: '🇺🇸', category: 'B', captainId: 'cap7', color: '#B22234' },
-  { id: 't8', name: 'Austrália', flag: '🇦🇺', category: 'B', captainId: 'cap8', color: '#00008B' },
-  { id: 't9', name: 'Colômbia', flag: '🇨🇴', category: 'C', captainId: 'cap9', color: '#FCD116' },
-  { id: 't10', name: 'Chile', flag: '🇨🇱', category: 'C', captainId: 'cap10', color: '#D52B1E' },
-  { id: 't11', name: 'México', flag: '🇲🇽', category: 'C', captainId: 'cap11', color: '#006847' },
-  { id: 't12', name: 'Uruguai', flag: '🇺🇾', category: 'C', captainId: 'cap12', color: '#5EB6E4' },
-];
-
-export const mockAthletes = [
-  // Brasil - Categoria A
-  { id: 'a1', teamId: 't1', name: 'Carlos Silva', gender: 'M', number: 1 },
-  { id: 'a2', teamId: 't1', name: 'Rafael Souza', gender: 'M', number: 2 },
-  { id: 'a3', teamId: 't1', name: 'Pedro Costa', gender: 'M', number: 3 },
-  { id: 'a4', teamId: 't1', name: 'João Santos', gender: 'M', number: 4 },
-  { id: 'a5', teamId: 't1', name: 'Ana Lima', gender: 'F', number: 5 },
-  { id: 'a6', teamId: 't1', name: 'Maria Oliveira', gender: 'F', number: 6 },
-  { id: 'a7', teamId: 't1', name: 'Beatriz Alves', gender: 'F', number: 7 },
-  { id: 'a8', teamId: 't1', name: 'Fernanda Rocha', gender: 'F', number: 8 },
-  // Argentina - Categoria A
-  { id: 'a9', teamId: 't2', name: 'Diego Martínez', gender: 'M', number: 1 },
-  { id: 'a10', teamId: 't2', name: 'Nicolás García', gender: 'M', number: 2 },
-  { id: 'a11', teamId: 't2', name: 'Facundo López', gender: 'M', number: 3 },
-  { id: 'a12', teamId: 't2', name: 'Maximiliano Torres', gender: 'M', number: 4 },
-  { id: 'a13', teamId: 't2', name: 'Valentina Rodríguez', gender: 'F', number: 5 },
-  { id: 'a14', teamId: 't2', name: 'Luciana Fernández', gender: 'F', number: 6 },
-  { id: 'a15', teamId: 't2', name: 'Camila González', gender: 'F', number: 7 },
-  { id: 'a16', teamId: 't2', name: 'Sofía Herrera', gender: 'F', number: 8 },
-  // Portugal - Categoria A
-  { id: 'a17', teamId: 't3', name: 'Tiago Ferreira', gender: 'M', number: 1 },
-  { id: 'a18', teamId: 't3', name: 'André Rodrigues', gender: 'M', number: 2 },
-  { id: 'a19', teamId: 't3', name: 'Gonçalo Pereira', gender: 'M', number: 3 },
-  { id: 'a20', teamId: 't3', name: 'Rui Carvalho', gender: 'M', number: 4 },
-  { id: 'a21', teamId: 't3', name: 'Inês Santos', gender: 'F', number: 5 },
-  { id: 'a22', teamId: 't3', name: 'Margarida Silva', gender: 'F', number: 6 },
-  { id: 'a23', teamId: 't3', name: 'Catarina Lopes', gender: 'F', number: 7 },
-  { id: 'a24', teamId: 't3', name: 'Joana Costa', gender: 'F', number: 8 },
-  // Espanha - Categoria A
-  { id: 'a25', teamId: 't4', name: 'Alejandro Ruiz', gender: 'M', number: 1 },
-  { id: 'a26', teamId: 't4', name: 'Pablo Sánchez', gender: 'M', number: 2 },
-  { id: 'a27', teamId: 't4', name: 'Sergio Moreno', gender: 'M', number: 3 },
-  { id: 'a28', teamId: 't4', name: 'Miguel Jiménez', gender: 'M', number: 4 },
-  { id: 'a29', teamId: 't4', name: 'Laura García', gender: 'F', number: 5 },
-  { id: 'a30', teamId: 't4', name: 'Carmen López', gender: 'F', number: 6 },
-  { id: 'a31', teamId: 't4', name: 'Isabel Martínez', gender: 'F', number: 7 },
-  { id: 'a32', teamId: 't4', name: 'Pilar Torres', gender: 'F', number: 8 },
-];
-
-export const mockCaptains = [
-  { id: 'cap1', teamId: 't1', name: 'Carlos Silva', username: 'brasil_cap', password: '1234', athleteId: 'a1' },
-  { id: 'cap2', teamId: 't2', name: 'Diego Martínez', username: 'argentina_cap', password: '1234', athleteId: 'a9' },
-  { id: 'cap3', teamId: 't3', name: 'Tiago Ferreira', username: 'portugal_cap', password: '1234', athleteId: 'a17' },
-  { id: 'cap4', teamId: 't4', name: 'Alejandro Ruiz', username: 'espanha_cap', password: '1234', athleteId: 'a25' },
-  { id: 'cap5', teamId: 't5', name: 'Marco Rossi', username: 'italia_cap', password: '1234', athleteId: null },
-  { id: 'cap6', teamId: 't6', name: 'Pierre Dupont', username: 'franca_cap', password: '1234', athleteId: null },
-  { id: 'cap7', teamId: 't7', name: 'John Smith', username: 'eua_cap', password: '1234', athleteId: null },
-  { id: 'cap8', teamId: 't8', name: 'Jack Wilson', username: 'australia_cap', password: '1234', athleteId: null },
-  { id: 'cap9', teamId: 't9', name: 'Andrés Torres', username: 'colombia_cap', password: '1234', athleteId: null },
-  { id: 'cap10', teamId: 't10', name: 'Felipe Vargas', username: 'chile_cap', password: '1234', athleteId: null },
-  { id: 'cap11', teamId: 't11', name: 'Luis Hernández', username: 'mexico_cap', password: '1234', athleteId: null },
-  { id: 'cap12', teamId: 't12', name: 'Sebastian Díaz', username: 'uruguai_cap', password: '1234', athleteId: null },
-];
-
-export const mockCourts = [
-  { id: 'court1', name: 'Quadra 1', location: 'Arena Principal', active: true },
-  { id: 'court2', name: 'Quadra 2', location: 'Arena Principal', active: true },
-  { id: 'court3', name: 'Quadra 3', location: 'Arena Secundária', active: true },
-  { id: 'court4', name: 'Quadra 4', location: 'Arena Secundária', active: true },
-  { id: 'court5', name: 'Quadra 5', location: 'Arena Secundária', active: true },
-  { id: 'court6', name: 'Quadra 6', location: 'Arena Externa', active: false },
-];
-
+// ─── Legacy compat exports (some old components may still import these) ───────
+export const mockTeams = INITIAL_STATE.eqs.map(e => ({
+  id: e.id, name: e.nome, flag: e.bandeira, category: e.catId,
+}));
+export const mockAthletes = INITIAL_STATE.atls.map(a => ({
+  id: a.id, teamId: a.eqId, name: a.nome, gender: a.sexo, number: 0,
+}));
+export const mockCaptains = INITIAL_STATE.caps.map(c => ({
+  id: `cap-${c.eqId}`, teamId: c.eqId, name: c.codigo, username: c.codigo.toLowerCase(), password: '1234', code: c.codigo,
+}));
+export const mockCourts = Array.from({ length: 4 }, (_, i) => ({
+  id: `court${i+1}`, name: `Quadra ${i+1}`, location: 'Arena Principal', active: true,
+}));
 export const mockGroups = [
-  { id: 'g1', category: 'A', name: 'Grupo A1', teamIds: ['t1', 't2', 't3', 't4'] },
-  { id: 'g2', category: 'B', name: 'Grupo B1', teamIds: ['t5', 't6', 't7', 't8'] },
-  { id: 'g3', category: 'C', name: 'Grupo C1', teamIds: ['t9', 't10', 't11', 't12'] },
+  { id: 'g-a1', category: 'A', name: 'Grupo A1', teamIds: ['bra','arg','por'] },
+  { id: 'g-a2', category: 'A', name: 'Grupo A2', teamIds: ['esp','ita','fra'] },
+  { id: 'g-b1', category: 'B', name: 'Grupo B1', teamIds: ['eua','aus','col'] },
+  { id: 'g-b2', category: 'B', name: 'Grupo B2', teamIds: ['chi','mex','uru'] },
 ];
-
-export const mockMatches = [
-  // Categoria A - Grupo A1 - Confronto 1: Brasil vs Argentina
-  {
-    id: 'm1',
-    groupId: 'g1',
-    category: 'A',
-    phase: 'group',
-    team1Id: 't1',
-    team2Id: 't2',
-    courtId: 'court1',
-    scheduledTime: '09:00',
-    games: [
-      {
-        id: 'g1m1',
-        matchId: 'm1',
-        type: 'male',
-        status: MATCH_STATUS.FINISHED,
-        lineup1: ['a1', 'a2'],
-        lineup2: ['a9', 'a10'],
-        score1: 6,
-        score2: 4,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: 'court1',
-        validatedResult: true,
-      },
-      {
-        id: 'g1m2',
-        matchId: 'm1',
-        type: 'female',
-        status: MATCH_STATUS.FINISHED,
-        lineup1: ['a5', 'a6'],
-        lineup2: ['a13', 'a14'],
-        score1: 3,
-        score2: 6,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: 'court1',
-        validatedResult: true,
-      },
-      {
-        id: 'g1m3',
-        matchId: 'm1',
-        type: 'mixed',
-        status: MATCH_STATUS.FINISHED,
-        lineup1: ['a1', 'a5'],
-        lineup2: ['a9', 'a13'],
-        score1: 6,
-        score2: 3,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: 'court1',
-        validatedResult: true,
-      },
-    ],
-    result: { team1Score: 2, team2Score: 1 },
-    status: MATCH_STATUS.FINISHED,
-  },
-  // Categoria A - Grupo A1 - Confronto 2: Portugal vs Espanha
-  {
-    id: 'm2',
-    groupId: 'g1',
-    category: 'A',
-    phase: 'group',
-    team1Id: 't3',
-    team2Id: 't4',
-    courtId: 'court2',
-    scheduledTime: '09:00',
-    games: [
-      {
-        id: 'g2m1',
-        matchId: 'm2',
-        type: 'male',
-        status: MATCH_STATUS.LINEUP_SENT,
-        lineup1: ['a17', 'a18'],
-        lineup2: ['a25', 'a26'],
-        score1: null,
-        score2: null,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: 'court2',
-        validatedResult: false,
-      },
-      {
-        id: 'g2m2',
-        matchId: 'm2',
-        type: 'female',
-        status: MATCH_STATUS.WAITING_LINEUP,
-        lineup1: [],
-        lineup2: [],
-        score1: null,
-        score2: null,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: 'court2',
-        validatedResult: false,
-      },
-    ],
-    result: null,
-    status: MATCH_STATUS.LINEUP_SENT,
-  },
-  // Categoria A - Grupo A1 - Confronto 3: Brasil vs Portugal
-  {
-    id: 'm3',
-    groupId: 'g1',
-    category: 'A',
-    phase: 'group',
-    team1Id: 't1',
-    team2Id: 't3',
-    courtId: 'court3',
-    scheduledTime: '11:00',
-    games: [
-      {
-        id: 'g3m1',
-        matchId: 'm3',
-        type: 'male',
-        status: MATCH_STATUS.WARMING_UP,
-        lineup1: ['a1', 'a2'],
-        lineup2: ['a17', 'a18'],
-        score1: null,
-        score2: null,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: Date.now() - 3 * 60 * 1000,
-        courtId: 'court3',
-        validatedResult: false,
-      },
-      {
-        id: 'g3m2',
-        matchId: 'm3',
-        type: 'female',
-        status: MATCH_STATUS.WAITING_LINEUP,
-        lineup1: [],
-        lineup2: [],
-        score1: null,
-        score2: null,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: 'court3',
-        validatedResult: false,
-      },
-    ],
-    result: null,
-    status: MATCH_STATUS.WARMING_UP,
-  },
-  // Categoria A - Confronto 4: Argentina vs Espanha
-  {
-    id: 'm4',
-    groupId: 'g1',
-    category: 'A',
-    phase: 'group',
-    team1Id: 't2',
-    team2Id: 't4',
-    courtId: null,
-    scheduledTime: '11:00',
-    games: [
-      {
-        id: 'g4m1',
-        matchId: 'm4',
-        type: 'male',
-        status: MATCH_STATUS.WAITING_LINEUP,
-        lineup1: [],
-        lineup2: [],
-        score1: null,
-        score2: null,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: null,
-        validatedResult: false,
-      },
-      {
-        id: 'g4m2',
-        matchId: 'm4',
-        type: 'female',
-        status: MATCH_STATUS.WAITING_LINEUP,
-        lineup1: [],
-        lineup2: [],
-        score1: null,
-        score2: null,
-        pendingScore1: null,
-        pendingScore2: null,
-        warmupStartedAt: null,
-        courtId: null,
-        validatedResult: false,
-      },
-    ],
-    result: null,
-    status: MATCH_STATUS.WAITING_LINEUP,
-  },
-];
-
-export const mockStandings = {
-  g1: [
-    { teamId: 't1', played: 1, wins: 1, losses: 0, gamesWon: 2, gamesLost: 1, points: 3 },
-    { teamId: 't2', played: 1, wins: 0, losses: 1, gamesWon: 1, gamesLost: 2, points: 0 },
-    { teamId: 't3', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't4', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-  ],
-  g2: [
-    { teamId: 't5', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't6', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't7', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't8', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-  ],
-  g3: [
-    { teamId: 't9', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't10', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't11', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-    { teamId: 't12', played: 0, wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, points: 0 },
-  ],
-};
-
+export const mockMatches = [];
+export const mockStandings = {};
 export const mockEvent = {
   id: 'evt1',
-  name: 'Copa do Mundo de Beach Tennis 2026',
-  subtitle: 'Circuito de Equipes',
+  name: INITIAL_STATE.event.nome,
+  subtitle: INITIAL_STATE.event.subtitulo,
   location: 'Arena Beach, São Paulo - Brasil',
   startDate: '2026-05-20',
   endDate: '2026-05-24',
   status: 'active',
-  activeCategories: ['A', 'B', 'C', 'D', 'E', '+35', '+60'],
+  activeCategories: ['A', 'B'],
 };
