@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#04101B">
+<title>BeachFlow — Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy900:#06121F; --navy850:#08182A; --navy800:#0B1E33; --navy700:#102941;
+  --ocean:#1E72E0; --turq:#16C2A3; --turqSoft:#3FD8BC; --coral:#FF6A45;
+  --ink:#EAF1F8; --inkDim:#9FB0C2; --n500:#74808F;
+  --ok:#27C08A; --warn:#F6B43C; --err:#F2545B; --info:#4C9BFF;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --ff-d:'Space Grotesk',system-ui; --ff-m:'IBM Plex Mono',monospace; --ff-u:'Space Grotesk',system-ui;
+}
+
+html,body{height:100%;background:#0a0f1a;display:flex;align-items:center;justify-content:center;font-family:var(--ff-u)}
+
+/* ── DEVICE SHELL ── */
+.device{
+  width:390px; height:844px;
+  background:var(--navy900);
+  border-radius:44px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.12),
+    0 0 0 10px #1a1a1a,
+    0 0 0 11px rgba(255,255,255,.08),
+    0 32px 80px rgba(0,0,0,.8),
+    0 0 120px rgba(22,194,163,.08);
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* notch */
+.device::before{
+  content:'';
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;
+  background:#1a1a1a;
+  border-radius:0 0 22px 22px;
+  z-index:200;
+}
+
+/* dynamic island */
+.island{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;
+  background:#000;border-radius:20px;
+  z-index:201;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.island-cam{width:12px;height:12px;border-radius:50%;background:#1a1a1a;border:1.5px solid #333}
+.island-face{width:7px;height:7px;border-radius:50%;background:#222;border:1px solid #333}
+
+/* ── SCREEN SYSTEM ── */
+.screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  background:var(--navy900);
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease,transform .22s ease;
+  transform:translateX(20px);
+  overflow:hidden;
+}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.slide-out{opacity:0;transform:translateX(-20px)}
+
+/* status bar */
+.statusbar{
+  height:54px;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px 0;flex-shrink:0;
+  font-family:var(--ff-d);font-weight:600;font-size:15px;color:var(--ink);
+}
+.statusbar-right{display:flex;align-items:center;gap:5px}
+.statusbar-right svg{opacity:.9}
+
+/* scrollable body */
+.body{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 20px 90px;-webkit-overflow-scrolling:touch}
+.body::-webkit-scrollbar{display:none}
+
+/* tab bar */
+.tabbar{
+  height:82px;flex-shrink:0;
+  display:flex;justify-content:space-around;align-items:flex-start;
+  padding:10px 8px 0;
+  border-top:1px solid var(--line);
+  background:rgba(8,24,42,.92);
+  backdrop-filter:blur(14px);
+}
+.tab-item{
+  display:flex;flex-direction:column;align-items:center;gap:4;
+  width:58px;padding:4px 0;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.tab-item span{font-family:var(--ff-m);font-size:9px;letter-spacing:.03em;color:var(--n500);margin-top:4px}
+.tab-item.active svg{stroke:var(--turq)}
+.tab-item.active span{color:var(--turq)}
+
+/* header */
+.header{
+  padding:54px 20px 14px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--navy850),var(--navy900));
+  flex-shrink:0;
+}
+.header-row{display:flex;align-items:center;gap:12px}
+.header-back{
+  width:34px;height:34px;border-radius:11px;
+  border:1px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.header-kicker{font-family:var(--ff-m);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--turq)}
+.header-title{font-family:var(--ff-d);font-weight:800;font-size:26px;letter-spacing:-.02em;color:#fff;line-height:1.05;margin-top:2px}
+.header-right{margin-left:auto}
+
+/* card */
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));
+  border:1px solid var(--line);border-radius:16px;padding:15px;
+  cursor:default;
+}
+.card.tap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .12s}
+.card.tap:active{opacity:.75}
+.card.glow{background:linear-gradient(150deg,rgba(30,114,224,.16),rgba(255,255,255,.02))}
+
+/* atoms */
+.mini{font-family:var(--ff-m);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--inkDim)}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--ff-m);font-size:9.5px;letter-spacing:.03em;
+  padding:4px 8px;border-radius:7px;white-space:nowrap;
+}
+.badge-turq{background:rgba(22,194,163,.14);color:var(--turq)}
+.badge-ok{background:rgba(39,192,138,.14);color:var(--ok)}
+.badge-warn{background:rgba(246,180,60,.14);color:var(--warn)}
+.badge-err{background:rgba(242,84,91,.14);color:var(--err)}
+.badge-info{background:rgba(76,155,255,.14);color:var(--info)}
+.badge-coral{background:rgba(255,106,69,.14);color:var(--coral)}
+.badge-ia{background:rgba(22,194,163,.14);color:var(--turq);font-weight:600;letter-spacing:.04em}
+
+.avatar{
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff-d);font-weight:700;color:#04261f;flex-shrink:0;
+}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--ff-u);font-weight:600;font-size:15px;
+  padding:13px 18px;border-radius:13px;border:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:opacity .12s;
+}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--coral);color:#fff;box-shadow:0 7px 18px rgba(255,106,69,.28)}
+.btn-secondary{background:var(--turq);color:#04261f}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line2)}
+
+.progress-bar{height:7px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}
+.progress-fill{height:100%;border-radius:9px;background:var(--turq)}
+
+/* footer cta */
+.footer-cta{
+  position:absolute;left:0;right:0;bottom:0;
+  padding:12px 20px 30px;
+  background:linear-gradient(transparent,var(--navy900) 30%);
+}
+
+/* gap indicator bar */
+.gap-bar{
+  border-radius:16px;padding:16px;
+  background:linear-gradient(150deg,rgba(255,106,69,.2),rgba(255,106,69,.04));
+  border:1px solid rgba(255,106,69,.3);
+}
+
+/* loading dots animation */
+@keyframes bf-pulse{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.loading-dot{width:6px;height:6px;border-radius:50%;background:var(--turq);animation:bf-pulse 1.4s infinite}
+.loading-dot:nth-child(2){animation-delay:.2s}
+.loading-dot:nth-child(3){animation-delay:.4s}
+
+/* scout choice btn */
+.choice-btn{
+  padding:9px 4px;border-radius:9px;text-align:center;
+  font-size:11.5px;line-height:1.15;
+  cursor:pointer;transition:all .12s;
+  -webkit-tap-highlight-color:transparent;
+}
+.choice-btn:active{opacity:.7}
+
+/* slider */
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  border-radius:2px;background:rgba(255,255,255,.1);
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:20px;height:20px;
+  border-radius:50%;background:var(--turq);cursor:pointer;
+  box-shadow:0 0 8px rgba(22,194,163,.5);
+}
+
+/* overlay demo label */
+.demo-banner{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(22,194,163,.15);border:1px solid rgba(22,194,163,.3);
+  border-radius:99px;padding:6px 16px;
+  font-family:var(--ff-m);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--turq);
+  white-space:nowrap;z-index:9999;
+  backdrop-filter:blur(10px);
+}
+
+/* desktop bg */
+body{
+  background:
+    radial-gradient(60% 60% at 20% 20%, rgba(22,194,163,.08) 0%, transparent 60%),
+    radial-gradient(50% 50% at 80% 80%, rgba(30,114,224,.06) 0%, transparent 60%),
+    #0a0f1a;
+}
+
+/* responsive: mobile fills screen */
+@media(max-width:440px){
+  body{align-items:flex-start;justify-content:flex-start;background:var(--navy900)}
+  .device{width:100%;height:100%;border-radius:0;box-shadow:none}
+  .device::before,.island{display:none}
+  .demo-banner{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="device" id="app">
+
+  <!-- Dynamic Island -->
+  <div class="island">
+    <div class="island-cam"></div>
+    <div class="island-face"></div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: LOGIN
+  ═══════════════════════════════════════ -->
+  <div class="screen active" id="s-login">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px">
+      <!-- logo mark -->
+      <svg viewBox="0 0 46 40" width="52" fill="none" style="display:block;margin-bottom:20px">
+        <path d="M3 35C14 8 30 8 41 26" stroke="#16C2A3" stroke-width="3.6" stroke-linecap="round"/>
+        <circle cx="41" cy="26" r="5.4" fill="#FF6A45"/>
+      </svg>
+      <div style="font-family:var(--ff-d);font-weight:800;font-size:28px;letter-spacing:-.03em;color:#fff;margin-bottom:6px">BeachFlow</div>
+      <div style="font-family:var(--ff-m);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--n500);margin-bottom:40px">modo demonstração</div>
+
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px">
+        <input style="width:100%;background:rgba(255,255,255,.05);color:var(--ink);border:1px solid var(--line2);border-radius:12px;padding:13px 14px;font-family:var(--ff-u);font-size:14px;outline:none" placeholder="email" value="gui@guilimapro.com" readonly>
+        <input type="password" style="width:100%;background:rgba(255,255,255,.05);color:var(--ink);border:1px solid var(--line2);border-radius:12px;padding:13px 14px;font-family:var(--ff-u);font-size:14px;outline:none" placeholder="senha" value="••••••••" readonly>
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="goTo('s-hoje')">Entrar →</button>
+      </div>
+
+      <div style="font-family:var(--ff-m);font-size:10px;color:var(--n500);margin-top:24px;letter-spacing:.06em">// demonstração com dados ficticios</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: HOJE (dashboard)
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-hoje">
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="statusbar-right">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx=".6" fill="#EAF1F8"/><rect x="4.5" y="4" width="3" height="7" rx=".6" fill="#EAF1F8"/><rect x="9" y="1.5" width="3" height="9.5" rx=".6" fill="#EAF1F8"/><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="#EAF1F8"/></svg>
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M8 2.8C10.1 2.8 12 3.7 13.3 5.1L14.3 4.1C12.7 2.5 10.5 1.5 8 1.5C5.5 1.5 3.3 2.5 1.7 4.1L2.7 5.1C4 3.7 5.9 2.8 8 2.8Z" fill="#EAF1F8"/><path d="M8 6.2C9.3 6.2 10.4 6.7 11.2 7.5L12.2 6.5C11.1 5.4 9.6 4.7 8 4.7C6.4 4.7 4.9 5.4 3.8 6.5L4.8 7.5C5.6 6.7 6.7 6.2 8 6.2Z" fill="#EAF1F8"/><circle cx="8" cy="9.5" r="1.5" fill="#EAF1F8"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="#EAF1F8" stroke-opacity=".35"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#EAF1F8"/><path d="M23 4.5V7.5C23.8 7.2 24.5 6.4 24.5 6C24.5 5.6 23.8 4.8 23 4.5Z" fill="#EAF1F8" fill-opacity=".4"/></svg>
+      </div>
+    </div>
+    <div class="body">
+      <div style="font-family:var(--ff-m);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--inkDim)">4 turmas · 12 alunos</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:4px">
+        <div style="font-family:var(--ff-d);font-weight:800;font-size:26px;letter-spacing:-.02em;color:#fff">Olá, Gui.</div>
+        <div style="font-family:var(--ff-m);font-size:10.5px;color:var(--inkDim);border:1px solid var(--line2);border-radius:9px;padding:7px 10px;cursor:pointer" onclick="goTo('s-login')">Sair</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <div class="card tap" style="flex:1;padding:13px 12px;text-align:center" onclick="goTo('s-alunos')">
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:24px;color:#fff">12</div>
+          <div class="mini" style="margin-top:3px">Alunos</div>
+        </div>
+        <div class="card tap" style="flex:1;padding:13px 12px;text-align:center" onclick="goTo('s-aulas')">
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:24px;color:#fff">4</div>
+          <div class="mini" style="margin-top:3px">Turmas</div>
+        </div>
+        <div class="card tap" style="flex:1;padding:13px 12px;text-align:center" onclick="goTo('s-scout-lista')">
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:24px;color:#fff">7</div>
+          <div class="mini" style="margin-top:3px">Scouts</div>
+        </div>
+      </div>
+
+      <!-- foco card -->
+      <div class="card tap" style="margin-top:14px;padding:16px;background:linear-gradient(150deg,rgba(255,106,69,.22),rgba(255,106,69,.05));border-color:rgba(255,106,69,.32)" onclick="goTo('s-diagnostico')">
+        <div class="mini" style="color:var(--coral)">● Cartão de foco</div>
+        <div style="font-family:var(--ff-d);font-weight:700;font-size:17px;color:#fff;margin-top:8px;line-height:1.18">Júlia Mendes precisa reforçar Recepção.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px">
+          <span style="font-size:11.5px;color:var(--inkDim)">Turma B · Intermediário</span>
+          <span style="display:flex;align-items:center;gap:5px;font-family:var(--ff-m);font-size:11px;color:var(--coral)">ver diagnóstico ›</span>
+        </div>
+      </div>
+
+      <!-- atalhos -->
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <div class="card tap" style="flex:1;display:flex;flex-direction:column;gap:8px;padding:13px" onclick="goTo('s-scout-ao-vivo')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">Scout</span>
+          <div class="mini">partidas e análise</div>
+        </div>
+        <div class="card tap" style="flex:1;display:flex;flex-direction:column;gap:8px;padding:13px" onclick="goTo('s-historico')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="4" width="12" height="17" rx="2.5"/><path d="M9 4h6v3H9z" fill="#16C2A3" stroke="none"/><path d="M9 12h6M9 16h4"/></svg>
+          <span style="font-size:13px;font-weight:600;color:var(--ink)">Planos salvos</span>
+          <div class="mini">treinos gerados</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:18px">
+        <div style="font-family:var(--ff-d);font-weight:800;font-size:18px;color:#fff">Turmas hoje</div>
+        <span style="font-family:var(--ff-m);font-size:10.5px;color:var(--inkDim)">sex, 05 jun</span>
+      </div>
+
+      <div class="card tap" style="margin-top:8px;padding:12px 13px" onclick="goTo('s-turma')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:var(--ff-m);font-size:12px;color:var(--turq);width:44px">18:30</div>
+          <div style="flex:1">
+            <div style="font-size:13.5px;color:var(--ink)">Turma B</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:2px">Foco: Devolução cruzada</div>
+          </div>
+          <span class="badge badge-turq">Hoje</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;padding-left:54px">
+          <button class="btn btn-secondary" style="flex:1;font-size:12.5px;padding:8px 10px;border-radius:9px" onclick="event.stopPropagation()">Enviar WhatsApp</button>
+          <button class="btn btn-ghost" style="font-size:12.5px;padding:8px 10px;border-radius:9px" onclick="event.stopPropagation();goTo('s-turma')">Abrir</button>
+        </div>
+      </div>
+
+      <div class="card tap" style="margin-top:8px;padding:12px 13px" onclick="goTo('s-aulas')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-family:var(--ff-m);font-size:12px;color:var(--turq);width:44px">07:00</div>
+          <div style="flex:1">
+            <div style="font-size:13.5px;color:var(--ink)">Turma A · Avançado</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:2px">Foco: Cobertura do centro</div>
+          </div>
+          <span class="badge badge-info">Amanhã</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item active" onclick="goTo('s-hoje')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>
+        <span>Hoje</span>
+      </div>
+      <div class="tab-item" onclick="goTo('s-alunos')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>
+        <span>Alunos</span>
+      </div>
+      <div class="tab-item" onclick="goTo('s-aulas')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="6" width="16" height="14" rx="2.5"/><path d="M4 10h16M9 4v4M15 4v4"/></svg>
+        <span>Aulas</span>
+      </div>
+      <div class="tab-item" onclick="goTo('s-scout-lista')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Scout</span>
+      </div>
+      <div class="tab-item" onclick="goTo('s-financeiro')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg>
+        <span>$</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: ALUNOS
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-alunos">
+    <div class="header">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0">
+        <div>
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:26px;letter-spacing:-.02em;color:#fff">Alunos</div>
+          <div class="mini" style="margin-top:2px">12 ativos</div>
+        </div>
+        <div style="width:34px;height:34px;border-radius:11px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+      <div style="margin-top:12px;background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:12px;padding:9px 13px;display:flex;align-items:center;gap:9px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74808F" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l4 4"/></svg>
+        <span style="font-size:13.5px;color:var(--n500)">Buscar aluno…</span>
+      </div>
+    </div>
+    <div class="body" style="padding-top:12px">
+      <!-- alunos list -->
+      <div id="alunos-list"></div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="goTo('s-hoje')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span>Hoje</span></div>
+      <div class="tab-item active" onclick="goTo('s-alunos')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Alunos</span></div>
+      <div class="tab-item" onclick="goTo('s-aulas')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="6" width="16" height="14" rx="2.5"/><path d="M4 10h16M9 4v4M15 4v4"/></svg><span>Aulas</span></div>
+      <div class="tab-item" onclick="goTo('s-scout-lista')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span>Scout</span></div>
+      <div class="tab-item" onclick="goTo('s-financeiro')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg><span>$</span></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: ALUNO DETALHE
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-aluno">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-alunos')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </div>
+        <div>
+          <div class="header-kicker">Perfil do aluno</div>
+          <div class="header-title">Júlia Mendes</div>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="card" style="display:flex;align-items:center;gap:12px">
+        <div class="avatar" style="width:48px;height:48px;font-size:17px;background:#16C2A3">JM</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:600;color:var(--ink)">Júlia Mendes</div>
+          <div style="font-size:12px;color:var(--inkDim)">Turma B · Intermediário</div>
+        </div>
+        <span class="badge badge-ok">+18%</span>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <div class="card" style="flex:1;padding:13px">
+          <div class="mini">Foco atual</div>
+          <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:5px">Recepção</div>
+        </div>
+        <div class="card" style="flex:1;padding:13px">
+          <div class="mini">Nível</div>
+          <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:5px">Intermediário</div>
+        </div>
+      </div>
+
+      <!-- radar -->
+      <div class="card" style="margin-top:10px">
+        <div class="mini">Radar de fundamentos</div>
+        <div style="display:flex;justify-content:center;margin-top:12px">
+          <svg id="aluno-radar" width="200" height="200" viewBox="0 0 200 200"></svg>
+        </div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:8px">
+          <div style="display:flex;align-items:center;gap:6px;font-family:var(--ff-m);font-size:9px;color:var(--inkDim)">
+            <div style="width:12px;height:2px;background:var(--turq);border-radius:1px"></div>Professor
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-family:var(--ff-m);font-size:9px;color:var(--inkDim)">
+            <div style="width:12px;height:1px;border-top:2px dashed #2AC1FF"></div>Aluno
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost" style="flex:1;font-size:13px;padding:11px" onclick="goTo('s-avaliacao')">Avaliar</button>
+        <button class="btn btn-secondary" style="flex:2;font-size:13px;padding:11px" onclick="goTo('s-diagnostico')">Ver diagnóstico</button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px;padding:11px" onclick="goTo('s-evolucao')">Ver evolução →</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: AVALIAÇÃO TÉCNICA
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-avaliacao">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-aluno')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div><div class="header-kicker">Avaliação técnica · Júlia</div><div class="header-title">Avaliar</div></div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="card" style="display:flex;align-items:center;gap:12px">
+        <div class="avatar" style="width:38px;height:38px;font-size:14px;background:#16C2A3">JM</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--ink)">Júlia Mendes</div><div style="font-size:11.5px;color:var(--inkDim)">Turma B · Intermediário</div></div>
+        <span class="badge badge-turq">52%</span>
+      </div>
+      <div class="mini" style="margin-top:16px">Toque para pontuar cada fundamento</div>
+      <div id="avaliacao-fields"></div>
+      <div class="card" style="margin-top:12px">
+        <div class="mini">Nota livre (a IA usa no diagnóstico)</div>
+        <textarea rows="2" placeholder="Ex.: ainda recua na devolução cruzada sob saque profundo…" style="width:100%;margin-top:8px;background:rgba(255,255,255,.05);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:9px 11px;font-family:var(--ff-u);font-size:13px;line-height:1.4;outline:none;resize:none">Recepção ainda instável no cruzado profundo. Saque melhorou bastante.</textarea>
+      </div>
+    </div>
+    <div class="footer-cta">
+      <button class="btn btn-primary" style="width:100%" onclick="goTo('s-diagnostico')">Salvar e ver diagnóstico</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: DIAGNÓSTICO IA
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-diagnostico">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="history_back()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div><div class="header-kicker">Diagnóstico por IA</div><div class="header-title">Júlia</div></div>
+      </div>
+    </div>
+    <div class="body" id="diag-body">
+      <!-- Loading state shown first -->
+      <div id="diag-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px">
+        <div style="display:flex;gap:8px">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+        </div>
+        <div style="font-family:var(--ff-m);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--inkDim)">Analisando dados…</div>
+      </div>
+      <div id="diag-content" style="display:none">
+        <div class="card" style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" style="width:40px;height:40px;font-size:14px;background:#16C2A3">JM</div>
+          <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--ink)">Júlia Mendes</div><div style="font-size:11.5px;color:var(--inkDim)">Turma B · Intermediário</div></div>
+          <span class="badge badge-ok">Alta</span>
+        </div>
+        <div class="gap-bar" style="margin-top:14px">
+          <div class="mini" style="color:var(--coral)">● Gap principal detectado</div>
+          <div style="font-family:var(--ff-d);font-weight:700;font-size:19px;color:#fff;margin-top:8px;line-height:1.18">Instabilidade na devolução de saque profundo cruzado</div>
+          <div style="font-size:12.5px;color:var(--inkDim);margin-top:8px;line-height:1.4">Padrão recorrente em 3 das últimas 5 sessões. Alta frequência de erros não forçados na recepção cruzada, especialmente sob pressão de saque potente.</div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="mini">Confiança do diagnóstico</div>
+            <span style="font-family:var(--ff-m);font-size:10px;color:var(--inkDim)">fonte: scout + avaliação</span>
+          </div>
+          <div style="font-size:12px;color:var(--inkDim);margin-top:7px;line-height:1.4">3 sessões com padrão consistente de erro. Autoavaliação confirmou percepção de dificuldade na recepção. Avaliação técnica nota 2/5 no fundamento.</div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="mini">Recomendação pedagógica</div>
+          <ul style="list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:9px">
+            <li style="display:flex;gap:9px;font-size:13px;color:var(--inkDim)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="2.2" stroke-linecap="round"><path d="M5 12l4.5 4.5L19 7"/></svg>
+              <span>Treino focado em posição de expectativa baixa antes da devolução</span>
+            </li>
+            <li style="display:flex;gap:9px;font-size:13px;color:var(--inkDim)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="2.2" stroke-linecap="round"><path d="M5 12l4.5 4.5L19 7"/></svg>
+              <span>Foco tático: cotovelos à frente, face levemente inclinada</span>
+            </li>
+            <li style="display:flex;gap:9px;font-size:13px;color:var(--inkDim)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="2.2" stroke-linecap="round"><path d="M5 12l4.5 4.5L19 7"/></svg>
+              <span>Validar no próximo scout: taxa de erros na recepção cruzada</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-cta" id="diag-cta" style="display:none">
+      <button class="btn btn-primary" style="width:100%" onclick="goTo('s-plano')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="6" y="4" width="12" height="17" rx="2.5"/><path d="M9 4h6v3H9z" fill="currentColor" stroke="none"/><path d="M9 12h6M9 16h4"/></svg>
+        Gerar plano de treino
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: PLANO DE TREINO (IA)
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-plano">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-diagnostico')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div style="flex:1"><div class="header-kicker">Problema técnico · método ABD</div><div class="header-title">Júlia</div></div>
+        <div style="width:34px;height:34px;border-radius:11px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="goTo('s-plano')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="2" stroke-linecap="round"><path d="M5 19h14M7 15l9-9 2 2-9 9H7z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      <div id="plano-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px">
+        <div style="display:flex;gap:8px">
+          <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
+        </div>
+        <div style="font-family:var(--ff-m);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--inkDim)">Gerando com IA…</div>
+      </div>
+      <div id="plano-content" style="display:none">
+        <div class="card glow">
+          <div style="display:flex;gap:13px;align-items:flex-start">
+            <svg id="plano-radar" width="92" height="92" viewBox="0 0 92 92"></svg>
+            <div style="flex:1">
+              <div class="mini">Diagnóstico</div>
+              <div style="font-size:13.5px;color:#fff;font-weight:600;margin-top:5px;line-height:1.25">Instabilidade na devolução cruzada profunda</div>
+              <div style="font-size:12px;color:var(--inkDim);margin-top:4px;line-height:1.35">Padrão recorrente confirmado por scout + avaliação técnica</div>
+            </div>
+          </div>
+          <div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:var(--inkDim)">Confiança · fonte: scout</span>
+            <span class="badge badge-ok">Alta</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px;border-color:rgba(76,155,255,.28)">
+          <div class="mini" style="color:var(--info)">Por que esse treino?</div>
+          <div style="font-size:12.5px;color:var(--inkDim);margin-top:6px;line-height:1.4">3 sessões consecutivas com erro na recepção cruzada. Padrão indicativo de gap técnico na posição de expectativa, não apenas ajuste tático.</div>
+          <div style="margin-top:9px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04)">
+            <div class="mini" style="color:var(--turq)">Validar no próximo scout</div>
+            <div style="font-size:12px;color:var(--ink);margin-top:5px;line-height:1.35">Frequência de erros na devolução cruzada deve cair abaixo de 30%.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <div class="mini">Objetivo</div>
+          <div style="font-size:13.5px;color:var(--ink);margin-top:5px;line-height:1.35">Estabilizar a posição de expectativa na devolução de saque potente cruzado</div>
+          <div style="margin-top:10px;font-size:12.5px;color:var(--inkDim)">Foco tático: cotovelos à frente, base baixa, face levemente inclinada</div>
+          <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap">
+            <span class="badge badge-turq">Posição de expectativa</span>
+            <span class="badge badge-info">Intermediário</span>
+            <span class="badge badge-coral">método: ABD</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+          <div class="mini">Blocos da aula</div>
+          <span class="badge badge-ia">★ GERADO POR IA</span>
+        </div>
+
+        <!-- blocos -->
+        <div class="card" style="margin-top:8px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-family:var(--ff-m);font-size:12px;color:var(--turq)">10 min</span>
+            <span style="font-size:13.5px;color:var(--ink);font-weight:600">Aquecimento dirigido</span>
+          </div>
+          <div style="margin-top:8px;font-size:12.5px;color:var(--inkDim);line-height:1.35">Movimentação lateral com foco em base baixa. 3 séries de 10 deslocamentos por lado com parada de expectativa.</div>
+        </div>
+
+        <div class="card" style="margin-top:8px;border-color:rgba(255,106,69,.3)">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-family:var(--ff-m);font-size:12px;color:var(--coral)">20 min</span>
+            <span style="font-size:13.5px;color:var(--ink);font-weight:600">Jogo condicionado</span>
+            <span style="font-family:var(--ff-m);font-size:9px;color:var(--info);margin-left:auto">CBT-D02</span>
+          </div>
+          <div style="margin-top:8px;font-size:12.5px;color:var(--inkDim);line-height:1.35">Saque potente cruzado + devolução obrigatória em linha. Ponto válido somente com posição correta antes do contato.</div>
+          <div style="margin-top:9px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid var(--line);font-size:11.5px;color:var(--ink);line-height:1.3">
+            <span style="color:var(--coral);font-weight:800">Regra: </span>Congelar 0,5s na posição de expectativa antes de cada devolução. Errar a regra = ponto do adversário.
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:8px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-family:var(--ff-m);font-size:12px;color:var(--turq)">15 min</span>
+            <span style="font-size:13.5px;color:var(--ink);font-weight:600">Treino de situação</span>
+          </div>
+          <div style="margin-top:8px;font-size:12.5px;color:var(--inkDim);line-height:1.35">Situação real: parceira serve variando direção. Aluna deve identificar a direção e posicionar antes do bounce. Foco em leitura antecipada.</div>
+        </div>
+
+        <div class="card" style="margin-top:8px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-family:var(--ff-m);font-size:12px;color:var(--turq)">5 min</span>
+            <span style="font-size:13.5px;color:var(--ink);font-weight:600">Feedback e fechamento</span>
+          </div>
+          <div style="margin-top:8px;font-size:12.5px;color:var(--inkDim);line-height:1.35">Revisão verbal do padrão trabalhado. Solicitar autoavaliação rápida do aluno sobre o que sentiu na posição.</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-cta" id="plano-cta" style="display:none">
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" style="flex:1;font-size:14px;padding:12px">Ajustar</button>
+        <button class="btn btn-primary" style="flex:2;font-size:14px;padding:12px" onclick="goTo('s-aluno')">Usar plano na aula</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: TURMAS
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-aulas">
+    <div class="statusbar"><span>9:41</span><div class="statusbar-right"><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="#EAF1F8" stroke-opacity=".35"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#EAF1F8"/></svg></div></div>
+    <div class="body" style="padding-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:var(--ff-d);font-weight:800;font-size:26px;letter-spacing:-.02em;color:#fff">Turmas</div>
+        <div style="width:34px;height:34px;border-radius:11px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-turma')">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(22,194,163,.12);border:1px solid rgba(22,194,163,.2);display:flex;align-items:center;justify-content:center;font-family:var(--ff-d);font-weight:700;font-size:15px;color:var(--turq);flex-shrink:0">B</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Turma B</div>
+            <div style="font-size:12px;color:var(--inkDim);margin-top:2px">Intermediário · 18:30 · 3/8 alunos</div>
+          </div>
+          <span class="badge badge-turq">Hoje</span>
+        </div>
+        <div style="margin-top:10px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:12px;color:var(--inkDim)">
+          Foco: <span style="color:var(--ink)">Devolução cruzada</span>
+        </div>
+      </div>
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-turma')">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(30,114,224,.12);border:1px solid rgba(30,114,224,.2);display:flex;align-items:center;justify-content:center;font-family:var(--ff-d);font-weight:700;font-size:15px;color:var(--ocean);flex-shrink:0">A</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Turma A</div>
+            <div style="font-size:12px;color:var(--inkDim);margin-top:2px">Avançado · 07:00 · 2/6 alunos</div>
+          </div>
+          <span class="badge badge-info">Amanhã</span>
+        </div>
+        <div style="margin-top:10px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:12px;color:var(--inkDim)">
+          Foco: <span style="color:var(--ink)">Cobertura do centro</span>
+        </div>
+      </div>
+      <div class="card tap" style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,106,69,.1);border:1px solid rgba(255,106,69,.2);display:flex;align-items:center;justify-content:center;font-family:var(--ff-d);font-weight:700;font-size:12px;color:var(--coral);flex-shrink:0;text-align:center;line-height:1.1">Ini</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Iniciantes · Base</div>
+            <div style="font-size:12px;color:var(--inkDim);margin-top:2px">Iniciante · 19:30 · 4/10 alunos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="goTo('s-hoje')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span>Hoje</span></div>
+      <div class="tab-item" onclick="goTo('s-alunos')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Alunos</span></div>
+      <div class="tab-item active" onclick="goTo('s-aulas')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="6" width="16" height="14" rx="2.5"/><path d="M4 10h16M9 4v4M15 4v4"/></svg><span>Aulas</span></div>
+      <div class="tab-item" onclick="goTo('s-scout-lista')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span>Scout</span></div>
+      <div class="tab-item" onclick="goTo('s-financeiro')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg><span>$</span></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: TURMA DETALHE
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-turma">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-aulas')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div style="flex:1"><div class="header-kicker">Turma B · 18:30</div><div class="header-title">Intermediário</div></div>
+        <span class="badge badge-turq" style="font-size:11px;padding:5px 10px">Hoje</span>
+      </div>
+    </div>
+    <div class="body">
+      <div style="display:flex;gap:10px">
+        <div class="card" style="flex:1;padding:12px;text-align:center">
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:22px;color:var(--turq)">3</div>
+          <div class="mini" style="margin-top:3px">Alunos</div>
+        </div>
+        <div class="card" style="flex:1;padding:12px;text-align:center">
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:22px;color:#fff">8</div>
+          <div class="mini" style="margin-top:3px">Vagas</div>
+        </div>
+        <div class="card" style="flex:1;padding:12px;text-align:center">
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:22px;color:var(--ok)">2</div>
+          <div class="mini" style="margin-top:3px">Confirmados</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="mini">Foco pedagógico</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:5px">Devolução cruzada</div>
+        <button class="btn btn-secondary" style="width:100%;margin-top:12px;font-size:13px;padding:11px" onclick="goTo('s-plano')">Gerar plano para a turma</button>
+      </div>
+      <div style="margin-top:16px">
+        <div class="mini" style="margin-bottom:8px">Alunos matriculados</div>
+        <div class="card tap" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:12px 13px" onclick="goTo('s-aluno')">
+          <div class="avatar" style="width:36px;height:36px;font-size:13px;background:#16C2A3">JM</div>
+          <div style="flex:1">
+            <div style="font-size:13.5px;color:var(--ink)">Júlia Mendes</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:2px">Foco: Recepção</div>
+          </div>
+          <span class="badge badge-ok">+18%</span>
+        </div>
+        <div class="card tap" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:12px 13px">
+          <div class="avatar" style="width:36px;height:36px;font-size:13px;background:#FF6A45">AS</div>
+          <div style="flex:1">
+            <div style="font-size:13.5px;color:var(--ink)">Ana Souza</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:2px">Foco: Saque</div>
+          </div>
+          <span class="badge badge-ok">+9%</span>
+        </div>
+        <div class="card tap" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:12px 13px">
+          <div class="avatar" style="width:36px;height:36px;font-size:13px;background:#1E72E0">PL</div>
+          <div style="flex:1">
+            <div style="font-size:13.5px;color:var(--ink)">Pedro Lima</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:2px">Iniciante · Base</div>
+          </div>
+          <span class="badge badge-info">Novo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: SCOUT ao vivo
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-scout-lista">
+    <div class="header">
+      <div class="header-row">
+        <div style="flex:1"><div class="header-kicker">Análise de partidas</div><div class="header-title">Scout</div></div>
+        <button class="btn btn-secondary" style="font-size:12px;padding:9px 14px;border-radius:11px" onclick="goTo('s-scout-ao-vivo')">+ Nova</button>
+      </div>
+    </div>
+    <div class="body">
+      <div class="mini" style="margin-bottom:10px">Partidas recentes</div>
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-scout-ao-vivo')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Júlia & Ana vs Pedro & Carla</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:3px">Turma B · 03 jun · Simples</div>
+          </div>
+          <span class="badge badge-ok">Encerrada</span>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:10px">
+          <div style="text-align:center"><div style="font-family:var(--ff-d);font-weight:800;font-size:20px;color:var(--turq)">6</div><div class="mini">Games A</div></div>
+          <div style="text-align:center;opacity:.4"><div style="font-family:var(--ff-d);font-weight:800;font-size:20px;color:#fff">×</div></div>
+          <div style="text-align:center"><div style="font-family:var(--ff-d);font-weight:800;font-size:20px;color:var(--inkDim)">3</div><div class="mini">Games B</div></div>
+          <div style="margin-left:auto;text-align:right"><div style="font-family:var(--ff-m);font-size:11px;color:var(--turq)">12 erros</div><div style="font-family:var(--ff-m);font-size:11px;color:var(--coral)">5 winners</div></div>
+        </div>
+      </div>
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-scout-ao-vivo')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">Léo Rocha · Particular</div>
+            <div style="font-size:11.5px;color:var(--inkDim);margin-top:3px">Particular · 28 mai · Pro set</div>
+          </div>
+          <span class="badge badge-warn">Em andamento</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="goTo('s-hoje')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span>Hoje</span></div>
+      <div class="tab-item" onclick="goTo('s-alunos')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Alunos</span></div>
+      <div class="tab-item" onclick="goTo('s-aulas')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="6" width="16" height="14" rx="2.5"/><path d="M4 10h16M9 4v4M15 4v4"/></svg><span>Aulas</span></div>
+      <div class="tab-item active" onclick="goTo('s-scout-lista')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span>Scout</span></div>
+      <div class="tab-item" onclick="goTo('s-financeiro')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg><span>$</span></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: SCOUT AO VIVO
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-scout-ao-vivo">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-scout-lista')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div><div class="header-kicker">Simples</div><div class="header-title">Júlia & Ana vs Pedro & Carla</div></div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="card glow">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;font-size:13px;color:var(--ink)">Júlia & Ana</div>
+          <div style="font-family:var(--ff-d);font-weight:800;font-size:26px;color:var(--turq)" id="score-display">4 × 2</div>
+          <div style="flex:1;font-size:13px;color:var(--ink);text-align:right">Pedro & Carla</div>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <span style="font-family:var(--ff-d);font-weight:700;font-size:18px;color:#fff">40 — 15</span>
+          <div style="margin-top:4px"><span style="font-family:var(--ff-m);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--inkDim)">Set 1</span></div>
+        </div>
+      </div>
+
+      <!-- últimos pontos -->
+      <div class="card" style="margin-top:12px">
+        <div class="mini" style="margin-bottom:8px">Pontos (8)</div>
+        <div id="scout-pts"></div>
+      </div>
+
+      <!-- form novo ponto -->
+      <div class="card" style="margin-top:12px" id="scout-form">
+        <div class="mini" style="margin-bottom:10px">Novo ponto</div>
+        <div style="font-family:var(--ff-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--n500);margin-top:12px">Quem venceu?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px">
+          <div class="choice-btn" id="w-a" style="border:1px solid var(--turq);background:rgba(22,194,163,.14);color:var(--turq)" onclick="selectWinner('a')">Júlia & Ana</div>
+          <div class="choice-btn" id="w-b" style="border:1px solid var(--line2);color:var(--inkDim)" onclick="selectWinner('b')">Pedro & Carla</div>
+        </div>
+        <div style="font-family:var(--ff-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--n500);margin-top:12px">Como terminou?</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:7px" id="outcomes-grid"></div>
+        <div style="font-family:var(--ff-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--n500);margin-top:12px">Técnica principal</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:7px" id="techniques-grid"></div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-ghost" style="flex:1;font-size:13px;padding:11px">Cancelar</button>
+          <button class="btn btn-secondary" style="flex:2;font-size:13px;padding:11px" onclick="savePt()">Salvar ponto</button>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 30px;background:linear-gradient(transparent,var(--navy900) 30%);display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1;font-size:14px;padding:12px" onclick="goTo('s-scout-lista')">Encerrar</button>
+      <button class="btn btn-primary" style="flex:2;font-size:14px;padding:12px" onclick="document.getElementById('scout-form').scrollIntoView({behavior:'smooth'})">+ Novo ponto</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: FINANCEIRO
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-financeiro">
+    <div class="statusbar"><span>9:41</span><div class="statusbar-right"><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="#EAF1F8" stroke-opacity=".35"/><rect x="2" y="2" width="18" height="8" rx="1.5" fill="#EAF1F8"/></svg></div></div>
+    <div class="body" style="padding-top:10px">
+      <div style="font-family:var(--ff-d);font-weight:800;font-size:26px;letter-spacing:-.02em;color:#fff;margin-bottom:12px">Financeiro</div>
+      <div class="card glow">
+        <div class="mini">Recebido · junho</div>
+        <div style="font-family:var(--ff-d);font-weight:800;font-size:30px;color:#fff;letter-spacing:-.02em;margin-top:4px">R$ 8.420</div>
+        <div style="margin-top:12px;display:flex;align-items:flex-end;gap:5px;height:36px" id="fin-bars"></div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--ff-m);font-size:9.5px;color:var(--n500);margin-top:7px">
+          <span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <div class="card" style="flex:1;padding:13px">
+          <div class="mini">A receber</div>
+          <div style="font-size:17px;font-weight:700;color:var(--ink);margin-top:4px">R$ 1.260</div>
+        </div>
+        <div class="card" style="flex:1;padding:13px">
+          <div class="mini">Atrasado</div>
+          <div style="font-size:17px;font-weight:700;color:var(--err);margin-top:4px">R$ 320</div>
+        </div>
+      </div>
+      <div class="mini" style="margin-top:18px;margin-bottom:8px">Movimentações</div>
+      <div style="display:flex;align-items:center;gap:11px;padding:13px 2px;border-bottom:1px solid var(--line)">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg></div>
+        <div style="flex:1;font-size:13.5px;color:var(--ink)">Mensalidade · Júlia</div>
+        <span style="font-family:var(--ff-m);font-size:12.5px;color:var(--ok)">+ R$ 360</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px;padding:13px 2px;border-bottom:1px solid var(--line)">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg></div>
+        <div style="flex:1;font-size:13.5px;color:var(--ink)">Particular · Léo</div>
+        <span class="badge badge-warn">PENDENTE</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px;padding:13px 2px;border-bottom:1px solid var(--line)">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg></div>
+        <div style="flex:1;font-size:13.5px;color:var(--ink)">Mensalidade · Carla</div>
+        <span style="font-family:var(--ff-m);font-size:12.5px;color:var(--ok)">+ R$ 320</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px;padding:13px 2px;border-bottom:1px solid var(--line)">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16C2A3" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg></div>
+        <div style="flex:1;font-size:13.5px;color:var(--ink)">Particular · João</div>
+        <span class="badge badge-err">ATRASADO</span>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="goTo('s-hoje')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg><span>Hoje</span></div>
+      <div class="tab-item" onclick="goTo('s-alunos')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Alunos</span></div>
+      <div class="tab-item" onclick="goTo('s-aulas')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="6" width="16" height="14" rx="2.5"/><path d="M4 10h16M9 4v4M15 4v4"/></svg><span>Aulas</span></div>
+      <div class="tab-item" onclick="goTo('s-scout-lista')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span>Scout</span></div>
+      <div class="tab-item active" onclick="goTo('s-financeiro')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v16M8 8h6a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h7"/></svg><span>$</span></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: EVOLUÇÃO
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-evolucao">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-aluno')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div><div class="header-kicker">Turma B · 7 semanas</div><div class="header-title">Evolução</div></div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div class="mini">Índice de evolução percebida</div>
+          <span style="font-family:var(--ff-d);font-weight:800;font-size:22px;color:var(--turq);letter-spacing:-.02em">+18%</span>
+        </div>
+        <div style="margin-top:14px">
+          <svg width="100%" viewBox="0 0 300 100" id="evo-line" style="display:block;overflow:visible"></svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--ff-m);font-size:9.5px;color:var(--n500);margin-top:6px">
+          <span>S1</span><span>S2</span><span>S3</span><span>S4</span><span>S5</span><span>S6</span><span>S7</span>
+        </div>
+      </div>
+      <div class="mini" style="margin-top:18px;margin-bottom:8px">Por fundamento</div>
+      <div class="card" style="margin-bottom:8px;padding:13px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+          <span style="font-size:13.5px;color:var(--ink)">Recepção</span>
+          <span style="font-family:var(--ff-m);font-size:11.5px;color:var(--turq)">+22%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:64%"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:8px;padding:13px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+          <span style="font-size:13.5px;color:var(--ink)">Saque</span>
+          <span style="font-family:var(--ff-m);font-size:11.5px;color:var(--turq)">+9%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:58%"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:8px;padding:13px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+          <span style="font-size:13.5px;color:var(--ink)">Devolução</span>
+          <span style="font-family:var(--ff-m);font-size:11.5px;color:var(--warn)">-4%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:38%;background:var(--warn)"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:8px;padding:13px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+          <span style="font-size:13.5px;color:var(--ink)">Defesa</span>
+          <span style="font-family:var(--ff-m);font-size:11.5px;color:var(--turq)">+15%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:71%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       SCREEN: HISTÓRICO
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-historico">
+    <div class="header">
+      <div class="header-row">
+        <div class="header-back" onclick="goTo('s-hoje')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EAF1F8" stroke-width="1.8" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div><div class="header-kicker">Seus planos</div><div class="header-title">Histórico</div></div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-plano')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="mini">júlia · 03 jun</div>
+          <span class="badge badge-coral">editado</span>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:5px">Estabilizar devolução cruzada</div>
+        <div style="font-size:12px;color:var(--inkDim);margin-top:3px;line-height:1.35">Instabilidade na devolução de saque profundo cruzado</div>
+      </div>
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-plano')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="mini">turma b · 28 mai</div>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:5px">Devolução cruzada · Turma B</div>
+        <div style="font-size:12px;color:var(--inkDim);margin-top:3px;line-height:1.35">Gap coletivo: recepção sob saque potente cruzado</div>
+      </div>
+      <div class="card tap" style="margin-bottom:8px" onclick="goTo('s-plano')">
+        <div class="mini">léo · 22 mai</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-top:5px">Consistência no ataque</div>
+        <div style="font-size:12px;color:var(--inkDim);margin-top:3px;line-height:1.35">Platô identificado — foco em finalização com pressão</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Banner -->
+<div class="demo-banner">🎾 BeachFlow — Demonstração interativa</div>
+
+<script>
+// ── DATA ──
+const ALUNOS = [
+  {id:'julia',ini:'JM',cor:'#16C2A3',nome:'Júlia Mendes',turma:'Turma B · Intermediário',foco:'Recepção',delta:'+18%',tone:'ok',radar:[0.55,0.8,0.7,0.45,0.6,0.75],auto:[0.5,0.7,0.65,0.4,0.55,0.7]},
+  {id:'leo',ini:'LR',cor:'#1E72E0',nome:'Léo Rocha',turma:'Particular',foco:'Ataque',delta:'Platô',tone:'warn',radar:[0.7,0.5,0.85,0.6,0.5,0.55],auto:[0.7,0.55,0.8,0.5,0.6,0.5]},
+  {id:'ana',ini:'AS',cor:'#FF6A45',nome:'Ana Souza',turma:'Turma B · Intermediário',foco:'Saque',delta:'+9%',tone:'ok',radar:[0.4,0.6,0.55,0.7,0.65,0.6],auto:[0.45,0.6,0.5,0.65,0.6,0.55]},
+  {id:'pedro',ini:'PL',cor:'#1E72E0',nome:'Pedro Lima',turma:'Iniciante',foco:'Base',delta:'Novo',tone:'info',radar:[0.3,0.35,0.4,0.3,0.45,0.5],auto:[0.35,0.4,0.3,0.45,0.4,0.35]},
+  {id:'carla',ini:'CF',cor:'#16C2A3',nome:'Carla Freitas',turma:'Turma A · Avançado',foco:'Defesa',delta:'+22%',tone:'ok',radar:[0.75,0.7,0.65,0.85,0.8,0.7],auto:[0.7,0.7,0.6,0.85,0.75,0.65]},
+];
+const RLAB = ['SAQUE','DEVOL.','FOREH.','BACKH.','POSIC.','CONST.'];
+const FUNDAMENTOS = ['Saque','Devolução','Forehand','Backhand','Posicionamento','Constância'];
+const OUTCOMES = ['Winner','Erro forçado','Erro não forçado','Ace','Erro de saque'];
+const TECHNIQUES = ['Smash','Lob','Bandeja','Forehand','Backhand','Vela'];
+const toneMap = {ok:'badge-ok',warn:'badge-warn',info:'badge-info',err:'badge-err'};
+
+// ── NAVIGATION ──
+let history = [];
+function goTo(id) {
+  const all = document.querySelectorAll('.screen');
+  const current = document.querySelector('.screen.active');
+  if(current && current.id !== id) history.push(current.id);
+  all.forEach(s => { s.classList.remove('active','slide-out'); });
+  const target = document.getElementById(id);
+  if(target) {
+    target.classList.add('active');
+    // Trigger screen-specific init
+    onEnter(id);
+  }
+}
+function history_back() {
+  const prev = history.pop();
+  if(prev) goTo(prev);
+  else goTo('s-hoje');
+}
+
+function onEnter(id) {
+  if(id==='s-alunos') renderAlunos();
+  if(id==='s-aluno') renderAlunoRadar();
+  if(id==='s-avaliacao') renderAvaliacaoFields();
+  if(id==='s-diagnostico') runDiag();
+  if(id==='s-plano') runPlano();
+  if(id==='s-scout-ao-vivo') renderScout();
+  if(id==='s-financeiro') renderFinBars();
+  if(id==='s-evolucao') renderEvoLine();
+}
+
+// ── ALUNOS LIST ──
+function renderAlunos() {
+  const el = document.getElementById('alunos-list');
+  el.innerHTML = ALUNOS.map(a => `
+    <div class="card tap" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;padding:12px 13px" onclick="goTo('s-aluno')">
+      <div class="avatar" style="width:38px;height:38px;font-size:14px;background:${a.cor}">${a.ini}</div>
+      <div style="flex:1">
+        <div style="font-size:13.5px;color:#EAF1F8">${a.nome}</div>
+        <div style="font-size:11.5px;color:#9FB0C2;margin-top:2px">${a.turma}</div>
+      </div>
+      <span class="badge ${toneMap[a.tone]||'badge-ok'}">${a.delta}</span>
+    </div>`).join('');
+}
+
+// ── RADAR ──
+function drawRadar(svgId, data, labels, size, dualAuto) {
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  const n = data.length;
+  const cx = size/2, cy = size/2;
+  const r = size * (size > 150 ? 0.36 : 0.32);
+  const ang = i => Math.PI/2 - i*2*Math.PI/n;
+  const pt = (i,v) => [cx + Math.cos(ang(i))*r*v, cy - Math.sin(ang(i))*r*v];
+  const ring = v => data.map((_,i)=>pt(i,v).join(',')).join(' ');
+  const poly = data.map((d,i)=>pt(i,d).join(',')).join(' ');
+  let html = '';
+  // rings
+  [1,0.66,0.33].forEach(v => { html += `<polygon points="${ring(v)}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>`; });
+  // axes
+  data.forEach((_,i) => { const [x,y]=pt(i,1); html += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,.07)" stroke-width="1"/>`; });
+  // dual (auto)
+  if(dualAuto) {
+    const autoPoly = dualAuto.map((d,i)=>pt(i,d).join(',')).join(' ');
+    html += `<polygon points="${autoPoly}" fill="rgba(42,193,255,.12)" stroke="#2AC1FF" stroke-width="2" stroke-dasharray="5 4"/>`;
+  }
+  // main poly
+  html += `<polygon points="${poly}" fill="rgba(22,194,163,.2)" stroke="#16C2A3" stroke-width="2.2"/>`;
+  data.forEach((d,i) => { const[x,y]=pt(i,d); html += `<circle cx="${x}" cy="${y}" r="${size>150?3.5:2.8}" fill="#FF6A45"/>`; });
+  // labels
+  if(labels) {
+    const fs = size > 150 ? 9 : 7.5;
+    labels.forEach((l,i) => {
+      const [x,y]=pt(i,1.22); const a=ang(i);
+      const anchor = Math.abs(Math.cos(a))<0.3 ? 'middle' : (Math.cos(a)>0 ? 'start' : 'end');
+      html += `<text x="${x}" y="${y}" fill="#74808F" font-family="IBM Plex Mono" font-size="${fs}" text-anchor="${anchor}" dominant-baseline="middle">${l}</text>`;
+    });
+  }
+  svg.innerHTML = html;
+}
+
+function renderAlunoRadar() {
+  const a = ALUNOS[0];
+  drawRadar('aluno-radar', a.radar, RLAB, 200, a.auto);
+}
+
+// ── AVALIAÇÃO ──
+const avalVals = [3,2,4,3,3,4];
+function renderAvaliacaoFields() {
+  const el = document.getElementById('avaliacao-fields');
+  el.innerHTML = FUNDAMENTOS.map((f,i) => `
+    <div class="card" style="margin-top:8px;padding:13px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;color:#EAF1F8">${f}</span>
+        <span style="font-family:var(--ff-m);font-size:11px;color:var(--turq)" id="val-${i}">${avalVals[i]}/5</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:11px" id="dots-${i}">
+        ${[1,2,3,4,5].map(n=>`<div onclick="setAval(${i},${n})" style="flex:1;height:30px;border-radius:8px;cursor:pointer;transition:background .12s;background:${n<=avalVals[i]?'var(--turq)':'rgba(255,255,255,.06)'};border:1px solid ${n<=avalVals[i]?'transparent':'var(--line)'}"></div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function setAval(fi, val) {
+  avalVals[fi] = val;
+  const row = document.getElementById(`dots-${fi}`);
+  if(row) row.querySelectorAll('div').forEach((d,n) => {
+    d.style.background = n<val ? 'var(--turq)' : 'rgba(255,255,255,.06)';
+    d.style.border = `1px solid ${n<val ? 'transparent' : 'var(--line)'}`;
+  });
+  const label = document.getElementById(`val-${fi}`);
+  if(label) label.textContent = `${val}/5`;
+}
+
+// ── DIAGNOSTICO (simulado) ──
+function runDiag() {
+  document.getElementById('diag-loading').style.display = 'flex';
+  document.getElementById('diag-content').style.display = 'none';
+  document.getElementById('diag-cta').style.display = 'none';
+  setTimeout(() => {
+    document.getElementById('diag-loading').style.display = 'none';
+    document.getElementById('diag-content').style.display = 'block';
+    document.getElementById('diag-cta').style.display = 'block';
+  }, 1600);
+}
+
+// ── PLANO (simulado) ──
+function runPlano() {
+  document.getElementById('plano-loading').style.display = 'flex';
+  document.getElementById('plano-content').style.display = 'none';
+  document.getElementById('plano-cta').style.display = 'none';
+  setTimeout(() => {
+    document.getElementById('plano-loading').style.display = 'none';
+    document.getElementById('plano-content').style.display = 'block';
+    document.getElementById('plano-cta').style.display = 'block';
+    drawRadar('plano-radar', ALUNOS[0].radar, null, 92, null);
+  }, 1800);
+}
+
+// ── SCOUT ──
+const demoPoints = [
+  {score:'40–0',outcome:'Winner',shot:'Smash',winner:'A'},
+  {score:'40–15',outcome:'Erro forçado',shot:'Lob',winner:'B'},
+  {score:'40–30',outcome:'Ace',shot:'Saque',winner:'A'},
+  {score:'Game',outcome:'Erro não forçado',shot:'Backhand',winner:'A'},
+];
+let selectedWinner = 'a', selectedOutcome = 'Winner', selectedTech = 'Smash';
+function renderScout() {
+  const pts = document.getElementById('scout-pts');
+  pts.innerHTML = demoPoints.map(p => `
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--line)">
+      <span style="font-family:var(--ff-m);color:var(--turq);width:54px">${p.score}</span>
+      <span style="flex:1;color:#EAF1F8">${p.outcome}</span>
+      <span style="color:#9FB0C2">${p.shot} · ${p.winner==='A'?'Júlia&Ana':'Pedro&Carla'}</span>
+    </div>`).join('');
+  // outcomes
+  const og = document.getElementById('outcomes-grid');
+  og.innerHTML = OUTCOMES.map(o => `
+    <div class="choice-btn" onclick="selectOutcome('${o}',this)" style="border:1px solid ${o===selectedOutcome?'var(--turq)':'var(--line2)'};background:${o===selectedOutcome?'rgba(22,194,163,.14)':'transparent'};color:${o===selectedOutcome?'var(--turq)':'var(--inkDim)'};">${o}</div>`).join('');
+  const tg = document.getElementById('techniques-grid');
+  tg.innerHTML = TECHNIQUES.map(t => `
+    <div class="choice-btn" onclick="selectTech('${t}',this)" style="border:1px solid ${t===selectedTech?'var(--turq)':'var(--line2)'};background:${t===selectedTech?'rgba(22,194,163,.14)':'transparent'};color:${t===selectedTech?'var(--turq)':'var(--inkDim)'};">${t}</div>`).join('');
+}
+function selectWinner(w) {
+  selectedWinner = w;
+  const a = document.getElementById('w-a'), b = document.getElementById('w-b');
+  if(a&&b){
+    a.style.borderColor = w==='a' ? 'var(--turq)' : 'var(--line2)';
+    a.style.background = w==='a' ? 'rgba(22,194,163,.14)' : 'transparent';
+    a.style.color = w==='a' ? 'var(--turq)' : 'var(--inkDim)';
+    b.style.borderColor = w==='b' ? 'var(--turq)' : 'var(--line2)';
+    b.style.background = w==='b' ? 'rgba(22,194,163,.14)' : 'transparent';
+    b.style.color = w==='b' ? 'var(--turq)' : 'var(--inkDim)';
+  }
+}
+function selectOutcome(o,el) {
+  selectedOutcome=o;
+  document.getElementById('outcomes-grid').querySelectorAll('.choice-btn').forEach(d=>{
+    d.style.borderColor='var(--line2)';d.style.background='transparent';d.style.color='var(--inkDim)';
+  });
+  el.style.borderColor='var(--turq)';el.style.background='rgba(22,194,163,.14)';el.style.color='var(--turq)';
+}
+function selectTech(t,el) {
+  selectedTech=t;
+  document.getElementById('techniques-grid').querySelectorAll('.choice-btn').forEach(d=>{
+    d.style.borderColor='var(--line2)';d.style.background='transparent';d.style.color='var(--inkDim)';
+  });
+  el.style.borderColor='var(--turq)';el.style.background='rgba(22,194,163,.14)';el.style.color='var(--turq)';
+}
+function savePt() {
+  // simulate saving
+  const scoreEl = document.getElementById('score-display');
+  scoreEl.textContent = '5 × 2';
+  const pts = document.getElementById('scout-pts');
+  const newRow = document.createElement('div');
+  newRow.style.cssText='display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--line)';
+  newRow.innerHTML=`<span style="font-family:var(--ff-m);color:var(--turq);width:54px">Game</span><span style="flex:1;color:#EAF1F8">${selectedOutcome}</span><span style="color:#9FB0C2">${selectedTech} · ${selectedWinner==='a'?'Júlia&Ana':'Pedro&Carla'}</span>`;
+  pts.prepend(newRow);
+}
+
+// ── FINANCEIRO BARS ──
+function renderFinBars() {
+  const vals = [5,7,6,9,10]; const max=10;
+  const el = document.getElementById('fin-bars');
+  if(!el) return;
+  el.innerHTML = vals.map((v,i)=>`
+    <div style="flex:1;height:${(v/max)*100}%;border-radius:3px;background:${i===4?'var(--coral)':'var(--turq)'}"></div>`).join('');
+}
+
+// ── EVOLUÇÃO LINE ──
+function renderEvoLine() {
+  const svg = document.getElementById('evo-line');
+  if(!svg) return;
+  const vals=[40,42,48,46,55,60,64];
+  const w=300,h=100,min=Math.min(...vals),max=Math.max(...vals);
+  const sx=i=>(i/(vals.length-1))*w;
+  const sy=v=>h-((v-min)/(max-min||1))*(h-12)-6;
+  const d=vals.map((v,i)=>`${i===0?'M':'L'}${sx(i).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ');
+  const area=`${d} L${w} ${h} L0 ${h} Z`;
+  svg.innerHTML=`
+    <defs><linearGradient id="evoG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(22,194,163,.32)"/><stop offset="1" stop-color="rgba(22,194,163,0)"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#evoG)"/>
+    <path d="${d}" fill="none" stroke="#16C2A3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${sx(vals.length-1).toFixed(1)}" cy="${sy(vals[vals.length-1]).toFixed(1)}" r="4" fill="#FF6A45"/>`;
+}
+
+// Init alunos on load
+renderAlunos();
+renderFinBars();
+</script>
+
+</body>
+</html>
