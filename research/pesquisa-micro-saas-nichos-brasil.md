@@ -465,3 +465,25 @@ O scaffolding transfere quase inteiro para os tops da pesquisa:
 1. **Não apostar o SaaS no BT Vision**: concorrente direto consolidado, recorrência fraca — falha nos critérios que definiram o topo do ranking.
 2. **Lançar o BT Vision mesmo assim, como treino** (está a dias do lançável): publica, aprende ciclo completo de loja/feedback, e o app vira portfólio.
 3. **Reaproveitar o esqueleto** no nicho escolhido do ranking — os de melhor encaixe com o código mobile existente são **Despachantes (#2)** e **Marmorarias (#8)**; o #1 (Regularização) reaproveita a lógica, mas pede web-first (portal do cliente).
+
+---
+
+## 7. Adendo 2 — Varredura do GitHub público: projetos não lançados × oportunidades (07/07/2026)
+
+### O que a varredura confirma
+1. **Os nichos do topo seguem vazios também no open source** — ninguém construiu (nem abandonou) um vertical de regularização imobiliária, gestão de AR de certificado digital, CRM de consórcio ou sistema de marmoraria. As tentativas encontradas são genéricas ou pararam no CRUD (ex.: `acmachado14/despcar` — consultas veiculares em Laravel, projeto pessoal parado; dezenas de "sistema de orçamento" abandonados).
+2. **As partes difíceis dos tops já existem prontas em open source** — o que derruba o custo do MVP:
+
+| Bloco pronto (GitHub) | O que resolve | Des-risca qual oportunidade |
+|---|---|---|
+| `EvolutionAPI/evolution-api` (Node/TS) | WhatsApp completo (Baileys + Cloud API oficial) | Todas — o canal central dos 20 |
+| `bacen/pix-api` + SDKs `efipay` (PHP/Go) | Pix automático/recorrente, boleto, split | Cobrança recorrente de todos |
+| `nfephp-org/sped-esocial` (PHP), `qualitaocupacional/libesocial` (Python) | Eventos eSocial SST (S-2210/2220/2240) prontos | #5 SST e #10 Medicina ocupacional |
+| `thiagosy/PNCP` + manual da API PNCP | Dados públicos de licitações (Lei 14.133) | #3 Assessorias de licitações |
+| Infosimples (API comercial, issues públicas de Detran) | Consultas Detran/veiculares sem convênio próprio | #2 Despachantes |
+| `beerandcodeteam/workshop-crm` | CRM multi-tenant Kanban + WhatsApp (EvolutionAPI) — scaffold de referência | Arquitetura de qualquer um dos tops |
+| `c0h1b4/autenticacao-ICP-Brasil`, `demoiselle/signer` | Autenticação/assinatura e-CPF/e-CNPJ | #4 Certificação digital |
+
+### Leitura
+- O ranking se mantém; **sobe a nota de "facilidade de MVP"** de #3 (licitações — API PNCP pública), #5 (SST — eSocial resolvido em lib) e #2 (despachantes — consultas via API comercial).
+- Stack de montagem recomendada para qualquer top 5: **Evolution API (WhatsApp) + SDK Pix Efí + Postgres multi-tenant**, com a lib específica do nicho por cima.
