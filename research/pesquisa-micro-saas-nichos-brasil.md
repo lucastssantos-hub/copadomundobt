@@ -431,3 +431,37 @@
 
 ---
 *Relatório gerado por pesquisa web em 07/07/2026. Fontes citadas em cada ficha. A navegação direta na Meta Ads Library não foi possível neste ambiente por bloqueio de rede; os links de validação estão prontos em cada ficha.*
+
+---
+
+## 6. Adendo — Cruzamento com os apps não lançados do projeto (07/07/2026)
+
+### O que existe no repositório
+**BT Vision** (único app encontrado; branches `bt-vision-mvp` e este): MVP Expo/React Native de análise de Beach Tennis por vídeo — scout de 12 tipos de evento (saque, smash, winner…), rallies com timestamp, insights táticos, relatório com export PDF. **Estado:** funcional porém não lançado; IA é mock (sugestões aleatórias), sem backend/login/pagamento; últimos commits são correções de debug.
+
+### BT Vision avaliado pelos mesmos critérios da pesquisa
+| Critério | Avaliação |
+|---|---|
+| Demanda | BT em alta no Brasil, mas gasto do professor/atleta é discricionário (6/10) |
+| Dor manual | Scout em papel/planilha existe, mas dor é leve (5/10) |
+| Lacuna | **BT Scout (app.btscout.com) já faz exatamente isso**; Filma Eu (câmeras+IA nas arenas, começando pelo BT) captou o segmento premium (3/10) |
+| MVP | ~80% pronto (9/10) |
+| Recorrência | Fraca — uso por torneio/temporada, churn alto (4/10) |
+| **Score: ~5,2** | Entraria em ~18º–20º no ranking |
+
+Gestão de arenas/academias (pivô óbvio) está saturada: ArenaAi, BT Match, Quadra Fácil, Sistema de Agenda, EsmeClub, ABC Evo, Next Fit, Letzplay.
+
+### O que o código do BT Vision vale para o ranking
+O scaffolding transfere quase inteiro para os tops da pesquisa:
+| Peça já construída | Vira |
+|---|---|
+| Timeline de rallies/eventos com timestamp | Timeline de andamento do processo (regularização #1, despachante #2) |
+| Botões de scout + tipos de evento | Checklist documental / etapas por modalidade |
+| Relatório + PDF (expo-print) | Relatório white-label, proposta, ASO/laudo |
+| Zustand + navegação + tema dark | Base de qualquer CRM mobile |
+| Stack Expo mobile-first | Nichos de campo: medição de marmoraria (#8), rotas de piscineiro (#14), despachante (#2) |
+
+### Conclusão do cruzamento
+1. **Não apostar o SaaS no BT Vision**: concorrente direto consolidado, recorrência fraca — falha nos critérios que definiram o topo do ranking.
+2. **Lançar o BT Vision mesmo assim, como treino** (está a dias do lançável): publica, aprende ciclo completo de loja/feedback, e o app vira portfólio.
+3. **Reaproveitar o esqueleto** no nicho escolhido do ranking — os de melhor encaixe com o código mobile existente são **Despachantes (#2)** e **Marmorarias (#8)**; o #1 (Regularização) reaproveita a lógica, mas pede web-first (portal do cliente).
