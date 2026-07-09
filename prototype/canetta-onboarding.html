@@ -509,7 +509,8 @@
     ritmo:2, difficulty:"", mascot:"Canetta", plan:"anual",
     doseLocal:"abdomen", doseNote:"",
     reminderDay:"quinta", reminderTime:"20h",
-    symptomFocus:"nausea", symptomNote:"", newWeight:91
+    symptomFocus:"nausea", symptomNote:"", newWeight:91,
+    didDose:false, didSymptom:false, didWeight:false
   };
 
   function nm(){ return state.name || "você"; }
@@ -833,10 +834,19 @@
         sym("Náusea",3)+sym("Apetite",6)+sym("Energia",7)+sym("Digestão",4)+
       '</div>'+
       '<button class="legal-card" type="button" style="margin-top:14px"><span class="ic">📋</span><div><b>Resumo para a consulta</b><span>Peso, doses, sintomas e fotos — organizados a partir dos seus registros</span></div><span class="arr">›</span></button>'+
-      '<div class="card" style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📖</span><span style="font-size:12.5px;color:var(--ink-soft)">A náusea é um efeito colateral relatado por parte dos usuários de GLP-1. Se for intensa ou persistente, procure seu médico. <b style="color:var(--brand)">Saiba mais →</b></span></div>',
+      '<div class="card" style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📖</span><span style="font-size:12.5px;color:var(--ink-soft)">A náusea é um efeito colateral relatado por parte dos usuários de GLP-1. Se for intensa ou persistente, procure seu médico. <b style="color:var(--brand)">Saiba mais →</b></span></div>'+
+      fontes(),
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
   function sym(n,v){ return '<div class="symrow"><b>'+n+'</b><div class="symbar"><i style="width:'+(v*10)+'%"></i></div><span>'+v+'/10</span></div>'; }
+  function fontes(){
+    return '<div class="card" style="margin-top:10px">'+
+      '<div style="font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft)">Fontes do conteúdo educativo</div>'+
+      '<div class="rq" style="margin-top:8px"><span>›</span><span>Bula do medicamento — Bulário Eletrônico · Anvisa</span></div>'+
+      '<div class="rq"><span>›</span><span>Diretrizes ABESO — Assoc. Brasileira para o Estudo da Obesidade</span></div>'+
+      '<div class="rq"><span>›</span><span>SBEM — Soc. Brasileira de Endocrinologia e Metabologia</span></div>'+
+      '</div>';
+  }
 
   // 19 Resumo pré-consulta (copiloto da consulta)
   S.push({title:"Resumo da consulta", render:function(){
@@ -952,7 +962,8 @@
       '<div class="card soft" style="margin-top:16px;display:flex;gap:12px;align-items:flex-start">'+
         '<span style="font-size:22px">💡</span><div><b style="display:block;font-size:14px">Destaque da sua jornada</b>'+
         '<span style="font-size:13px;color:var(--ink-soft)">Acompanhamento das refeições e dos sintomas, com resumo pronto para levar à consulta.</span></div></div>'+
-      '<div style="text-align:center;margin-top:16px"><span class="badge">📚 Conteúdo com fontes</span></div>',
+      '<div style="text-align:center;margin-top:16px"><span class="badge">📚 Conteúdo com fontes</span>'+
+      '<p class="sub tight" style="font-size:11.5px;text-align:center">Educativo baseado em bulas (Bulário Anvisa) e diretrizes ABESO/SBEM — sempre com a fonte junto do conteúdo.</p></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
 
@@ -1009,8 +1020,10 @@
   // 29 Lembretes pós-compra
   S.push({title:"Lembretes", render:function(){
     return {body:'<span class="eyebrow">Primeiro ajuste</span>'+
-      '<h2 class="title sm">Quando você quer receber o lembrete de aplicação?</h2>'+
-      '<p class="sub tight">Você pode mudar isso depois. O Canetta só lembra o horário que você registrar.</p>'+
+      '<h2 class="title sm">'+(isStarting()?"Quando você quer receber seu check-in semanal?":"Quando você quer receber o lembrete de aplicação?")+'</h2>'+
+      '<p class="sub tight">'+(isStarting()
+        ?'Enquanto você não começa, o lembrete serve para organizar anotações e dúvidas antes da consulta.'
+        :'Você pode mudar isso depois. O Canetta só lembra o horário que você registrar.')+'</p>'+
       '<div class="slotgrid">'+
         slot("reminderDay","segunda","Segunda","Começo da semana")+
         slot("reminderDay","quinta","Quinta","Ritmo atual do preview")+
@@ -1028,17 +1041,33 @@
 
   // 30 Home pós-onboarding
   S.push({title:"Home da jornada", render:function(){
+    var heroK, heroV, heroM;
+    if(isStarting()){
+      heroK="Próxima ação";
+      heroV="Preparar sua lista de dúvidas para a consulta.";
+      heroM="Guarde orientações recebidas e o que quer perguntar. O Canetta organiza tudo para a conversa com seu médico.";
+    } else if(state.didDose){
+      heroK="Feito por hoje";
+      heroV="Aplicação registrada. Registre sintomas ou peso quando quiser.";
+      heroM="Próximo lembrete: "+reminderLabel()+". Tudo entra na sua linha do tempo.";
+    } else {
+      heroK="Próxima ação";
+      heroV="Registrar sua aplicação quando ela acontecer.";
+      heroM="Lembrete: "+reminderLabel()+". O Canetta guarda data, dose, local e observações para o seu histórico.";
+    }
     return {body:'<span class="eyebrow">Hoje</span>'+
       '<h2 class="title sm">'+Nm()+', sua jornada está organizada.</h2>'+
       '<div class="dash-hero">'+
-        '<div class="k">Próxima ação</div>'+
-        '<div class="v">Registrar sua aplicação quando ela acontecer.</div>'+
-        '<div class="m">Lembrete: '+reminderLabel()+'. O Canetta guarda data, dose, local e observações para o seu histórico.</div>'+
+        '<div class="k">'+heroK+'</div>'+
+        '<div class="v">'+heroV+'</div>'+
+        '<div class="m">'+heroM+'</div>'+
       '</div>'+
       '<div class="quickgrid">'+
-        quick("💉","Aplicação","Registrar data e local","recordDose")+
-        quick("🩺","Sintomas","Anotar como foi o dia","symptomSoon")+
-        quick("⚖️","Peso","Adicionar registro","weightSoon")+
+        (isStarting()
+          ? quick("📝","Anotações","Guardar orientações e dúvidas","recordDose")
+          : quick("💉","Aplicação",(state.didDose?"Registrada hoje ✓":"Registrar data e local"),"recordDose"))+
+        quick("🩺","Sintomas",(state.didSymptom?"Check-in feito hoje ✓":"Anotar como foi o dia"),"symptomSoon")+
+        quick("⚖️","Peso",(state.didWeight?"Registrado hoje ✓":"Adicionar registro"),"weightSoon")+
         quick("📋","Consulta","Gerar resumo","reportSoon")+
       '</div>'+
       '<div class="daylist">'+
@@ -1046,7 +1075,7 @@
         day("📈","Progresso","Peso, sintomas e fotos ficam em uma linha do tempo")+
         day("🔎","Padrões observados","O app descreve registros; não diagnostica nem recomenda")+
       '</div>',
-      cta:'<button class="btn btn-pri" id="recordDoseCta">Registrar aplicação</button>'+
+      cta:'<button class="btn btn-pri" id="recordDoseCta">'+(isStarting()?"Guardar anotação":"Registrar aplicação")+'</button>'+
         '<button class="btn btn-ghost" id="openReportCta">Ver resumo de consulta</button>',
       init:function(){
         bindGo("recordDose",30); bindGo("recordDoseCta",30);
@@ -1065,8 +1094,10 @@
   // 31 Registro de aplicação
   S.push({title:"Registro de aplicação", render:function(){
     return {body:'<span class="eyebrow">Registro</span>'+
-      '<h2 class="title sm">Como foi sua aplicação?</h2>'+
-      '<p class="sub tight">Registre exatamente o que aconteceu. Estes dados entram no seu histórico e no resumo da consulta.</p>'+
+      '<h2 class="title sm">'+(isStarting()?"Recebeu orientação ou fez sua primeira aplicação?":"Como foi sua aplicação?")+'</h2>'+
+      '<p class="sub tight">'+(isStarting()
+        ?'Se ainda não começou, use a observação para guardar orientações recebidas e datas combinadas — tudo vai para o resumo da consulta.'
+        :'Registre exatamente o que aconteceu. Estes dados entram no seu histórico e no resumo da consulta.')+'</p>'+
       '<div class="card soft" style="margin-top:16px">'+
         '<div style="font-size:12px;font-weight:800;color:var(--ink-soft);letter-spacing:.04em">MEDICAÇÃO</div>'+
         '<div class="rrow"><span class="rk">'+med()+'</span><span class="rv">'+(state.dose||"Dose não informada")+'</span></div>'+
@@ -1078,10 +1109,12 @@
         '<textarea class="note" id="doseNote" placeholder="Ex.: apliquei no horário combinado, sem observações." autocomplete="off">'+esc(state.doseNote)+'</textarea>'+
       '</div>'+
       '<div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🩺</span><span style="font-size:12.5px;color:var(--ink-soft)">O Canetta registra sua rotina. Dúvidas sobre dose, horário ou reação devem ser discutidas com um profissional de saúde.</span></div>',
-      cta:'<button class="btn btn-pri" data-adv="1">Salvar registro</button>',
+      cta:'<button class="btn btn-pri" id="saveDose">Salvar registro</button>',
       init:function(){
         var n=document.getElementById("doseNote");
         if(n) n.addEventListener("input",function(){ state.doseNote=n.value.trim(); });
+        var b=document.getElementById("saveDose");
+        if(b) b.addEventListener("click",function(){ state.didDose=true; next(); });
       }};
   }});
   function site(val,label,ic){
@@ -1127,10 +1160,12 @@
         '<textarea class="note" id="symptomNote" placeholder="Ex.: náusea leve pela manhã, melhorou ao longo do dia." autocomplete="off">'+esc(state.symptomNote)+'</textarea>'+
       '</div>'+
       '<div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🩺</span><span style="font-size:12.5px;color:var(--ink-soft)">Se um sintoma for intenso, persistente ou preocupante, procure seu médico.</span></div>',
-      cta:'<button class="btn btn-pri" data-adv="1">Salvar sintomas</button>',
+      cta:'<button class="btn btn-pri" id="saveSymptom">Salvar sintomas</button>',
       init:function(){
         var n=document.getElementById("symptomNote");
         if(n) n.addEventListener("input",function(){ state.symptomNote=n.value.trim(); });
+        var b=document.getElementById("saveSymptom");
+        if(b) b.addEventListener("click",function(){ state.didSymptom=true; next(); });
       }};
   }});
 
@@ -1161,11 +1196,15 @@
       '<p class="sub tight">Use como diário de acompanhamento. Metas e condutas devem ser discutidas com profissionais de saúde.</p>'+
       ruler("newWeight",40,180,state.newWeight,"kg")+
       '<div class="metricgrid">'+
-        metric("Anterior",state.weight+" kg","Último registro")+
+        metric("Anterior",state.weight+" kg","Informado no onboarding")+
         metric("Meta informada",state.goal+" kg","Usada só como referência")+
       '</div>',
-      cta:'<button class="btn btn-pri" data-adv="1">Salvar peso</button>',
-      init:function(){ initRuler(); }};
+      cta:'<button class="btn btn-pri" id="saveWeight">Salvar peso</button>',
+      init:function(){
+        initRuler();
+        var b=document.getElementById("saveWeight");
+        if(b) b.addEventListener("click",function(){ state.didWeight=true; next(); });
+      }};
   }});
 
   // 36 Peso salvo
@@ -1183,20 +1222,35 @@
       '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📋</span><span style="font-size:12.5px;color:var(--ink-soft)">O dado entra no resumo da consulta como registro factual.</span></div>',
       cta:'<button class="btn btn-pri" id="weightBackHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="weightTimeline">Ver linha do tempo</button>',
-      init:function(){ state.weight=state.newWeight; bindGo("weightBackHome",29); bindGo("weightTimeline",37); }};
+      init:function(){ bindGo("weightBackHome",29); bindGo("weightTimeline",37); }};
   }});
 
   // 37 Resumo de consulta
   S.push({title:"Consulta", render:function(){
-    var inicio=state.weight+4;
+    var temAlgo = state.didDose||state.didSymptom||state.didWeight;
+    var secs='';
+    // peso do onboarding é dado real informado pelo usuário; registros novos só com didWeight
+    secs+='<div class="rsec"><div class="rlabel">Peso</div>'+
+      '<div class="rrow"><span class="rk">Informado no onboarding</span><span class="rv">'+state.weight+' kg</span></div>'+
+      (state.didWeight?'<div class="rrow"><span class="rk">Último registro</span><span class="rv">'+state.newWeight+' kg</span></div>':'')+
+      '</div>';
+    secs+='<div class="rsec"><div class="rlabel">Aplicação</div>'+
+      (state.didDose
+        ?'<div class="rrow"><span class="rk">Dose registrada</span><span class="rv">'+(state.dose||"—")+'</span></div><div class="rrow"><span class="rk">Último local</span><span class="rv">'+localLabel()+'</span></div>'
+        :'<div class="rrow"><span class="rk">Sem registros ainda</span><span class="rv">—</span></div>')+
+      '</div>';
+    secs+='<div class="rsec"><div class="rlabel">Sintomas</div>'+
+      (state.didSymptom
+        ?'<div class="rrow"><span class="rk">Foco recente</span><span class="rv">'+symptomLabel()+'</span></div>'+(state.symptomNote?'<div class="rq"><span>•</span><span>'+state.symptomNote+'</span></div>':'')
+        :'<div class="rrow"><span class="rk">Sem registros ainda</span><span class="rv">—</span></div>')+
+      '</div>';
     return {body:'<span class="eyebrow">Consulta</span>'+
       '<h2 class="title sm">Resumo atualizado para levar à próxima consulta.</h2>'+
       '<p class="sub tight">Uma visão organizada dos seus registros. Sem diagnóstico, sem sugestão de dose.</p>'+
+      (temAlgo?'':'<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🌱</span><span style="font-size:12.5px;color:var(--ink-soft)">Seu resumo começa vazio. Cada aplicação, sintoma ou peso registrado aparece aqui automaticamente.</span></div>')+
       '<div class="report">'+
         '<div class="rhead"><span class="ri">📋</span><div><b>Resumo atual · '+med()+'</b><span>Lembrete '+reminderLabel()+'</span></div></div>'+
-        '<div class="rsec"><div class="rlabel">Peso</div><div class="rrow"><span class="rk">Inicial</span><span class="rv">'+inicio+' kg</span></div><div class="rrow"><span class="rk">Último registro</span><span class="rv">'+state.weight+' kg</span></div></div>'+
-        '<div class="rsec"><div class="rlabel">Aplicação</div><div class="rrow"><span class="rk">Dose registrada</span><span class="rv">'+(state.dose||"—")+'</span></div><div class="rrow"><span class="rk">Último local</span><span class="rv">'+localLabel()+'</span></div></div>'+
-        '<div class="rsec"><div class="rlabel">Sintomas</div><div class="rrow"><span class="rk">Foco recente</span><span class="rv">'+symptomLabel()+'</span></div></div>'+
+        secs+
         '<div class="rfoot">🩺 Use este resumo para discutir dúvidas com seu médico.</div>'+
       '</div>'+
       '<div class="summary-actions">'+
@@ -1209,15 +1263,18 @@
 
   // 38 Linha do tempo
   S.push({title:"Linha do tempo", render:function(){
+    var evts='';
+    if(state.didWeight) evts+=eventRow("Hoje","Peso registrado",state.newWeight+" kg · registro factual","⚖️");
+    if(state.didSymptom) evts+=eventRow("Hoje","Check-in de sintomas",symptomLabel()+(state.symptomNote?" · com nota":""),"🩺");
+    if(state.didDose) evts+=eventRow("Hoje","Aplicação registrada",med()+" · "+(state.dose||"dose não informada")+" · "+localLabel(),"💉");
+    evts+=eventRow(reminderLabel(),"Próximo lembrete","Configurável a qualquer momento","🔔");
+    var vazia=!(state.didWeight||state.didSymptom||state.didDose);
     return {body:'<span class="eyebrow">Histórico</span>'+
       '<h2 class="title sm">Sua jornada em ordem cronológica.</h2>'+
       '<p class="sub tight">Registros ficam agrupados para facilitar revisão e conversa em consulta.</p>'+
-      '<div class="timeline-mini">'+
-        eventRow("Hoje","Peso registrado",state.weight+" kg · registro factual","⚖️")+
-        eventRow("Hoje","Check-in de sintomas",symptomLabel()+(state.symptomNote?" · com nota":""),"🩺")+
-        eventRow("Hoje","Aplicação registrada",med()+" · "+(state.dose||"dose não informada")+" · "+localLabel(),"💉")+
-        eventRow(reminderLabel(),"Próximo lembrete","Configurável a qualquer momento","🔔")+
-      '</div>'+
+      (vazia?'<div class="mascot-wrap" style="margin:14px 0 2px">'+mascot("calm",104)+'</div>'+
+        '<div class="card soft" style="margin-top:8px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🌱</span><span style="font-size:12.5px;color:var(--ink-soft)">Sua linha do tempo começa no primeiro registro. Aplicações, sintomas e pesos aparecem aqui em ordem.</span></div>':'')+
+      '<div class="timeline-mini">'+evts+'</div>'+
       '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🔎</span><span style="font-size:12.5px;color:var(--ink-soft)">Padrões aparecem quando houver histórico suficiente. O app apenas descreve o que você registrou.</span></div>',
       cta:'<button class="btn btn-pri" id="timelineHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="timelineReport">Ver resumo da consulta</button>',

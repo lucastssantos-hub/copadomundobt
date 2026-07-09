@@ -124,8 +124,10 @@ Tudo em `canetta-onboarding.html`. O arquivo **não** tem `<!doctype>/<html>/<he
 
 - **`state`** (objeto JS): `name, stage, medication, dose, freq, weight, height,
   goal, ritmo, difficulty, mascot, plan, doseLocal, doseNote, reminderDay,
-  reminderTime, symptomFocus, symptomNote, newWeight`. Placeholders se propagam
-  entre telas.
+  reminderTime, symptomFocus, symptomNote, newWeight, didDose, didSymptom,
+  didWeight`. Placeholders se propagam entre telas. As flags `did*` são setadas
+  pelos botões "Salvar" das telas 31/33/35 e controlam os estados vazios de
+  home (30), resumo (37) e linha do tempo (38).
 - **Helpers de texto:** `nm()/Nm()` (nome), `med()`, `mascotN()`, `difLabel()`,
   `diffKg()`, `estDate()` (data estimada a partir do ritmo).
 - **`DOSES`**: mapa medicamento → lista de doses (usado na tela 09).
@@ -156,27 +158,37 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
   "Exemplo · seus dados aparecem aqui" nessa tela.
 - **Evolução prevista (tela 14):** projeção visual a partir das respostas, rotulada
   como "não é uma promessa clínica". Não é cálculo clínico.
-- **Conteúdo educativo:** o texto sobre náusea (tela 18) e o selo "Conteúdo com
-  fontes" (tela 25) ainda precisam de fontes reais linkadas.
-- **Pós-onboarding (telas 29–38):** lembrete, home, aplicação, sintomas, peso,
-  resumo e linha do tempo são mockados no `state` local. Horário, dose, local,
-  peso e sintomas são tratados como dados registrados pelo usuário, não como
-  recomendação clínica.
+- **Conteúdo educativo:** a tela 18 e o selo da tela 25 agora **nomeiam** as
+  fontes (Bulário Eletrônico Anvisa, diretrizes ABESO, SBEM), mas os links
+  profundos (URL da bula de cada medicamento, documento específico de diretriz)
+  e a revisão por consultor médico/nutricionista ainda estão pendentes.
+- **Pós-onboarding (telas 29–38):** persistem só no `state` local (sem backend/
+  notificações). Home (30), resumo (37) e linha do tempo (38) agora têm
+  **estados vazios reais**: só mostram aplicação/sintoma/peso que o usuário
+  registrou na sessão (flags `didDose/didSymptom/didWeight`); antes de qualquer
+  registro, exibem estado vazio explicativo. O peso do onboarding aparece como
+  "Informado no onboarding" (dado real do usuário, não mock).
 
 ## 8. Próximos passos candidatos (a decidir)
 
 **Refino do protótipo:**
-- Estados vazios e microinterações adicionais.
-- Fontes reais para o conteúdo educativo e para o selo "Conteúdo com fontes".
-- Decisão de preços e trial do paywall.
+- ~~Estados vazios~~ (feitos para home/resumo/linha do tempo) — restam
+  microinterações adicionais.
+- Fontes: nomeadas (Anvisa/ABESO/SBEM); faltam links profundos e revisão de
+  consultor.
+- Decisão de preços e trial do paywall (segue placeholder).
 - Conectar o pós-onboarding a persistência real, notificações reais, calendário e
   exportação/compartilhamento de resumo quando a implementação Expo/RN começar.
 
 **Ramificação "Quero começar" (pré-tratamento):**
-- Já existe um desenho inicial no mesmo fluxo: medicamento, dose, frequência e
-  registro mudam a copy para organização pré-consulta; dose aceita "Ainda não sei".
-- Próximo passo é decidir se esse estágio merece caminho separado, com menos coleta
-  de dose/frequência e mais preparação de consulta, sem recomendar início ou conduta.
+- Onboarding: medicamento, dose, frequência e registro mudam a copy para
+  organização pré-consulta; dose aceita "Ainda não sei".
+- Pós-compra (revisão de 09/07/2026): lembrete vira "check-in semanal" de
+  preparação, a home orienta a preparar a lista de dúvidas ("Guardar anotação"),
+  e a tela 31 aceita registrar orientações recebidas antes da primeira aplicação.
+- Segue em aberto decidir se esse estágio merece um caminho separado de verdade
+  (menos coleta, mais preparação de consulta) — hoje é adaptação de copy no mesmo
+  fluxo, sem recomendar início ou conduta.
 
 **Implementação do app (Expo/React Native, já no repo):**
 - Traduzir o design system (tokens/componentes) para RN.

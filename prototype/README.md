@@ -118,13 +118,34 @@ Mudanças aplicadas nesta revisão:
   progresso, gráfico SVG, anéis de atividade, timeline de dose, paywall, cards
   rápidos, slots de lembrete, métricas e linha do tempo.
 
+## Estados vazios (revisão de 09/07/2026)
+
+As telas pós-compra reagem ao que você realmente registra na sessão:
+
+- **Home (30):** os cards mostram "Registrada hoje ✓" só depois de salvar; o hero
+  muda para "Feito por hoje" após a aplicação.
+- **Resumo de consulta (37):** começa vazio ("Seu resumo começa vazio…") e ganha
+  seções conforme os registros. O peso do onboarding aparece rotulado como
+  "Informado no onboarding".
+- **Linha do tempo (38):** começa com estado vazio e mostra apenas os eventos
+  registrados (aplicação, sintomas, peso) + o próximo lembrete.
+- **Ramificação "Quero começar":** no pós-compra, o lembrete vira check-in
+  semanal de preparação, a home orienta a montar a lista de dúvidas e a tela de
+  registro aceita guardar orientações recebidas.
+
+## Fontes do conteúdo educativo
+
+A tela 18 lista as fontes nomeadas (Bulário Eletrônico Anvisa, diretrizes ABESO,
+SBEM) e o selo da tela 25 as referencia. Links profundos (bula por medicamento,
+documento específico) e revisão por consultor médico/nutricionista ainda pendem.
+
 ## Placeholders conhecidos
 
 - Valores de preço (R$ 149,90/ano, R$ 29,90/mês) são placeholders para revisão.
 - O resumo pré-consulta da tela 19 é um exemplo visual de como os dados aparecerão
   depois de registros reais.
 - A projeção da tela 14 é uma estimativa visual, não uma promessa clínica.
-- O conteúdo educativo da tela 18 e o selo "Conteúdo com fontes" da tela 25 ainda
-  precisam de fontes reais linkadas.
-- As telas pós-onboarding ainda são mockadas: persistem apenas no `state` local do
-  protótipo, não enviam notificações reais e não substituem backend/autenticação.
+- Links profundos das fontes educativas (telas 18 e 25) ainda não apontam para
+  URLs reais.
+- As telas pós-onboarding persistem apenas no `state` local do protótipo, não
+  enviam notificações reais e não substituem backend/autenticação.
