@@ -440,6 +440,7 @@
   function Nm(){ return state.name || "Você"; }
   function med(){ return state.medication || "seu GLP-1"; }
   function mascotN(){ return state.mascot || "Canetta"; }
+  function difLabel(){ var m={alimentacao:"a alimentação",atividade:"a atividade física",doses:"o registro de doses",progresso:"acompanhar o progresso",efeitos:"os efeitos colaterais"}; return m[state.difficulty]||"a alimentação"; }
   function diffKg(){ return Math.max(0, state.weight - state.goal); }
   function estDate(){
     var rates={1:0.42,2:0.62,3:0.9}, r=rates[state.ritmo]||0.62;
@@ -575,7 +576,8 @@
       '<div class="opts" style="margin-top:20px">'+
         '<a class="legal-card"><span class="ic">📄</span><div><b>Termos de Uso</b><span>Como o Canetta funciona</span></div><span class="arr">›</span></a>'+
         '<a class="legal-card"><span class="ic">🔒</span><div><b>Política de Privacidade</b><span>Como cuidamos dos seus dados</span></div><span class="arr">›</span></a>'+
-      '</div>',
+      '</div>'+
+      '<div class="card" style="margin-top:12px;display:flex;gap:11px;align-items:flex-start"><span style="font-size:18px">🩺</span><span style="font-size:12.5px;color:var(--ink-soft)">O Canetta organiza sua jornada e <b style="color:var(--ink)">não substitui profissionais de saúde</b> — não diagnostica nem prescreve.</span></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Aceitar e Continuar</button>'+
         '<div class="footlinks"><span>Termos</span><span>Privacidade</span></div>'};
   }});
@@ -742,13 +744,14 @@
 
   // 18 Sintomas -> consulta
   S.push({title:"Sintomas → consulta", render:function(){
-    return {body:'<span class="eyebrow">Pronto para a consulta</span>'+
+    return {body:'<span class="eyebrow">Copiloto da consulta</span>'+
       '<h2 class="title">Chegue à consulta sabendo exatamente como seu corpo respondeu ao tratamento.</h2>'+
       '<div class="card" style="margin-top:20px">'+
         '<div style="font-size:12px;font-weight:800;color:var(--ink-soft);letter-spacing:.04em">INTENSIDADE DOS SINTOMAS · 0–10</div>'+
         sym("Náusea",3)+sym("Apetite",6)+sym("Energia",7)+sym("Digestão",4)+
       '</div>'+
-      '<div class="legal-card" style="margin-top:14px"><span class="ic">📋</span><div><b>Relatório para o médico</b><span>Gerado automaticamente a partir dos seus registros</span></div><span class="arr">›</span></div>',
+      '<div class="legal-card" style="margin-top:14px"><span class="ic">📋</span><div><b>Resumo para a consulta</b><span>Peso, doses, sintomas e fotos — organizados a partir dos seus registros</span></div><span class="arr">›</span></div>'+
+      '<div class="card" style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📖</span><span style="font-size:12.5px;color:var(--ink-soft)">A náusea é um efeito colateral relatado por parte dos usuários de GLP-1. Se for intensa ou persistente, procure seu médico. <b style="color:var(--brand)">Saiba mais →</b></span></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
   function sym(n,v){ return '<div class="symrow"><b>'+n+'</b><div class="symbar"><i style="width:'+(v*10)+'%"></i></div><span>'+v+'/10</span></div>'; }
@@ -799,9 +802,10 @@
   // 22 Insight
   S.push({title:"Insight personalizado", render:function(){
     return {body:'<div class="mascot-wrap" style="margin:8px 0 4px">'+mascot("think",130)+'</div>'+
-      '<span class="eyebrow" style="text-align:center;display:block">Seu insight</span>'+
-      '<div class="insight-quote">Pelas suas respostas, seu maior risco não é esquecer a dose — é <em>perder proteína</em> durante o tratamento. Seu plano já compensa isso.</div>'+
-      '<div class="badge" style="margin-top:20px">✦ Personalizado para '+nm()+'</div>',
+      '<span class="eyebrow" style="text-align:center;display:block">Um padrão a observar</span>'+
+      '<div class="insight-quote">Você apontou <em>'+difLabel()+'</em> como seu maior desafio. O '+mascotN()+' vai registrar sua jornada e destacar padrões observados — para você levar dados concretos à próxima consulta.</div>'+
+      '<div class="badge" style="margin-top:20px">✦ Baseado nos seus registros</div>'+
+      '<p class="sub tight" style="text-align:center;font-size:12px">O Canetta descreve o que você registrou. Não diagnostica nem recomenda.</p>',
       cta:'<button class="btn btn-pri" data-adv="1">Ver meu plano</button>'};
   }});
 
@@ -831,8 +835,8 @@
       '</div>'+
       '<p class="estdate">Data estimada: <b>'+estDate()+'</b></p>'+
       '<div class="card soft" style="margin-top:16px;display:flex;gap:12px;align-items:flex-start">'+
-        '<span style="font-size:22px">💡</span><div><b style="display:block;font-size:14px">Destaque do seu plano</b>'+
-        '<span style="font-size:13px;color:var(--ink-soft)">Proteção de proteína integrada às refeições — ligado ao seu insight.</span></div></div>'+
+        '<span style="font-size:22px">💡</span><div><b style="display:block;font-size:14px">Destaque da sua jornada</b>'+
+        '<span style="font-size:13px;color:var(--ink-soft)">Acompanhamento das refeições e dos sintomas, com resumo pronto para levar à consulta.</span></div></div>'+
       '<div style="text-align:center;margin-top:16px"><span class="badge">🛡️ Baseado em evidências</span></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
@@ -852,9 +856,9 @@
       '<p class="sub tight">Chegar a '+state.goal+' kg até '+estDate()+', com acompanhamento em cada etapa.</p>'+
       '<div class="benefits">'+
         ben("🔔","Lembretes de dose para nunca mais esquecer")+
-        ben("📋","Relatórios prontos para levar ao seu médico")+
+        ben("📋","Resumo pronto para levar à sua consulta")+
         ben("📈","Seu progresso em gráficos, fotos e conquistas")+
-        ben("✨","Assistente com IA para tirar dúvidas do tratamento")+
+        ben("🔎","Padrões observados nos seus registros — sem diagnóstico")+
       '</div>'+
       '<div class="plan'+(a?" on":"")+'" data-set="plan" data-val="anual">'+
         '<div class="ribbon"><span class="badge gold">★ Melhor valor</span></div>'+

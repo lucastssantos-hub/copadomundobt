@@ -50,6 +50,37 @@ A barra de progresso aparece apenas nas 12 telas de coleta reais (05–07, 09–
 - Projeções rotuladas como estimativas — "não é uma promessa clínica".
 - Privacidade e confiança em destaque.
 
+## Posicionamento e limites (segurança regulatória)
+
+Tese: **"IA que organiza minha jornada"**, não "IA que interpreta meus dados". O
+Canetta é um **diário inteligente da jornada com GLP-1** — registra, organiza,
+resume, mostra padrões observáveis e prepara o usuário para a próxima consulta.
+Ele **não diagnostica, não prescreve e não substitui profissionais de saúde**.
+
+O que o copy faz e o que evita:
+
+| Faz (descritivo / organizacional) | Evita (orientação clínica) |
+|---|---|
+| "Você apontou a alimentação como seu maior desafio." | "Você precisa comer X g de proteína." |
+| "Padrões observados nos seus registros — sem diagnóstico." | "Sua náusea indica que…" |
+| "Resumo pronto para levar à sua consulta." | "Aumente / reduza / pare a dose." |
+| Educação com fonte + "procure seu médico." | Recomendação individualizada de saúde. |
+
+Mudanças aplicadas nesta revisão:
+
+- **Tela 22 (Insight):** deixou de afirmar risco clínico ("perder proteína… seu
+  plano compensa") e passou a **descrever um padrão** ligado à resposta do usuário +
+  convite a levar à consulta, com disclaimer "não diagnostica nem recomenda".
+- **Tela 26 (Paywall):** removido o benefício "assistente com IA para tirar dúvidas
+  do tratamento" (terreno regulatório delicado). Em seu lugar: "Padrões observados
+  nos seus registros — sem diagnóstico" e "Resumo pronto para levar à sua consulta".
+- **Tela 18 (Sintomas):** reposicionada como **copiloto da consulta** — resumo
+  automático (peso, doses, sintomas, fotos) + card educativo com "procure seu médico".
+- **Tela 24 (Reveal):** destaque agora descreve acompanhamento e resumo para a
+  consulta, sem prescrição.
+- **Tela 04 (Privacidade):** boundary explícito — "não substitui profissionais de
+  saúde; não diagnostica nem prescreve".
+
 ## Design system
 
 - **Cores:** pinho-teal `#0E6B5C` (marca), menta `#22B39A` (ativo/progresso),
