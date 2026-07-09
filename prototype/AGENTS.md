@@ -143,7 +143,11 @@ Tudo em `canetta-onboarding.html`. O arquivo **não** tem `<!doctype>/<html>/<he
     `data-adv` avança automaticamente.
 - **Interações:** `initRuler()`, `initPace()`, `runLoading()`.
 - **Navegação:** `draw()` renderiza a tela atual; `next()/prev()/goTo(i)`;
-  setas do teclado; botão "▦ Ver todas as telas" (grid); "◐ Tema".
+  setas do teclado; botão "▦ Ver todas as telas" (grid, agrupado em Onboarding /
+  Pós-compra); "◐ Tema"; "↺ Reiniciar" (recarrega com estado zerado).
+- **Microinterações:** cada tela entra com stagger sutil (classe `enter` no
+  `.body`/`.foot`, keyframe `screenIn`); seleções têm `pop` e `:active`.
+  Tudo respeita `prefers-reduced-motion`.
 - **Contador** é dinâmico (`S.length`) — adicionar/remover telas não quebra o "X / N".
 
 Para adicionar uma tela: crie um `S.push({...})` na posição desejada (a ordem do

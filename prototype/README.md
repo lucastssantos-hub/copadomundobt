@@ -12,9 +12,11 @@ build, servidor ou conexão.
 ## Navegação
 
 - **‹ / ›** e **setas do teclado** avançam/voltam entre as telas.
-- **▦ Ver todas as telas** abre a visão geral do fluxo (salte para qualquer tela).
+- **▦ Ver todas as telas** abre a visão geral do fluxo, agrupada em Onboarding
+  (01–28) e Pós-compra (29–38) — salte para qualquer tela.
 - **◐ Tema** alterna o tema claro/escuro da moldura da página (a tela do app mantém
   o próprio tema, como um app real).
+- **↺ Reiniciar** volta ao início com o estado zerado (útil para demos).
 - Toque nas opções, digite o nome, arraste a régua e o slider — o estado se
   propaga entre as telas (nome, mascote, medicamento, peso, meta, data estimada).
 
