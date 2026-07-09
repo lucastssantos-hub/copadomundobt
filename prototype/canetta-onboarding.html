@@ -109,7 +109,7 @@
     display:grid;place-items:center;cursor:pointer;color:var(--ink)}
   .appbar .back:hover{border-color:var(--brand)}
   .ptrack{flex:1;height:7px;border-radius:5px;background:var(--line-2);overflow:hidden}
-  .pfill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .pfill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--brand),var(--brand-2));transform:scaleX(var(--progress,0));transform-origin:left;transition:transform .5s cubic-bezier(.4,0,.2,1)}
   .pstep{font-size:11px;font-weight:800;color:var(--ink-soft);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 
   /* scroll body */
@@ -228,7 +228,7 @@
   .medlevel{margin-top:20px;display:flex;align-items:flex-end;justify-content:center;gap:14px;height:150px;
     background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--brand-2) 8%,#fff));border:1px solid var(--line);border-radius:18px;padding:16px}
   .vial{width:46px;height:100%;border-radius:12px 12px 8px 8px;background:#fff;border:2px solid var(--line);position:relative;overflow:hidden}
-  .vial .fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--brand-2),var(--brand));border-radius:0 0 6px 6px;transition:height 1s}
+  .vial .fill{position:absolute;left:0;right:0;bottom:0;height:100%;background:linear-gradient(180deg,var(--brand-2),var(--brand));border-radius:0 0 6px 6px;transform:scaleY(var(--fill-scale,0));transform-origin:bottom;transition:transform 1s}
   .vial .cap{position:absolute;top:-9px;left:50%;transform:translateX(-50%);width:22px;height:12px;border-radius:5px;background:var(--ink-soft)}
 
   /* ruler */
@@ -675,13 +675,13 @@
       '<h2 class="title">'+(isStarting()?'Chegue ao início com tudo organizado.':'Cada dose registrada é uma dúvida a menos.')+'</h2>'+
       '<p class="sub">'+(isStarting()?'Guarde dúvidas, datas combinadas e orientações recebidas para levar ao seu profissional de saúde.':'Registrar suas aplicações ajuda você a entender sua rotina e evitar esquecimentos.')+'</p>'+
       '<div class="medlevel">'+
-        '<div class="vial"><span class="cap"></span><span class="fill" id="vf1" style="height:35%"></span></div>'+
-        '<div class="vial"><span class="cap"></span><span class="fill" id="vf2" style="height:58%"></span></div>'+
-        '<div class="vial"><span class="cap"></span><span class="fill" id="vf3" style="height:82%"></span></div>'+
+        '<div class="vial"><span class="cap"></span><span class="fill" id="vf1" style="--fill-scale:.35"></span></div>'+
+        '<div class="vial"><span class="cap"></span><span class="fill" id="vf2" style="--fill-scale:.58"></span></div>'+
+        '<div class="vial"><span class="cap"></span><span class="fill" id="vf3" style="--fill-scale:.82"></span></div>'+
       '</div>'+
       '<p class="sub tight" style="text-align:center">Nível de medicação acompanhado ao longo do tempo.</p>',
       cta:'<button class="btn btn-pri" data-adv="1">Entendi</button>',
-      init:function(){ setTimeout(function(){ ["vf1","vf2","vf3"].forEach(function(id,k){var e=document.getElementById(id); if(e) e.style.height=[45,68,90][k]+"%";}); },120); }};
+      init:function(){ setTimeout(function(){ ["vf1","vf2","vf3"].forEach(function(id,k){var e=document.getElementById(id); if(e) e.style.setProperty("--fill-scale",[.45,.68,.9][k]);}); },120); }};
   }});
 
   // 09 Dose (4)
@@ -1182,7 +1182,7 @@
     if(s.step){
       appbar.innerHTML='<div class="appbar">'+
         '<button class="back" id="abBack" aria-label="Voltar"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
-        '<div class="ptrack"><div class="pfill" style="width:'+(s.step/STEP_TOTAL*100)+'%"></div></div>'+
+        '<div class="ptrack"><div class="pfill" style="--progress:'+(s.step/STEP_TOTAL)+'"></div></div>'+
         '<span class="pstep">'+s.step+'/'+STEP_TOTAL+'</span></div>';
       var ab=document.getElementById("abBack"); if(ab) ab.addEventListener("click",prev);
     } else { appbar.innerHTML=""; }
