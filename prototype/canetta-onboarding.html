@@ -73,9 +73,13 @@
   .shell-head .sep{flex:1}
   .theme-tog{
     border:1px solid var(--page-line);background:var(--page-panel);color:var(--page-fg);
-    border-radius:999px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+    border-radius:999px;padding:7px 13px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
   }
   .theme-tog:hover{border-color:var(--page-accent)}
+  .theme-tog:focus-visible,.ctl:focus-visible,.gclose:focus-visible,.thumb:focus-visible{
+    outline:3px solid color-mix(in srgb,var(--page-accent) 36%,transparent);
+    outline-offset:3px;
+  }
 
   /* ---------- stage ---------- */
   .stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:16px;padding:14px 16px 30px;width:100%}
@@ -105,7 +109,7 @@
 
   /* progress appbar */
   .appbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:4px 20px 10px}
-  .appbar .back{width:34px;height:34px;border-radius:11px;border:1px solid var(--line);background:var(--paper-2);
+  .appbar .back{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--paper-2);
     display:grid;place-items:center;cursor:pointer;color:var(--ink)}
   .appbar .back:hover{border-color:var(--brand)}
   .ptrack{flex:1;height:7px;border-radius:5px;background:var(--line-2);overflow:hidden}
@@ -132,7 +136,7 @@
   .num{font-variant-numeric:tabular-nums}
 
   /* ---------- buttons ---------- */
-  .btn{width:100%;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:800;font-family:inherit;
+  .btn{width:100%;min-height:52px;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:800;font-family:inherit;
     cursor:pointer;letter-spacing:-.01em;transition:transform .08s,box-shadow .2s,background .2s;display:flex;align-items:center;justify-content:center;gap:9px}
   .btn:active{transform:scale(.985)}
   .btn-pri{background:linear-gradient(180deg,var(--brand),var(--brand-d));color:#fff;box-shadow:0 12px 24px -12px rgba(14,107,92,.75)}
@@ -143,10 +147,14 @@
   .btn-line{background:var(--paper-2);border:1.5px solid var(--line);color:var(--ink)}
   .btn-line:hover{border-color:var(--brand)}
   .btn.sm{padding:13px;font-size:15px;border-radius:14px}
+  .btn:focus-visible,.opt:focus-visible,.chip:focus-visible,.legal-card:focus-visible,.plan:focus-visible,.quick:focus-visible,.site:focus-visible,.appbar .back:focus-visible,.ruler-units button:focus-visible,.pace input[type=range]:focus-visible{
+    outline:3px solid color-mix(in srgb,var(--brand-2) 36%,transparent);
+    outline-offset:3px;
+  }
 
   /* ---------- option cards ---------- */
   .opts{display:flex;flex-direction:column;gap:11px;margin-top:20px}
-  .opt{display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;border:1.5px solid var(--line);
+  .opt{display:flex;align-items:center;gap:14px;min-height:64px;padding:16px;border-radius:16px;border:1.5px solid var(--line);
     background:var(--paper-2);cursor:pointer;text-align:left;font-family:inherit;transition:.15s;color:var(--ink)}
   .opt:hover{border-color:var(--brand);transform:translateY(-1px)}
   .opt.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand-2) 12%,#fff);box-shadow:0 8px 18px -12px rgba(14,107,92,.5)}
@@ -163,7 +171,7 @@
 
   /* chips list (medication/dose) */
   .chips{display:flex;flex-direction:column;gap:9px;margin-top:16px}
-  .chip{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:14px;
+  .chip{display:flex;align-items:center;justify-content:space-between;min-height:50px;padding:14px 16px;border-radius:14px;
     border:1.5px solid var(--line);background:var(--paper-2);cursor:pointer;font-family:inherit;color:var(--ink);transition:.15s}
   .chip:hover{border-color:var(--brand)}
   .chip.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand-2) 12%,#fff)}
@@ -182,7 +190,7 @@
   /* card */
   .card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--r-md);padding:16px}
   .card.soft{background:color-mix(in srgb,var(--brand-2) 8%,#fff);border-color:color-mix(in srgb,var(--brand-2) 22%,var(--line))}
-  .legal-card{display:flex;align-items:center;gap:13px;padding:15px;border-radius:15px;border:1px solid var(--line);background:var(--paper-2);text-decoration:none;color:var(--ink)}
+  .legal-card{width:100%;display:flex;align-items:center;gap:13px;padding:15px;border-radius:15px;border:1px solid var(--line);background:var(--paper-2);text-decoration:none;color:var(--ink);font-family:inherit;text-align:left;cursor:pointer}
   .legal-card:hover{border-color:var(--brand)}
   .legal-card .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--brand-2) 15%,#fff);color:var(--brand)}
   .legal-card b{font-size:14.5px;font-weight:800;display:block}
@@ -192,8 +200,9 @@
   /* trust row */
   .trust{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--ink-soft);margin-top:12px;text-align:center}
   .footlinks{display:flex;justify-content:center;gap:16px;margin-top:14px;font-size:11.5px;color:var(--ink-soft)}
-  .footlinks span{cursor:pointer}
-  .footlinks span:hover{color:var(--brand)}
+  .linkbtn{min-height:36px;border:none;background:transparent;color:inherit;font:inherit;padding:6px 0;cursor:pointer}
+  .linkbtn:hover{color:var(--brand)}
+  .linkbtn:focus-visible{outline:2px solid color-mix(in srgb,var(--brand-2) 40%,transparent);outline-offset:3px}
 
   .badge{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:11.5px;font-weight:800;
     background:color-mix(in srgb,var(--brand-2) 16%,#fff);color:var(--brand-d);border:1px solid color-mix(in srgb,var(--brand-2) 30%,var(--line));letter-spacing:.01em}
@@ -341,7 +350,7 @@
   .estdate b{color:var(--ink)}
 
   /* plans */
-  .plan{border:2px solid var(--line);border-radius:18px;padding:16px;background:var(--paper-2);cursor:pointer;position:relative;margin-top:12px;transition:.15s}
+  .plan{width:100%;border:2px solid var(--line);border-radius:18px;padding:16px;background:var(--paper-2);cursor:pointer;position:relative;margin-top:12px;transition:.15s;text-align:left;font-family:inherit;color:var(--ink)}
   .plan:hover{border-color:var(--brand)}
   .plan.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand-2) 9%,#fff);box-shadow:0 12px 26px -16px rgba(14,107,92,.55)}
   .plan .ptop{display:flex;align-items:center;justify-content:space-between}
@@ -363,7 +372,7 @@
   .dash-hero .v{font-size:25px;font-weight:800;letter-spacing:-.03em;margin-top:6px;max-width:230px}
   .dash-hero .m{font-size:13px;line-height:1.4;margin-top:8px;opacity:.82;max-width:240px}
   .quickgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-  .quick{border:1px solid var(--line);background:var(--paper-2);border-radius:16px;padding:14px;text-align:left;color:var(--ink);font-family:inherit;cursor:pointer}
+  .quick{min-height:94px;border:1px solid var(--line);background:var(--paper-2);border-radius:16px;padding:14px;text-align:left;color:var(--ink);font-family:inherit;cursor:pointer}
   .quick:hover{border-color:var(--brand)}
   .quick .qi{font-size:20px;display:block}
   .quick b{display:block;font-size:13.5px;font-weight:800;margin-top:8px}
@@ -374,7 +383,7 @@
   .dayitem b{font-size:13.5px;font-weight:800;display:block}
   .dayitem span{font-size:12px;color:var(--ink-soft);display:block;margin-top:2px;line-height:1.35}
   .sitegrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:16px}
-  .site{border:1.5px solid var(--line);background:var(--paper-2);border-radius:15px;padding:12px 8px;text-align:center;font-family:inherit;color:var(--ink);cursor:pointer}
+  .site{min-height:74px;border:1.5px solid var(--line);background:var(--paper-2);border-radius:15px;padding:12px 8px;text-align:center;font-family:inherit;color:var(--ink);cursor:pointer}
   .site:hover{border-color:var(--brand)}
   .site.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand-2) 12%,#fff)}
   .site .si{font-size:20px;display:block}
@@ -397,7 +406,7 @@
   /* ---------- bottom controls ---------- */
   .controls{display:flex;align-items:center;gap:14px;background:var(--page-panel);border:1px solid var(--page-line);
     border-radius:999px;padding:8px 10px;box-shadow:0 12px 30px -18px rgba(0,0,0,.5)}
-  .ctl{width:42px;height:42px;border-radius:50%;border:1px solid var(--page-line);background:transparent;color:var(--page-fg);
+  .ctl{width:44px;height:44px;border-radius:50%;border:1px solid var(--page-line);background:transparent;color:var(--page-fg);
     display:grid;place-items:center;cursor:pointer;font-family:inherit}
   .ctl:hover{border-color:var(--page-accent);color:var(--page-accent)}
   .ctl:disabled{opacity:.35;cursor:default}
@@ -418,7 +427,7 @@
   .thumb .tn{font-size:11px;font-weight:800;color:var(--page-accent);font-variant-numeric:tabular-nums}
   .thumb .tt{font-size:12.5px;font-weight:700;margin-top:5px;line-height:1.25}
   .thumb.cur{outline:2px solid var(--page-accent)}
-  .gclose{position:fixed;top:20px;right:22px;width:40px;height:40px;border-radius:50%;border:1px solid var(--page-line);
+  .gclose{position:fixed;top:20px;right:22px;width:44px;height:44px;border-radius:50%;border:1px solid var(--page-line);
     background:var(--page-panel);color:var(--page-fg);font-size:18px;cursor:pointer}
 
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
@@ -463,7 +472,7 @@
 </div>
 
 <div class="grid-ov" id="gridOv">
-  <button class="gclose" id="gclose">×</button>
+  <button class="gclose" id="gclose" aria-label="Fechar visão geral">×</button>
   <div class="grid-inner">
     <h3>Fluxo completo — Onboarding Canetta</h3>
     <p>Toque em qualquer tela para saltar até ela.</p>
@@ -562,7 +571,7 @@
 
   function opt(key,val,label,desc,icon){
     var on = state[key]===val ? " on":"";
-    return '<button class="opt'+on+'" data-set="'+key+'" data-val="'+esc(val)+'" data-adv="1">'+
+    return '<button class="opt'+on+'" data-set="'+key+'" data-val="'+esc(val)+'" data-adv="1" aria-pressed="'+(on?"true":"false")+'">'+
       (icon?'<span class="ico">'+icon+'</span>':'')+
       '<span class="tx"><b>'+label+'</b>'+(desc?'<span>'+desc+'</span>':'')+'</span>'+
       '<span class="chk"></span></button>';
@@ -623,12 +632,12 @@
       '<h2 class="title">Sua privacidade vem em primeiro lugar</h2>'+
       '<p class="sub">Seus dados de saúde ficam privados e sob seu controle.</p>'+
       '<div class="opts" style="margin-top:20px">'+
-        '<a class="legal-card"><span class="ic">📄</span><div><b>Termos de Uso</b><span>Como o Canetta funciona</span></div><span class="arr">›</span></a>'+
-        '<a class="legal-card"><span class="ic">🔒</span><div><b>Política de Privacidade</b><span>Como cuidamos dos seus dados</span></div><span class="arr">›</span></a>'+
+        '<button class="legal-card" type="button"><span class="ic">📄</span><div><b>Termos de Uso</b><span>Como o Canetta funciona</span></div><span class="arr">›</span></button>'+
+        '<button class="legal-card" type="button"><span class="ic">🔒</span><div><b>Política de Privacidade</b><span>Como cuidamos dos seus dados</span></div><span class="arr">›</span></button>'+
       '</div>'+
       '<div class="card" style="margin-top:12px;display:flex;gap:11px;align-items:flex-start"><span style="font-size:18px">🩺</span><span style="font-size:12.5px;color:var(--ink-soft)">O Canetta organiza sua jornada e <b style="color:var(--ink)">não substitui profissionais de saúde</b> — não diagnostica nem prescreve.</span></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Aceitar e Continuar</button>'+
-        '<div class="footlinks"><span>Termos</span><span>Privacidade</span></div>'};
+        '<div class="footlinks"><button class="linkbtn" type="button">Termos</button><button class="linkbtn" type="button">Privacidade</button></div>'};
   }});
 
   // 05 Nome (step 1)
@@ -661,7 +670,7 @@
     var meds=["Zepbound","Mounjaro","Ozempic","Wegovy","Trulicity","Saxenda","Victoza","Rybelsus","Outro"];
     var c=meds.map(function(m){
       var on=state.medication===m?" on":"";
-      return '<button class="chip'+on+'" data-set="medication" data-val="'+m+'" data-adv="1"><b>'+m+'</b><span class="dot"></span></button>';
+      return '<button class="chip'+on+'" data-set="medication" data-val="'+m+'" data-adv="1" aria-pressed="'+(on?"true":"false")+'"><b>'+m+'</b><span class="dot"></span></button>';
     }).join("");
     return {body:'<span class="eyebrow">Medicamento</span>'+
       '<h2 class="title">'+Nm()+', '+(isStarting()?'qual medicamento seu médico mencionou?':'qual medicamento GLP-1 você usa?')+'</h2>'+
@@ -690,7 +699,7 @@
     if(isStarting()){ list=list.concat(["Ainda não sei"]); }
     var c=list.map(function(d){
       var on=state.dose===d?" on":"";
-      return '<button class="chip'+on+'" data-set="dose" data-val="'+d+'" data-adv="1"><b>'+d+'</b><span class="dot"></span></button>';
+      return '<button class="chip'+on+'" data-set="dose" data-val="'+d+'" data-adv="1" aria-pressed="'+(on?"true":"false")+'"><b>'+d+'</b><span class="dot"></span></button>';
     }).join("");
     return {body:'<span class="eyebrow">'+(state.medication||"GLP-1")+'</span>'+
       '<h2 class="title">'+Nm()+', '+(isStarting()?'qual dose foi conversada até agora?':'qual é sua dose atual?')+'</h2>'+
@@ -762,7 +771,7 @@
       '<div class="pace">'+
         '<input type="range" min="1" max="3" step="1" value="'+state.ritmo+'" id="paceRange">'+
         '<div class="labels"><b id="pl1">Suave</b><b id="pl2">Equilibrado</b><b id="pl3">Acelerado</b></div>'+
-        '<div class="micro">💚 <span>Ritmos mais rápidos pedem acompanhamento mais próximo — a gente cuida disso.</span></div>'+
+        '<div class="micro">💚 <span>Ritmos mais rápidos podem pedir acompanhamento mais próximo. O Canetta organiza seus registros para a conversa com profissionais de saúde.</span></div>'+
       '</div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>',
       init:function(){ initPace(); }};
@@ -802,7 +811,7 @@
         '<div style="font-size:12px;font-weight:800;color:var(--ink-soft);letter-spacing:.04em">INTENSIDADE DOS SINTOMAS · 0–10</div>'+
         sym("Náusea",3)+sym("Apetite",6)+sym("Energia",7)+sym("Digestão",4)+
       '</div>'+
-      '<div class="legal-card" style="margin-top:14px"><span class="ic">📋</span><div><b>Resumo para a consulta</b><span>Peso, doses, sintomas e fotos — organizados a partir dos seus registros</span></div><span class="arr">›</span></div>'+
+      '<button class="legal-card" type="button" style="margin-top:14px"><span class="ic">📋</span><div><b>Resumo para a consulta</b><span>Peso, doses, sintomas e fotos — organizados a partir dos seus registros</span></div><span class="arr">›</span></button>'+
       '<div class="card" style="margin-top:12px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📖</span><span style="font-size:12.5px;color:var(--ink-soft)">A náusea é um efeito colateral relatado por parte dos usuários de GLP-1. Se for intensa ou persistente, procure seu médico. <b style="color:var(--brand)">Saiba mais →</b></span></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
@@ -833,8 +842,8 @@
           '<div class="rphotos"><i style="background:linear-gradient(160deg,#8DA9E8,#5F7FD6)">Sem 1</i><i style="background:linear-gradient(160deg,#2FC6AC,#0E6B5C)">Sem 2</i><i style="background:linear-gradient(160deg,#FFB08F,#F07F58)">Sem 4</i></div>'+
         '</div>'+
         '<div class="rsec"><div class="rlabel">Perguntas para discutir com seu médico</div>'+
-          '<div class="rq"><span>?</span><span>A náusea nas primeiras 48h é esperada?</span></div>'+
-          '<div class="rq"><span>?</span><span>Faz sentido revermos a frequência de aplicação?</span></div>'+
+          '<div class="rq"><span>?</span><span>Quero comentar a náusea nas primeiras 48h.</span></div>'+
+          '<div class="rq"><span>?</span><span>Quero revisar minhas dúvidas sobre frequência de aplicação.</span></div>'+
         '</div>'+
         '<div class="rfoot">🩺 Leve este resumo para discutir com seu médico.</div>'+
       '</div>',
@@ -867,7 +876,7 @@
           '<div class="rl"><i style="background:var(--data-d)"></i>Hidratação<span>1,8L</span></div>'+
         '</div>'+
       '</div>'+
-      '<div class="legal-card" style="margin-top:14px"><span class="ic">❤️</span><div><b>Integração com Saúde</b><span>Apple Saúde · Google Fit</span></div><span class="arr">›</span></div>',
+      '<button class="legal-card" type="button" style="margin-top:14px"><span class="ic">❤️</span><div><b>Integração com Saúde</b><span>Apple Saúde · Google Fit</span></div><span class="arr">›</span></button>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
 
@@ -938,26 +947,26 @@
   S.push({title:"Paywall", render:function(){
     var a=state.plan==="anual", m=state.plan==="mensal";
     return {body:'<h2 class="title" style="margin-top:6px">'+Nm()+', seu plano está pronto. Vamos começar juntos.</h2>'+
-      '<p class="sub tight">Acompanhar sua jornada até '+state.goal+' kg, com registros e lembretes em cada etapa.</p>'+
+      '<p class="sub tight">Acompanhar seus registros até a meta informada de '+state.goal+' kg, com lembretes e resumo para consulta.</p>'+
       '<div class="benefits">'+
         ben("🔔","Lembretes de dose para nunca mais esquecer")+
         ben("📋","Resumo pronto para levar à sua consulta")+
         ben("📈","Seu progresso em gráficos, fotos e conquistas")+
         ben("🔎","Padrões observados nos seus registros — sem diagnóstico")+
       '</div>'+
-      '<div class="plan'+(a?" on":"")+'" data-set="plan" data-val="anual">'+
+      '<button class="plan'+(a?" on":"")+'" type="button" data-set="plan" data-val="anual" aria-pressed="'+(a?"true":"false")+'">'+
         '<div class="ribbon"><span class="badge gold">★ Melhor valor</span></div>'+
         '<div class="ptop"><div><b>Anual</b></div><span class="radio"></span></div>'+
         '<div class="price"><strong>3 dias grátis</strong>, depois R$ 149,90/ano</div>'+
         '<div class="price" style="margin-top:2px">equivale a <strong>R$ 12,49/mês</strong></div>'+
-      '</div>'+
-      '<div class="plan'+(m?" on":"")+'" data-set="plan" data-val="mensal">'+
+      '</button>'+
+      '<button class="plan'+(m?" on":"")+'" type="button" data-set="plan" data-val="mensal" aria-pressed="'+(m?"true":"false")+'">'+
         '<div class="ptop"><div><b>Mensal</b></div><span class="radio"></span></div>'+
         '<div class="price"><strong>R$ 29,90/mês</strong></div>'+
-      '</div>',
+      '</button>',
       cta:'<button class="btn btn-accent" data-adv="1">Começar meus 3 dias grátis</button>'+
         '<div class="trust">🔒 Cancele quando quiser · Sem cobrança nos 3 primeiros dias</div>'+
-        '<div class="footlinks"><span>Termos</span><span>Políticas</span><span>Restaurar compra</span></div>'};
+        '<div class="footlinks"><button class="linkbtn" type="button">Termos</button><button class="linkbtn" type="button">Políticas</button><button class="linkbtn" type="button">Restaurar compra</button></div>'};
   }});
   function ben(ic,t){ return '<div class="benefit"><span class="bc">'+ic+'</span><span>'+t+'</span></div>'; }
 
@@ -1000,7 +1009,8 @@
         '<button class="btn btn-ghost" id="openReportCta">Ver resumo de exemplo</button>',
       init:function(){
         bindGo("recordDose",29); bindGo("recordDoseCta",29);
-        bindGo("openReportCta",18);
+        bindGo("symptomSoon",17); bindGo("weightSoon",10);
+        bindGo("reportSoon",18); bindGo("openReportCta",18);
       }};
   }});
   function quick(ic,t,d,id){ return '<button class="quick" id="'+id+'"><span class="qi">'+ic+'</span><b>'+t+'</b><span>'+d+'</span></button>'; }
@@ -1031,7 +1041,7 @@
   }});
   function site(val,label,ic){
     var on=state.doseLocal===val?" on":"";
-    return '<button class="site'+on+'" data-set="doseLocal" data-val="'+val+'"><span class="si">'+ic+'</span><b>'+label+'</b></button>';
+    return '<button class="site'+on+'" data-set="doseLocal" data-val="'+val+'" aria-pressed="'+(on?"true":"false")+'"><span class="si">'+ic+'</span><b>'+label+'</b></button>';
   }
 
   // 31 Registro salvo
@@ -1100,7 +1110,7 @@
       '<div class="ruler-value"><span class="rv-num">'+val+'</span><span class="rv-unit">'+unit+'</span></div>'+
       '<div class="ruler-track"><div class="ruler-strip"></div></div>'+
       '<div class="ruler-needle"></div>'+
-      '<div class="ruler-units"><button data-u="'+unit+'" class="on">'+unit+'</button><button data-u="'+alt+'">'+alt+'</button></div>'+
+      '<div class="ruler-units"><button data-u="'+unit+'" class="on" aria-pressed="true">'+unit+'</button><button data-u="'+alt+'" aria-pressed="false">'+alt+'</button></div>'+
       '</div>';
   }
   var GAP=14;
@@ -1130,8 +1140,8 @@
     track.addEventListener("scroll",refresh,{passive:true});
     root.querySelectorAll(".ruler-units button").forEach(function(b){
       b.addEventListener("click",function(){
-        root.querySelectorAll(".ruler-units button").forEach(function(x){x.classList.remove("on");});
-        b.classList.add("on"); curUnit=b.dataset.u; refresh();
+        root.querySelectorAll(".ruler-units button").forEach(function(x){x.classList.remove("on"); x.setAttribute("aria-pressed","false");});
+        b.classList.add("on"); b.setAttribute("aria-pressed","true"); curUnit=b.dataset.u; refresh();
       });
     });
     refresh();
@@ -1215,8 +1225,9 @@
       el.addEventListener("click",function(){
         var k=el.dataset.set, v=el.dataset.val;
         state[k]=v;
-        body.querySelectorAll('[data-set="'+k+'"]').forEach(function(g){ g.classList.remove("on"); });
+        body.querySelectorAll('[data-set="'+k+'"]').forEach(function(g){ g.classList.remove("on"); g.setAttribute("aria-pressed","false"); });
         el.classList.add("on");
+        el.setAttribute("aria-pressed","true");
         if(el.hasAttribute("data-adv")){ setTimeout(next,230); }
       });
     });
