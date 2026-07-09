@@ -21,15 +21,15 @@ emagrecimento".
 
 ## 2. Status atual
 
-- **Entregue:** protótipo mobile navegável de **31 telas** (28 de onboarding +
-  3 pós-onboarding), em pt-BR, como
+- **Entregue:** protótipo mobile navegável de **38 telas** (28 de onboarding +
+  10 pós-compra/pós-onboarding), em pt-BR, como
   **arquivo único** `canetta-onboarding.html` (HTML+CSS+JS inline, SVG do mascote
   inline, zero dependências, zero build). Abre direto no navegador e também é
   publicável como Artifact.
 - **Não feito ainda:** implementação em app real (o repositório é um projeto
   Expo/React Native, mas o Canetta ainda não tem código de app), backend,
-  autenticação, persistência, conteúdo educativo real com fontes e telas
-  pós-onboarding completas.
+  autenticação, persistência real, notificações reais e conteúdo educativo real
+  com fontes.
 
 ## 3. Limites regulatórios — OBRIGATÓRIO
 
@@ -53,11 +53,12 @@ clínica**. Qualquer copy ou feature nova precisa respeitar isto:
 Boundary explícito já presente no app (tela 04 e 23): *"O Canetta organiza sua
 jornada e não substitui profissionais de saúde — não diagnostica nem prescreve."*
 
-## 4. As 28 telas
+## 4. As 38 telas
 
 Ordem estratégica do onboarding (não reordenar sem motivo forte — perguntas são
 intercaladas com telas de valor de propósito). Barra de progresso só nas **12
-telas de coleta**. As telas 29–31 são o primeiro rascunho pós-onboarding.
+telas de coleta**. As telas 29–38 cobrem o primeiro fluxo pós-compra:
+lembretes, home, aplicação, sintomas, peso, consulta e linha do tempo.
 
 | # | Tela | Coleta? |
 |---|------|:---:|
@@ -89,9 +90,16 @@ telas de coleta**. As telas 29–31 são o primeiro rascunho pós-onboarding.
 | 26 | Compromisso | |
 | 27 | Paywall (anual/mensal) | |
 | 28 | Pós-compra / retenção | |
-| 29 | Home da jornada | |
-| 30 | Registro de aplicação | |
-| 31 | Registro salvo | |
+| 29 | Lembretes | |
+| 30 | Home da jornada | |
+| 31 | Registro de aplicação | |
+| 32 | Registro salvo | |
+| 33 | Registro de sintomas | |
+| 34 | Sintomas salvos | |
+| 35 | Registro de peso | |
+| 36 | Peso salvo | |
+| 37 | Resumo de consulta | |
+| 38 | Linha do tempo | |
 
 ## 5. Design system
 
@@ -115,7 +123,9 @@ Tudo em `canetta-onboarding.html`. O arquivo **não** tem `<!doctype>/<html>/<he
 <body>` (para ser compatível com Artifact) — começa em `<meta>/<title>/<style>`.
 
 - **`state`** (objeto JS): `name, stage, medication, dose, freq, weight, height,
-  goal, ritmo, difficulty, mascot, plan`. Placeholders se propagam entre telas.
+  goal, ritmo, difficulty, mascot, plan, doseLocal, doseNote, reminderDay,
+  reminderTime, symptomFocus, symptomNote, newWeight`. Placeholders se propagam
+  entre telas.
 - **Helpers de texto:** `nm()/Nm()` (nome), `med()`, `mascotN()`, `difLabel()`,
   `diffKg()`, `estDate()` (data estimada a partir do ritmo).
 - **`DOSES`**: mapa medicamento → lista de doses (usado na tela 09).
@@ -148,9 +158,10 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
   como "não é uma promessa clínica". Não é cálculo clínico.
 - **Conteúdo educativo:** o texto sobre náusea (tela 18) e o selo "Conteúdo com
   fontes" (tela 25) ainda precisam de fontes reais linkadas.
-- **Pós-onboarding (telas 29–31):** home, registro de aplicação e confirmação são
-  mockados. O local de aplicação é tratado como dado registrado pelo usuário, não
-  como recomendação clínica.
+- **Pós-onboarding (telas 29–38):** lembrete, home, aplicação, sintomas, peso,
+  resumo e linha do tempo são mockados no `state` local. Horário, dose, local,
+  peso e sintomas são tratados como dados registrados pelo usuário, não como
+  recomendação clínica.
 
 ## 8. Próximos passos candidatos (a decidir)
 
@@ -158,8 +169,8 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
 - Estados vazios e microinterações adicionais.
 - Fontes reais para o conteúdo educativo e para o selo "Conteúdo com fontes".
 - Decisão de preços e trial do paywall.
-- Expandir o pós-onboarding: anotar sintomas, peso, calendário e resumo de consulta
-  com dados reais persistidos.
+- Conectar o pós-onboarding a persistência real, notificações reais, calendário e
+  exportação/compartilhamento de resumo quando a implementação Expo/RN começar.
 
 **Ramificação "Quero começar" (pré-tratamento):**
 - Já existe um desenho inicial no mesmo fluxo: medicamento, dose, frequência e

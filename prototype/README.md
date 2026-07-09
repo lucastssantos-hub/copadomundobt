@@ -18,11 +18,11 @@ build, servidor ou conexão.
 - Toque nas opções, digite o nome, arraste a régua e o slider — o estado se
   propaga entre as telas (nome, mascote, medicamento, peso, meta, data estimada).
 
-## Fluxo (31 telas)
+## Fluxo (38 telas)
 
-As telas 01–28 continuam sendo o onboarding/paywall. As telas 29–31 são o primeiro
-rascunho pós-onboarding da aplicação: home da jornada, registro de aplicação e
-confirmação do registro.
+As telas 01–28 continuam sendo o onboarding/paywall. As telas 29–38 completam o
+primeiro fluxo pós-compra da aplicação: lembretes, home, aplicação, sintomas,
+peso, resumo de consulta e linha do tempo.
 
 | # | Tela | # | Tela |
 |---|------|---|------|
@@ -38,10 +38,16 @@ confirmação do registro.
 | 10 | Frequência | 26 | Compromisso |
 | 11 | Peso atual (régua) | 27 | Paywall |
 | 12 | Altura (régua) | 28 | Pós-compra / retenção |
-| 13 | Meta de peso (cálculo dinâmico) | 29 | Home da jornada |
-| 14 | Evolução prevista (gráfico) | 30 | Registro de aplicação |
-| 15 | Ritmo desejado (slider) | 31 | Registro salvo |
-| 16 | Maior dificuldade | | |
+| 13 | Meta de peso (cálculo dinâmico) | 29 | Lembretes |
+| 14 | Evolução prevista (gráfico) | 30 | Home da jornada |
+| 15 | Ritmo desejado (slider) | 31 | Registro de aplicação |
+| 16 | Maior dificuldade | 32 | Registro salvo |
+|  |  | 33 | Registro de sintomas |
+|  |  | 34 | Sintomas salvos |
+|  |  | 35 | Registro de peso |
+|  |  | 36 | Peso salvo |
+|  |  | 37 | Resumo de consulta |
+|  |  | 38 | Linha do tempo |
 
 A barra de progresso aparece apenas nas 12 telas de coleta reais (05–07, 09–13,
 15–17, 22).
@@ -97,9 +103,9 @@ Mudanças aplicadas nesta revisão:
   onboarding.
 - **Fluxo "Quero começar":** copy inicial adaptada para pré-tratamento nas telas de
   medicamento, dose, frequência e registro, com a opção "Ainda não sei" na dose.
-- **Pós-onboarding:** adicionadas home da jornada, registro de aplicação e
-  confirmação do registro. O fluxo usa local de aplicação como dado registrado,
-  sem recomendar dose, horário ou conduta.
+- **Pós-onboarding:** expandidas telas de lembretes, home, aplicação, sintomas,
+  peso, resumo de consulta e linha do tempo. O fluxo usa dose, horário, local,
+  peso e sintomas como dados registrados pelo usuário, sem recomendar conduta.
 
 ## Design system
 
@@ -109,7 +115,8 @@ Mudanças aplicadas nesta revisão:
 - **Tipografia:** stack de sistema (iOS/Android nativo), com escala e numerais
   tabulares para todos os dados (kg, datas, preços).
 - **Componentes:** cards de opção, chips, régua com rolagem, slider, barra de
-  progresso, gráfico SVG, anéis de atividade, timeline de dose, paywall.
+  progresso, gráfico SVG, anéis de atividade, timeline de dose, paywall, cards
+  rápidos, slots de lembrete, métricas e linha do tempo.
 
 ## Placeholders conhecidos
 
@@ -119,5 +126,5 @@ Mudanças aplicadas nesta revisão:
 - A projeção da tela 14 é uma estimativa visual, não uma promessa clínica.
 - O conteúdo educativo da tela 18 e o selo "Conteúdo com fontes" da tela 25 ainda
   precisam de fontes reais linkadas.
-- As telas pós-onboarding ainda são mockadas: não persistem dados, não enviam
-  notificações e não substituem backend/autenticação.
+- As telas pós-onboarding ainda são mockadas: persistem apenas no `state` local do
+  protótipo, não enviam notificações reais e não substituem backend/autenticação.
