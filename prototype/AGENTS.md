@@ -21,14 +21,15 @@ emagrecimento".
 
 ## 2. Status atual
 
-- **Entregue:** protótipo mobile navegável de **28 telas**, em pt-BR, como
+- **Entregue:** protótipo mobile navegável de **31 telas** (28 de onboarding +
+  3 pós-onboarding), em pt-BR, como
   **arquivo único** `canetta-onboarding.html` (HTML+CSS+JS inline, SVG do mascote
   inline, zero dependências, zero build). Abre direto no navegador e também é
   publicável como Artifact.
 - **Não feito ainda:** implementação em app real (o repositório é um projeto
   Expo/React Native, mas o Canetta ainda não tem código de app), backend,
-  autenticação, persistência, conteúdo educativo real com fontes, telas pós-onboarding
-  (home, registro de dose, etc.).
+  autenticação, persistência, conteúdo educativo real com fontes e telas
+  pós-onboarding completas.
 
 ## 3. Limites regulatórios — OBRIGATÓRIO
 
@@ -54,8 +55,9 @@ jornada e não substitui profissionais de saúde — não diagnostica nem prescr
 
 ## 4. As 28 telas
 
-Ordem estratégica (não reordenar sem motivo forte — perguntas são intercaladas com
-telas de valor de propósito). Barra de progresso só nas **12 telas de coleta**.
+Ordem estratégica do onboarding (não reordenar sem motivo forte — perguntas são
+intercaladas com telas de valor de propósito). Barra de progresso só nas **12
+telas de coleta**. As telas 29–31 são o primeiro rascunho pós-onboarding.
 
 | # | Tela | Coleta? |
 |---|------|:---:|
@@ -87,6 +89,9 @@ telas de valor de propósito). Barra de progresso só nas **12 telas de coleta**
 | 26 | Compromisso | |
 | 27 | Paywall (anual/mensal) | |
 | 28 | Pós-compra / retenção | |
+| 29 | Home da jornada | |
+| 30 | Registro de aplicação | |
+| 31 | Registro salvo | |
 
 ## 5. Design system
 
@@ -143,6 +148,9 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
   como "não é uma promessa clínica". Não é cálculo clínico.
 - **Conteúdo educativo:** o texto sobre náusea (tela 18) e o selo "Conteúdo com
   fontes" (tela 25) ainda precisam de fontes reais linkadas.
+- **Pós-onboarding (telas 29–31):** home, registro de aplicação e confirmação são
+  mockados. O local de aplicação é tratado como dado registrado pelo usuário, não
+  como recomendação clínica.
 
 ## 8. Próximos passos candidatos (a decidir)
 
@@ -150,6 +158,8 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
 - Estados vazios e microinterações adicionais.
 - Fontes reais para o conteúdo educativo e para o selo "Conteúdo com fontes".
 - Decisão de preços e trial do paywall.
+- Expandir o pós-onboarding: anotar sintomas, peso, calendário e resumo de consulta
+  com dados reais persistidos.
 
 **Ramificação "Quero começar" (pré-tratamento):**
 - Já existe um desenho inicial no mesmo fluxo: medicamento, dose, frequência e

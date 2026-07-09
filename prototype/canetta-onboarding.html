@@ -356,6 +356,32 @@
   .benefit{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.35}
   .benefit .bc{width:26px;height:26px;flex:0 0 auto;border-radius:9px;background:color-mix(in srgb,var(--brand-2) 16%,#fff);color:var(--brand);display:grid;place-items:center}
 
+  /* post-onboarding app */
+  .dash-hero{margin-top:12px;border-radius:20px;padding:18px;background:linear-gradient(160deg,var(--brand),var(--brand-d));color:#fff;position:relative;overflow:hidden}
+  .dash-hero::after{content:"";position:absolute;right:-34px;top:-34px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .dash-hero .k{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.78}
+  .dash-hero .v{font-size:25px;font-weight:800;letter-spacing:-.03em;margin-top:6px;max-width:230px}
+  .dash-hero .m{font-size:13px;line-height:1.4;margin-top:8px;opacity:.82;max-width:240px}
+  .quickgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .quick{border:1px solid var(--line);background:var(--paper-2);border-radius:16px;padding:14px;text-align:left;color:var(--ink);font-family:inherit;cursor:pointer}
+  .quick:hover{border-color:var(--brand)}
+  .quick .qi{font-size:20px;display:block}
+  .quick b{display:block;font-size:13.5px;font-weight:800;margin-top:8px}
+  .quick span{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.3}
+  .daylist{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .dayitem{display:flex;align-items:flex-start;gap:11px;border:1px solid var(--line);background:var(--paper-2);border-radius:15px;padding:13px}
+  .dayitem .di{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--brand-2) 15%,#fff);color:var(--brand);flex:0 0 auto}
+  .dayitem b{font-size:13.5px;font-weight:800;display:block}
+  .dayitem span{font-size:12px;color:var(--ink-soft);display:block;margin-top:2px;line-height:1.35}
+  .sitegrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:16px}
+  .site{border:1.5px solid var(--line);background:var(--paper-2);border-radius:15px;padding:12px 8px;text-align:center;font-family:inherit;color:var(--ink);cursor:pointer}
+  .site:hover{border-color:var(--brand)}
+  .site.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand-2) 12%,#fff)}
+  .site .si{font-size:20px;display:block}
+  .site b{display:block;font-size:12.5px;font-weight:800;margin-top:6px}
+  textarea.note{width:100%;min-height:86px;margin-top:9px;padding:14px;border-radius:15px;border:1.5px solid var(--line);background:var(--paper-2);font-family:inherit;color:var(--ink);font-size:14px;resize:none}
+  textarea.note:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand-2) 22%,transparent)}
+
   /* splash */
   .splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;
     background:radial-gradient(120% 80% at 50% 25%,color-mix(in srgb,var(--brand-2) 16%,var(--paper)),var(--paper))}
@@ -403,7 +429,7 @@
   <span class="brandmark"><span class="pen"><b></b></span> Canetta</span>
   <div>
     <h1 style="display:none">Canetta</h1>
-    <p>Protótipo de onboarding · GLP-1 · pt-BR · 28 telas</p>
+    <p>Protótipo Canetta · GLP-1 · pt-BR · 31 telas</p>
   </div>
   <span class="sep"></span>
   <button class="theme-tog" id="gridBtn">▦ Ver todas as telas</button>
@@ -431,7 +457,7 @@
 
   <div class="controls">
     <button class="ctl" id="prevBtn" aria-label="Anterior">‹</button>
-    <div class="counter"><span class="cn" id="cur">01</span> / <span id="tot">28</span><span class="lbl" id="scrTitle">Splash</span></div>
+    <div class="counter"><span class="cn" id="cur">01</span> / <span id="tot">31</span><span class="lbl" id="scrTitle">Splash</span></div>
     <button class="ctl" id="nextBtn" aria-label="Próxima">›</button>
   </div>
 </div>
@@ -453,7 +479,8 @@
   var state = {
     name:"", stage:"", medication:"", dose:"", freq:"",
     weight:92, height:170, goal:75, unitW:"kg", unitH:"cm",
-    ritmo:2, difficulty:"", mascot:"Canetta", plan:"anual"
+    ritmo:2, difficulty:"", mascot:"Canetta", plan:"anual",
+    doseLocal:"abdomen", doseNote:""
   };
 
   function nm(){ return state.name || "você"; }
@@ -471,6 +498,7 @@
     return M[d.getMonth()]+" de "+d.getFullYear();
   }
   function priceAnual(){ return "R$ 149,90"; }
+  function localLabel(){ var m={abdomen:"Abdômen",coxa:"Coxa",braco:"Braço"}; return m[state.doseLocal]||"Abdômen"; }
 
   /* medication -> doses */
   var DOSES = {
@@ -946,6 +974,83 @@
       '</div>',
       cta:'<button class="btn btn-pri" data-adv="1">Ativar notificações</button>'+
         '<button class="btn btn-ghost" data-adv="1">Começar minha jornada</button>'};
+  }});
+
+  // 29 Home pós-onboarding
+  S.push({title:"Home da jornada", render:function(){
+    return {body:'<span class="eyebrow">Hoje</span>'+
+      '<h2 class="title sm">'+Nm()+', sua jornada está organizada.</h2>'+
+      '<div class="dash-hero">'+
+        '<div class="k">Próxima ação</div>'+
+        '<div class="v">Registrar sua aplicação quando ela acontecer.</div>'+
+        '<div class="m">O Canetta guarda data, dose, local e observações para o seu histórico.</div>'+
+      '</div>'+
+      '<div class="quickgrid">'+
+        quick("💉","Aplicação","Registrar data e local","recordDose")+
+        quick("🩺","Sintomas","Anotar como foi o dia","symptomSoon")+
+        quick("⚖️","Peso","Adicionar registro","weightSoon")+
+        quick("📋","Consulta","Gerar resumo","reportSoon")+
+      '</div>'+
+      '<div class="daylist">'+
+        day("🔔","Lembrete de dose","Qui, 20h · configurável no app")+
+        day("📈","Progresso","Peso, sintomas e fotos ficam em uma linha do tempo")+
+        day("🔎","Padrões observados","O app descreve registros; não diagnostica nem recomenda")+
+      '</div>',
+      cta:'<button class="btn btn-pri" id="recordDoseCta">Registrar aplicação</button>'+
+        '<button class="btn btn-ghost" id="openReportCta">Ver resumo de exemplo</button>',
+      init:function(){
+        bindGo("recordDose",29); bindGo("recordDoseCta",29);
+        bindGo("openReportCta",18);
+      }};
+  }});
+  function quick(ic,t,d,id){ return '<button class="quick" id="'+id+'"><span class="qi">'+ic+'</span><b>'+t+'</b><span>'+d+'</span></button>'; }
+  function day(ic,t,d){ return '<div class="dayitem"><span class="di">'+ic+'</span><div><b>'+t+'</b><span>'+d+'</span></div></div>'; }
+  function bindGo(id,i){ var e=document.getElementById(id); if(e) e.addEventListener("click",function(){ goTo(i); }); }
+
+  // 30 Registro de aplicação
+  S.push({title:"Registro de aplicação", render:function(){
+    return {body:'<span class="eyebrow">Registro</span>'+
+      '<h2 class="title sm">Como foi sua aplicação?</h2>'+
+      '<p class="sub tight">Registre exatamente o que aconteceu. Estes dados entram no seu histórico e no resumo da consulta.</p>'+
+      '<div class="card soft" style="margin-top:16px">'+
+        '<div style="font-size:12px;font-weight:800;color:var(--ink-soft);letter-spacing:.04em">MEDICAÇÃO</div>'+
+        '<div class="rrow"><span class="rk">'+med()+'</span><span class="rv">'+(state.dose||"Dose não informada")+'</span></div>'+
+      '</div>'+
+      '<div class="field"><label>Local registrado</label>'+
+        '<div class="sitegrid">'+site("abdomen","Abdômen","◌")+site("coxa","Coxa","◍")+site("braco","Braço","◎")+'</div>'+
+      '</div>'+
+      '<div class="field"><label>Observação opcional</label>'+
+        '<textarea class="note" id="doseNote" placeholder="Ex.: apliquei no horário combinado, sem observações." autocomplete="off">'+esc(state.doseNote)+'</textarea>'+
+      '</div>'+
+      '<div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🩺</span><span style="font-size:12.5px;color:var(--ink-soft)">O Canetta registra sua rotina. Dúvidas sobre dose, horário ou reação devem ser discutidas com um profissional de saúde.</span></div>',
+      cta:'<button class="btn btn-pri" data-adv="1">Salvar registro</button>',
+      init:function(){
+        var n=document.getElementById("doseNote");
+        if(n) n.addEventListener("input",function(){ state.doseNote=n.value.trim(); });
+      }};
+  }});
+  function site(val,label,ic){
+    var on=state.doseLocal===val?" on":"";
+    return '<button class="site'+on+'" data-set="doseLocal" data-val="'+val+'"><span class="si">'+ic+'</span><b>'+label+'</b></button>';
+  }
+
+  // 31 Registro salvo
+  S.push({title:"Registro salvo", render:function(){
+    return {body:'<div class="mascot-wrap" style="margin:12px 0 4px">'+mascot("checkin",118)+'</div>'+
+      '<span class="eyebrow" style="text-align:center;display:block">Registro salvo</span>'+
+      '<h2 class="title sm" style="text-align:center">Aplicação registrada na sua linha do tempo.</h2>'+
+      '<div class="report">'+
+        '<div class="rhead"><span class="ri">✓</span><div><b>'+med()+'</b><span>Hoje · '+localLabel()+'</span></div></div>'+
+        '<div class="rsec"><div class="rlabel">Dose</div><div class="rrow"><span class="rk">Registrada</span><span class="rv">'+(state.dose||"—")+'</span></div></div>'+
+        '<div class="rsec"><div class="rlabel">Observação</div><div class="rq"><span>•</span><span>'+(state.doseNote||"Sem observações adicionadas.")+'</span></div></div>'+
+        '<div class="rfoot">📋 Este registro aparecerá no resumo para consulta.</div>'+
+      '</div>'+
+      '<div class="daylist">'+
+        day("🔔","Próximo lembrete","Você pode editar lembretes depois")+
+        day("🩺","Se algo incomodar","Registre o sintoma e procure seu médico se for intenso ou persistente")+
+      '</div>',
+      cta:'<button class="btn btn-pri" id="backHome">Voltar para a home</button>',
+      init:function(){ bindGo("backHome",28); }};
   }});
   function confetti(){
     var cols=["#22B39A","#FF9E7D","#8DA9E8","#0E6B5C","#FFD79B"], out='<div class="confetti">';
