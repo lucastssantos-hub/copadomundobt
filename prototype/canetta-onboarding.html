@@ -1,4 +1,5 @@
 <!-- Canetta — Onboarding GLP-1 · Protótipo mobile navegável (self-contained) -->
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Canetta · Protótipo de Onboarding</title>
 <style>
@@ -459,6 +460,7 @@
   function Nm(){ return state.name || "Você"; }
   function med(){ return state.medication || "seu GLP-1"; }
   function mascotN(){ return state.mascot || "Canetta"; }
+  function isStarting(){ return state.stage==="comecar"; }
   function difLabel(){ var m={alimentacao:"a alimentação",atividade:"a atividade física",doses:"o registro de doses",progresso:"acompanhar o progresso",efeitos:"os efeitos colaterais"}; return m[state.difficulty]||"a alimentação"; }
   function diffKg(){ return Math.max(0, state.weight - state.goal); }
   function estDate(){
@@ -634,15 +636,16 @@
       return '<button class="chip'+on+'" data-set="medication" data-val="'+m+'" data-adv="1"><b>'+m+'</b><span class="dot"></span></button>';
     }).join("");
     return {body:'<span class="eyebrow">Medicamento</span>'+
-      '<h2 class="title">'+Nm()+', qual medicamento GLP-1 você usa?</h2>'+
+      '<h2 class="title">'+Nm()+', '+(isStarting()?'qual medicamento seu médico mencionou?':'qual medicamento GLP-1 você usa?')+'</h2>'+
+      (isStarting()?'<p class="sub tight">Se ainda não tiver definido, escolha "Outro" por enquanto. O Canetta só organiza suas anotações para a conversa com profissionais de saúde.</p>':'')+
       '<div class="chips">'+c+'</div>'};
   }});
 
   // 08 Valor dose (interstitial)
   S.push({title:"Valor · Registro", render:function(){
     return {body:'<span class="eyebrow">Por que registrar</span>'+
-      '<h2 class="title">Cada dose registrada é uma dúvida a menos.</h2>'+
-      '<p class="sub">Registrar suas aplicações ajuda você a entender sua rotina e evitar esquecimentos.</p>'+
+      '<h2 class="title">'+(isStarting()?'Chegue ao início com tudo organizado.':'Cada dose registrada é uma dúvida a menos.')+'</h2>'+
+      '<p class="sub">'+(isStarting()?'Guarde dúvidas, datas combinadas e orientações recebidas para levar ao seu profissional de saúde.':'Registrar suas aplicações ajuda você a entender sua rotina e evitar esquecimentos.')+'</p>'+
       '<div class="medlevel">'+
         '<div class="vial"><span class="cap"></span><span class="fill" id="vf1" style="height:35%"></span></div>'+
         '<div class="vial"><span class="cap"></span><span class="fill" id="vf2" style="height:58%"></span></div>'+
@@ -656,26 +659,28 @@
   // 09 Dose (4)
   S.push({title:"Dose", step:4, render:function(){
     var list=(DOSES[state.medication]||DOSES["Outro"]);
+    if(isStarting()){ list=list.concat(["Ainda não sei"]); }
     var c=list.map(function(d){
       var on=state.dose===d?" on":"";
       return '<button class="chip'+on+'" data-set="dose" data-val="'+d+'" data-adv="1"><b>'+d+'</b><span class="dot"></span></button>';
     }).join("");
     return {body:'<span class="eyebrow">'+(state.medication||"GLP-1")+'</span>'+
-      '<h2 class="title">'+Nm()+', qual é sua dose atual?</h2>'+
-      '<p class="sub tight">Filtramos as doses de acordo com o seu medicamento.</p>'+
+      '<h2 class="title">'+Nm()+', '+(isStarting()?'qual dose foi conversada até agora?':'qual é sua dose atual?')+'</h2>'+
+      '<p class="sub tight">'+(isStarting()?'Pode marcar "Ainda não sei". Isso não substitui orientação médica; é só para organizar seu plano de conversa.':'Filtramos as doses de acordo com o seu medicamento.')+'</p>'+
       '<div class="chips">'+c+'</div>'};
   }});
 
   // 10 Frequência (5)
   S.push({title:"Frequência", step:5, render:function(){
     return {body:'<span class="eyebrow">Rotina</span>'+
-      '<h2 class="title">Com que frequência você aplica?</h2>'+
+      '<h2 class="title">'+(isStarting()?'Qual frequência foi combinada ou mencionada?':'Com que frequência você aplica?')+'</h2>'+
+      (isStarting()?'<p class="sub tight">Se isso ainda não foi definido, escolha "Ainda não sei" e leve a dúvida para a consulta.</p>':'')+
       '<div class="opts">'+
         opt("freq","diaria","Diária","","📅")+
         opt("freq","semanal","Semanal","","🗓️")+
         opt("freq","quinzenal","Quinzenal","","📆")+
         opt("freq","mensal","Mensal","","🈷️")+
-        opt("freq","naosei","Ainda não sei","Ajustamos isso com você depois","🤔")+
+        opt("freq","naosei","Ainda não sei","Você pode completar depois","🤔")+
       '</div>'};
   }});
 
@@ -753,7 +758,7 @@
   S.push({title:"Nascimento", step:11, render:function(){
     return {body:'<span class="eyebrow">Quase lá</span>'+
       '<h2 class="title sm">Por último, sua data de nascimento</h2>'+
-      '<p class="sub tight">Para calcular suas metas com precisão.</p>'+
+      '<p class="sub tight">Para personalizar sua experiência no app.</p>'+
       '<div class="field"><label>Data de nascimento</label>'+
       '<input id="dobInput" type="date" value="1990-05-12"></div>'+
       '<div class="card" style="margin-top:16px;display:flex;gap:10px;align-items:center"><span style="font-size:20px">🔒</span>'+
@@ -781,8 +786,9 @@
     return {body:'<span class="eyebrow">Copiloto da consulta</span>'+
       '<h2 class="title sm">Seu resumo, pronto antes de cada consulta.</h2>'+
       '<p class="sub tight">Tudo o que você registrou, organizado num só lugar — sem interpretações, só os fatos.</p>'+
+      '<div style="margin-top:14px"><span class="badge">Exemplo · seus dados aparecem aqui</span></div>'+
       '<div class="report">'+
-        '<div class="rhead"><span class="ri">📋</span><div><b>Resumo · '+med()+'</b><span>Últimas 4 semanas · para '+nm()+'</span></div></div>'+
+        '<div class="rhead"><span class="ri">📋</span><div><b>Resumo de exemplo · '+med()+'</b><span>Preview ilustrativo · para '+nm()+'</span></div></div>'+
         '<div class="rsec"><div class="rlabel">Peso</div>'+
           '<div class="rrow"><span class="rk">Inicial</span><span class="rv">'+inicio+' kg</span></div>'+
           '<div class="rrow"><span class="rk">Atual</span><span class="rv">'+state.weight+' kg <span class="good">(−4 kg)</span></span></div>'+
@@ -798,7 +804,7 @@
         '<div class="rsec"><div class="rlabel">Fotos de evolução</div>'+
           '<div class="rphotos"><i style="background:linear-gradient(160deg,#8DA9E8,#5F7FD6)">Sem 1</i><i style="background:linear-gradient(160deg,#2FC6AC,#0E6B5C)">Sem 2</i><i style="background:linear-gradient(160deg,#FFB08F,#F07F58)">Sem 4</i></div>'+
         '</div>'+
-        '<div class="rsec"><div class="rlabel">Perguntas que você anotou</div>'+
+        '<div class="rsec"><div class="rlabel">Perguntas para discutir com seu médico</div>'+
           '<div class="rq"><span>?</span><span>A náusea nas primeiras 48h é esperada?</span></div>'+
           '<div class="rq"><span>?</span><span>Faz sentido revermos a frequência de aplicação?</span></div>'+
         '</div>'+
@@ -868,7 +874,7 @@
       '<div class="pct" id="loadPct">0%</div></div>'+
       '<div class="loadsteps">'+
         '<div class="lstep on" id="ls0"><span class="lc">1</span>Analisando seu perfil</div>'+
-        '<div class="lstep" id="ls1"><span class="lc">2</span>Calculando metas</div>'+
+        '<div class="lstep" id="ls1"><span class="lc">2</span>Organizando suas metas</div>'+
         '<div class="lstep" id="ls2"><span class="lc">3</span>Finalizando seu plano</div>'+
       '</div></div>',
       init:function(){ runLoading(); }};
@@ -878,7 +884,7 @@
   S.push({title:"Reveal do plano", render:function(){
     return {body:'<div class="mascot-wrap" style="margin:8px 0 2px">'+mascot("checkin",112)+'</div>'+
       '<span class="eyebrow" style="text-align:center;display:block">Plano pronto</span>'+
-      '<h2 class="title" style="text-align:center">'+Nm()+', seu plano para chegar a '+state.goal+' kg com '+med()+' está pronto.</h2>'+
+      '<h2 class="title" style="text-align:center">'+Nm()+', seu plano de acompanhamento para '+med()+' está pronto.</h2>'+
       '<div class="journey">'+
         '<div class="jw"><div class="k">Hoje</div><div class="v num">'+state.weight+'</div><div class="k" style="text-transform:none">kg</div></div>'+
         '<div class="arrowc"><svg width="40" height="20" viewBox="0 0 40 20"><path d="M2 10h32m-8-6 8 6-8 6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
@@ -904,7 +910,7 @@
   S.push({title:"Paywall", render:function(){
     var a=state.plan==="anual", m=state.plan==="mensal";
     return {body:'<h2 class="title" style="margin-top:6px">'+Nm()+', seu plano está pronto. Vamos começar juntos.</h2>'+
-      '<p class="sub tight">Chegar a '+state.goal+' kg até '+estDate()+', com acompanhamento em cada etapa.</p>'+
+      '<p class="sub tight">Acompanhar sua jornada até '+state.goal+' kg, com registros e lembretes em cada etapa.</p>'+
       '<div class="benefits">'+
         ben("🔔","Lembretes de dose para nunca mais esquecer")+
         ben("📋","Resumo pronto para levar à sua consulta")+
@@ -1078,6 +1084,7 @@
 
     // body
     body.style.padding = r.bare ? "0" : "8px 24px 18px";
+    body.onclick = null;
     body.innerHTML = r.body || "";
 
     // footer / cta
@@ -1113,7 +1120,7 @@
       el.addEventListener("click",next);
     });
     // splash: tap anywhere to continue
-    if(r.tap){ body.addEventListener("click",next); }
+    if(r.tap){ body.onclick = next; }
   }
 
   function next(){ if(idx<S.length-1){ idx++; draw(); } }

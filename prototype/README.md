@@ -18,7 +18,7 @@ build, servidor ou conexão.
 - Toque nas opções, digite o nome, arraste a régua e o slider — o estado se
   propaga entre as telas (nome, mascote, medicamento, peso, meta, data estimada).
 
-## Fluxo (27 telas)
+## Fluxo (28 telas)
 
 | # | Tela | # | Tela |
 |---|------|---|------|
@@ -26,19 +26,25 @@ build, servidor ou conexão.
 | 02 | Valor · controle de doses | 16 | Maior dificuldade |
 | 03 | Valor · jornada | 17 | Data de nascimento |
 | 04 | Privacidade | 18 | Sintomas → consulta |
-| 05 | Nome | 19 | Refeições |
-| 06 | Estágio | 20 | Atividade |
-| 07 | Medicamento | 21 | Nome do mascote |
-| 08 | Valor · registro de dose | 22 | Insight personalizado |
-| 09 | Dose (filtrada por medicamento) | 23 | Loading |
-| 10 | Frequência | 24 | Reveal do plano |
-| 11 | Peso atual (régua) | 25 | Compromisso |
-| 12 | Altura (régua) | 26 | Paywall |
-| 13 | Meta de peso (cálculo dinâmico) | 27 | Pós-compra / retenção |
-| 14 | Evolução prevista (gráfico) | | |
+| 05 | Nome | 19 | Resumo pré-consulta |
+| 06 | Estágio | 20 | Refeições |
+| 07 | Medicamento | 21 | Atividade |
+| 08 | Valor · registro de dose | 22 | Nome do mascote |
+| 09 | Dose (filtrada por medicamento) | 23 | Insight personalizado |
+| 10 | Frequência | 24 | Loading |
+| 11 | Peso atual (régua) | 25 | Reveal do plano |
+| 12 | Altura (régua) | 26 | Compromisso |
+| 13 | Meta de peso (cálculo dinâmico) | 27 | Paywall |
+| 14 | Evolução prevista (gráfico) | 28 | Pós-compra / retenção |
 
 A barra de progresso aparece apenas nas 12 telas de coleta reais (05–07, 09–13,
-15–17, 21).
+15–17, 22).
+
+O estágio **"Quero começar"** já tem um desenho inicial de ramificação dentro do
+mesmo fluxo: as telas de medicamento, dose, frequência e registro mudam a copy
+para preparação de consulta, aceitam "Ainda não sei" na dose e reforçam que o app
+organiza anotações sem substituir orientação médica. A arquitetura ainda não cria
+um caminho separado completo para pré-tratamento.
 
 ## Princípios aplicados
 
@@ -80,6 +86,11 @@ Mudanças aplicadas nesta revisão:
   consulta, sem prescrição.
 - **Tela 04 (Privacidade):** boundary explícito — "não substitui profissionais de
   saúde; não diagnostica nem prescreve".
+- **Tela 19 (Resumo pré-consulta):** preview agora marcado como "Exemplo · seus
+  dados aparecem aqui", para não parecer histórico real do usuário durante o
+  onboarding.
+- **Fluxo "Quero começar":** copy inicial adaptada para pré-tratamento nas telas de
+  medicamento, dose, frequência e registro, com a opção "Ainda não sei" na dose.
 
 ## Design system
 
@@ -91,4 +102,11 @@ Mudanças aplicadas nesta revisão:
 - **Componentes:** cards de opção, chips, régua com rolagem, slider, barra de
   progresso, gráfico SVG, anéis de atividade, timeline de dose, paywall.
 
-> Valores de preço (R$ 149,90/ano, R$ 29,90/mês) são placeholders para revisão.
+## Placeholders conhecidos
+
+- Valores de preço (R$ 149,90/ano, R$ 29,90/mês) são placeholders para revisão.
+- O resumo pré-consulta da tela 19 é um exemplo visual de como os dados aparecerão
+  depois de registros reais.
+- A projeção da tela 14 é uma estimativa visual, não uma promessa clínica.
+- O conteúdo educativo da tela 18 e o selo "Conteúdo com fontes" da tela 25 ainda
+  precisam de fontes reais linkadas.

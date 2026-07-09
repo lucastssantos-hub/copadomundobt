@@ -137,7 +137,8 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
 - **Preços:** R$ 149,90/ano e R$ 29,90/mês (tela 27) — a definir.
 - **Resumo pré-consulta (tela 19):** números de exemplo (−4 kg, "3 de 4 semanas",
   fotos Sem 1/2/4) para ilustrar o preview de onboarding; o usuário ainda não
-  registrou nada nesse momento.
+  registrou nada nesse momento. O protótipo deve manter o rótulo explícito
+  "Exemplo · seus dados aparecem aqui" nessa tela.
 - **Evolução prevista (tela 14):** projeção visual a partir das respostas, rotulada
   como "não é uma promessa clínica". Não é cálculo clínico.
 - **Conteúdo educativo:** o texto sobre náusea (tela 18) e o selo "Conteúdo com
@@ -146,9 +147,15 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
 ## 8. Próximos passos candidatos (a decidir)
 
 **Refino do protótipo:**
-- Rótulo "exemplo · seus dados aparecem aqui" no resumo pré-consulta (tela 19).
-- Ramificação do fluxo para o estágio "Quero começar" (hoje o fluxo assume "já usa").
 - Estados vazios e microinterações adicionais.
+- Fontes reais para o conteúdo educativo e para o selo "Conteúdo com fontes".
+- Decisão de preços e trial do paywall.
+
+**Ramificação "Quero começar" (pré-tratamento):**
+- Já existe um desenho inicial no mesmo fluxo: medicamento, dose, frequência e
+  registro mudam a copy para organização pré-consulta; dose aceita "Ainda não sei".
+- Próximo passo é decidir se esse estágio merece caminho separado, com menos coleta
+  de dose/frequência e mais preparação de consulta, sem recomendar início ou conduta.
 
 **Implementação do app (Expo/React Native, já no repo):**
 - Traduzir o design system (tokens/componentes) para RN.
