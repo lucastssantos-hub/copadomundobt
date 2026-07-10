@@ -388,6 +388,19 @@
   .site.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand-2) 12%,#fff)}
   .site .si{font-size:20px;display:block}
   .site b{display:block;font-size:12.5px;font-weight:800;margin-top:6px}
+  .bodymap{margin-top:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;grid-template-columns:112px 1fr;gap:14px;align-items:center}
+  .bodymap-figure{height:168px;position:relative;display:grid;place-items:center}
+  .bodymap-figure::before{content:"";width:54px;height:122px;border-radius:20px 20px 18px 18px;background:color-mix(in srgb,var(--brand-2) 14%,#fff);border:1px solid var(--line);box-shadow:0 12px 24px -18px rgba(10,38,32,.35)}
+  .bodymap-figure::after{content:"";position:absolute;top:2px;width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--brand) 10%,#fff);border:1px solid var(--line)}
+  .site-pin{position:absolute;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:2px solid #fff;background:var(--paper);box-shadow:0 10px 22px -14px rgba(10,38,32,.45);font-size:12px;font-weight:900;color:var(--ink-soft)}
+  .site-pin.on{background:var(--brand);color:#fff}
+  .site-pin.abdomen{left:39px;top:76px}
+  .site-pin.coxa{left:32px;top:125px}
+  .site-pin.braco{right:13px;top:70px}
+  .site-stats{display:flex;flex-direction:column;gap:9px}
+  .site-stat{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:11px 12px;background:var(--paper)}
+  .site-stat b{font-size:12.5px;font-weight:800}
+  .site-stat span{font-size:12px;color:var(--ink-soft)}
   textarea.note{width:100%;min-height:86px;margin-top:9px;padding:14px;border-radius:15px;border:1.5px solid var(--line);background:var(--paper-2);font-family:inherit;color:var(--ink);font-size:14px;resize:none}
   textarea.note:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand-2) 22%,transparent)}
   .slotgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
@@ -401,6 +414,18 @@
   .metric .mk{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
   .metric .mv{margin-top:5px;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--brand)}
   .metric .md{margin-top:3px;font-size:11.5px;line-height:1.3;color:var(--ink-soft)}
+  .calendar-card{margin-top:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:14px}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+  .cal-day{min-height:42px;border-radius:12px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--ink-soft)}
+  .cal-day.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .photo-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+  .photo-slot{min-height:104px;border:1px dashed color-mix(in srgb,var(--brand) 32%,var(--line));border-radius:15px;background:color-mix(in srgb,var(--brand-2) 7%,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--ink-soft)}
+  .photo-slot b{font-size:12px;color:var(--ink)}
+  .photo-slot span{font-size:11px;line-height:1.25;margin-top:4px}
+  .source-card{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);background:var(--paper-2);border-radius:15px;padding:13px;margin-top:10px}
+  .source-card .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--data) 18%,#fff);color:var(--brand);flex:0 0 auto}
+  .source-card b{display:block;font-size:13.5px;font-weight:800}
+  .source-card span{display:block;margin-top:3px;font-size:12px;line-height:1.35;color:var(--ink-soft)}
   .timeline-mini{display:flex;flex-direction:column;gap:10px;margin-top:14px}
   .event{display:flex;gap:11px;align-items:flex-start;background:var(--paper-2);border:1px solid var(--line);border-radius:15px;padding:13px}
   .event .dot{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;background:color-mix(in srgb,var(--brand-2) 15%,#fff);color:var(--brand)}
@@ -483,7 +508,7 @@
   <span class="brandmark"><span class="pen"><b></b></span> Canetta</span>
   <div>
     <h1 style="display:none">Canetta</h1>
-    <p>Protótipo Canetta · GLP-1 · pt-BR · 39 telas</p>
+    <p>Protótipo Canetta · GLP-1 · pt-BR · 45 telas</p>
   </div>
   <span class="sep"></span>
   <button class="theme-tog" id="gridBtn">▦ Ver todas as telas</button>
@@ -512,7 +537,7 @@
 
   <div class="controls">
     <button class="ctl" id="prevBtn" aria-label="Anterior">‹</button>
-    <div class="counter"><span class="cn" id="cur">01</span> / <span id="tot">31</span><span class="lbl" id="scrTitle">Splash</span></div>
+    <div class="counter"><span class="cn" id="cur">01</span> / <span id="tot">45</span><span class="lbl" id="scrTitle">Splash</span></div>
     <button class="ctl" id="nextBtn" aria-label="Próxima">›</button>
   </div>
 </div>
@@ -537,8 +562,9 @@
     ritmo:2, difficulty:"", mascot:"Canetta", plan:"anual",
     doseLocal:"abdomen", doseNote:"",
     reminderDay:"quinta", reminderTime:"20h",
-    symptomFocus:"nausea", symptomNote:"", newWeight:91,
-    didDose:false, didSymptom:false, didWeight:false
+    symptomFocus:"nausea", symptomNote:"", hydration:"ok", mealCheck:"leve", newWeight:91,
+    measureNote:"", didDose:false, didPostDose:false, didSymptom:false, didWeight:false,
+    didMeasure:false
   };
 
   function nm(){ return state.name || "você"; }
@@ -1104,11 +1130,11 @@
         day("🔎","Padrões observados","O app descreve registros; não diagnostica nem recomenda")+
       '</div>',
       cta:'<button class="btn btn-pri" id="recordDoseCta">'+(isStarting()?"Guardar anotação":"Registrar aplicação")+'</button>'+
-        '<button class="btn btn-ghost" id="openReportCta">Ver resumo de consulta</button>',
+        '<button class="btn btn-ghost" id="openCalendarCta">Ver calendário</button>',
       init:function(){
         bindGo("recordDose",30); bindGo("recordDoseCta",30);
-        bindGo("symptomSoon",32); bindGo("weightSoon",34);
-        bindGo("reportSoon",36); bindGo("openReportCta",36);
+        bindGo("symptomSoon",35); bindGo("weightSoon",37);
+        bindGo("reportSoon",39); bindGo("openCalendarCta",42);
       }};
   }});
   function quick(ic,t,d,id){ return '<button class="quick" id="'+id+'"><span class="qi">'+ic+'</span><b>'+t+'</b><span>'+d+'</span></button>'; }
@@ -1165,11 +1191,96 @@
         day("🔔","Próximo lembrete","Você pode editar lembretes depois")+
         day("🩺","Se algo incomodar","Registre o sintoma e procure seu médico se for intenso ou persistente")+
       '</div>',
-      cta:'<button class="btn btn-pri" id="backHome">Voltar para a home</button>',
-      init:function(){ bindGo("backHome",29); }};
+      cta:'<button class="btn btn-pri" id="postDoseStart">Fazer check-in pós-dose</button>'+
+        '<button class="btn btn-ghost" id="siteHistoryStart">Ver locais registrados</button>',
+      init:function(){ bindGo("postDoseStart",32); bindGo("siteHistoryStart",34); }};
   }});
 
-  // 33 Registro de sintomas
+  // 33 Check-in pós-dose
+  S.push({title:"Check-in pós-dose", render:function(){
+    return {body:'<span class="eyebrow">Pós-dose</span>'+
+      '<h2 class="title sm">Como ficou sua rotina depois da aplicação?</h2>'+
+      '<p class="sub tight">Registre sintomas, hidratação e refeição como fatos do dia. O Canetta não interpreta nem orienta conduta.</p>'+
+      '<div class="slotgrid">'+
+        slot("symptomFocus","nausea","Náusea","Foi o foco")+
+        slot("symptomFocus","apetite","Apetite","Mudou hoje")+
+        slot("symptomFocus","energia","Energia","Oscilou")+
+        slot("symptomFocus","digestao","Digestão","Observação")+
+      '</div>'+
+      '<div class="field"><label>Hidratação registrada</label>'+
+        '<div class="slotgrid" style="margin-top:9px">'+
+          slot("hydration","ok","Ok","Como de costume")+
+          slot("hydration","baixo","Baixa","Menos que o usual")+
+          slot("hydration","alto","Alta","Mais que o usual")+
+          slot("hydration","nao-sei","Não sei","Não acompanhei")+
+        '</div>'+
+      '</div>'+
+      '<div class="field"><label>Refeição registrada</label>'+
+        '<div class="slotgrid" style="margin-top:9px">'+
+          slot("mealCheck","leve","Leve","Menor/leve")+
+          slot("mealCheck","normal","Normal","Como de costume")+
+          slot("mealCheck","sem-apetite","Sem apetite","Pouco interesse")+
+          slot("mealCheck","nao-sei","Não sei","Não acompanhei")+
+        '</div>'+
+      '</div>'+
+      '<div class="field"><label>Nota opcional</label>'+
+        '<textarea class="note" id="postDoseNote" placeholder="Ex.: náusea leve pela manhã; refeição menor no almoço." autocomplete="off">'+esc(state.symptomNote)+'</textarea>'+
+      '</div>'+
+      '<div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🩺</span><span style="font-size:12.5px;color:var(--ink-soft)">Se um sintoma for intenso, persistente ou preocupante, procure seu médico.</span></div>',
+      cta:'<button class="btn btn-pri" id="savePostDose">Salvar check-in</button>'+
+        '<button class="btn btn-ghost" id="skipPostDose">Fazer depois</button>',
+      init:function(){
+        var n=document.getElementById("postDoseNote");
+        if(n) n.addEventListener("input",function(){ state.symptomNote=n.value.trim(); });
+        var b=document.getElementById("savePostDose");
+        if(b) b.addEventListener("click",function(){ state.didPostDose=true; state.didSymptom=true; next(); });
+        bindGo("skipPostDose",29);
+      }};
+  }});
+
+  // 34 Check-in salvo
+  S.push({title:"Check-in salvo", render:function(){
+    return {body:'<div class="mascot-wrap" style="margin:10px 0 4px">'+mascot("checkin",112)+'</div>'+
+      '<span class="eyebrow" style="text-align:center;display:block">Pós-dose salvo</span>'+
+      '<h2 class="title sm" style="text-align:center">Seu check-in entrou no histórico.</h2>'+
+      '<div class="report">'+
+        '<div class="rhead"><span class="ri">🩺</span><div><b>Check-in pós-dose</b><span>Hoje · '+symptomLabel()+'</span></div></div>'+
+        '<div class="rsec"><div class="rlabel">Rotina</div>'+
+          '<div class="rrow"><span class="rk">Hidratação</span><span class="rv">'+hydrationLabel()+'</span></div>'+
+          '<div class="rrow"><span class="rk">Refeição</span><span class="rv">'+mealLabel()+'</span></div></div>'+
+        '<div class="rsec"><div class="rlabel">Nota</div><div class="rq"><span>•</span><span>'+(state.symptomNote||"Sem nota adicional.")+'</span></div></div>'+
+        '<div class="rfoot">🔎 O Canetta descreve registros; não interpreta sintomas.</div>'+
+      '</div>',
+      cta:'<button class="btn btn-pri" id="postDoseHome">Voltar para a home</button>'+
+        '<button class="btn btn-ghost" id="postDoseSites">Ver locais registrados</button>',
+      init:function(){ bindGo("postDoseHome",29); bindGo("postDoseSites",34); }};
+  }});
+
+  // 35 Histórico de locais
+  S.push({title:"Histórico de locais", render:function(){
+    return {body:'<span class="eyebrow">Aplicações</span>'+
+      '<h2 class="title sm">Histórico visual dos locais registrados.</h2>'+
+      '<p class="sub tight">Mapa factual do que você salvou no app. O Canetta não indica local de aplicação nem recomenda rotação.</p>'+
+      '<div class="bodymap">'+
+        '<div class="bodymap-figure" aria-hidden="true">'+
+          sitePin("abdomen","A")+sitePin("coxa","C")+sitePin("braco","B")+
+        '</div>'+
+        '<div class="site-stats">'+
+          siteStat("Abdômen","abdomen")+
+          siteStat("Coxa","coxa")+
+          siteStat("Braço","braco")+
+        '</div>'+
+      '</div>'+
+      '<div class="daylist">'+
+        day("💉","Último registro",state.didDose?med()+" · "+localLabel(): "Nenhuma aplicação registrada ainda")+
+        day("📋","Consulta","O histórico aparece como dado factual no resumo")+
+      '</div>',
+      cta:'<button class="btn btn-pri" id="sitesHome">Voltar para a home</button>'+
+        '<button class="btn btn-ghost" id="sitesReport">Ver resumo da consulta</button>',
+      init:function(){ bindGo("sitesHome",29); bindGo("sitesReport",39); }};
+  }});
+
+  // 36 Registro de sintomas
   S.push({title:"Registro de sintomas", render:function(){
     return {body:'<span class="eyebrow">Check-in</span>'+
       '<h2 class="title sm">Como seu corpo respondeu hoje?</h2>'+
@@ -1197,7 +1308,7 @@
       }};
   }});
 
-  // 34 Sintomas salvos
+  // 37 Sintomas salvos
   S.push({title:"Sintomas salvos", render:function(){
     return {body:'<div class="mascot-wrap" style="margin:10px 0 4px">'+mascot("checkin",112)+'</div>'+
       '<span class="eyebrow" style="text-align:center;display:block">Check-in salvo</span>'+
@@ -1214,10 +1325,10 @@
       '</div>',
       cta:'<button class="btn btn-pri" id="symBackHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="symOpenReport">Ver resumo atualizado</button>',
-      init:function(){ bindGo("symBackHome",29); bindGo("symOpenReport",36); }};
+      init:function(){ bindGo("symBackHome",29); bindGo("symOpenReport",39); }};
   }});
 
-  // 35 Registro de peso
+  // 38 Registro de peso
   S.push({title:"Registro de peso", render:function(){
     return {body:'<span class="eyebrow">Peso</span>'+
       '<h2 class="title sm">Adicionar novo registro de peso</h2>'+
@@ -1235,7 +1346,7 @@
       }};
   }});
 
-  // 36 Peso salvo
+  // 39 Peso salvo
   S.push({title:"Peso salvo", render:function(){
     var delta=state.weight-state.newWeight;
     return {body:'<div class="mascot-wrap" style="margin:10px 0 4px">'+mascot("checkin",112)+'</div>'+
@@ -1250,12 +1361,12 @@
       '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📋</span><span style="font-size:12.5px;color:var(--ink-soft)">O dado entra no resumo da consulta como registro factual.</span></div>',
       cta:'<button class="btn btn-pri" id="weightBackHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="weightTimeline">Ver linha do tempo</button>',
-      init:function(){ bindGo("weightBackHome",29); bindGo("weightTimeline",38); }};
+      init:function(){ bindGo("weightBackHome",29); bindGo("weightTimeline",41); }};
   }});
 
-  // 37 Resumo de consulta
+  // 40 Resumo de consulta
   S.push({title:"Consulta", render:function(){
-    var temAlgo = state.didDose||state.didSymptom||state.didWeight;
+    var temAlgo = state.didDose||state.didPostDose||state.didSymptom||state.didWeight||state.didMeasure;
     var secs='';
     // peso do onboarding é dado real informado pelo usuário; registros novos só com didWeight
     secs+='<div class="rsec"><div class="rlabel">Peso</div>'+
@@ -1267,10 +1378,20 @@
         ?'<div class="rrow"><span class="rk">Dose registrada</span><span class="rv">'+(state.dose||"—")+'</span></div><div class="rrow"><span class="rk">Último local</span><span class="rv">'+localLabel()+'</span></div>'
         :'<div class="rrow"><span class="rk">Sem registros ainda</span><span class="rv">—</span></div>')+
       '</div>';
+    secs+='<div class="rsec"><div class="rlabel">Pós-dose</div>'+
+      (state.didPostDose
+        ?'<div class="rrow"><span class="rk">Hidratação</span><span class="rv">'+hydrationLabel()+'</span></div><div class="rrow"><span class="rk">Refeição</span><span class="rv">'+mealLabel()+'</span></div>'
+        :'<div class="rrow"><span class="rk">Sem check-in pós-dose</span><span class="rv">—</span></div>')+
+      '</div>';
     secs+='<div class="rsec"><div class="rlabel">Sintomas</div>'+
       (state.didSymptom
         ?'<div class="rrow"><span class="rk">Foco recente</span><span class="rv">'+symptomLabel()+'</span></div>'+(state.symptomNote?'<div class="rq"><span>•</span><span>'+state.symptomNote+'</span></div>':'')
         :'<div class="rrow"><span class="rk">Sem registros ainda</span><span class="rv">—</span></div>')+
+      '</div>';
+    secs+='<div class="rsec"><div class="rlabel">Fotos e medidas</div>'+
+      (state.didMeasure
+        ?'<div class="rq"><span>•</span><span>'+(state.measureNote||"Observação visual registrada pelo usuário.")+'</span></div>'
+        :'<div class="rrow"><span class="rk">Sem observação visual</span><span class="rv">—</span></div>')+
       '</div>';
     return {body:'<span class="eyebrow">Consulta</span>'+
       '<h2 class="title sm">Resumo atualizado para levar à próxima consulta.</h2>'+
@@ -1284,14 +1405,18 @@
       '<div class="summary-actions">'+
         '<button class="legal-card" type="button" id="openExport"><span class="ic">📤</span><div><b>Exportar resumo</b><span>Gerar arquivo para levar à consulta</span></div><span class="arr">›</span></button>'+
         '<button class="legal-card" type="button" id="openTimeline"><span class="ic">📈</span><div><b>Ver linha do tempo</b><span>Doses, peso e check-ins em ordem</span></div><span class="arr">›</span></button>'+
+        '<button class="legal-card" type="button" id="openSiteHistory"><span class="ic">◎</span><div><b>Locais registrados</b><span>Mapa factual das aplicações salvas</span></div><span class="arr">›</span></button>'+
+        '<button class="legal-card" type="button" id="openCalendar"><span class="ic">🗓️</span><div><b>Calendário</b><span>Rotina registrada e próximos lembretes</span></div><span class="arr">›</span></button>'+
+        '<button class="legal-card" type="button" id="openPhotos"><span class="ic">📷</span><div><b>Fotos e medidas</b><span>Acompanhamento visual controlado por você</span></div><span class="arr">›</span></button>'+
+        '<button class="legal-card" type="button" id="openSources"><span class="ic">📚</span><div><b>Fontes educativas</b><span>Conteúdo rotulado e pronto para revisão</span></div><span class="arr">›</span></button>'+
         '<button class="legal-card" type="button" id="openDoseAgain"><span class="ic">💉</span><div><b>Registrar nova aplicação</b><span>Adicionar data, local e observações</span></div><span class="arr">›</span></button>'+
       '</div>',
       cta:'<button class="btn btn-pri" id="consultExport">Exportar resumo</button>'+
         '<button class="btn btn-ghost" id="consultHome">Voltar para a home</button>',
-      init:function(){ bindGo("consultHome",29); bindGo("consultExport",37); bindGo("openExport",37); bindGo("openTimeline",38); bindGo("openDoseAgain",30); }};
+      init:function(){ bindGo("consultHome",29); bindGo("consultExport",40); bindGo("openExport",40); bindGo("openTimeline",41); bindGo("openSiteHistory",34); bindGo("openCalendar",42); bindGo("openPhotos",43); bindGo("openSources",44); bindGo("openDoseAgain",30); }};
   }});
 
-  // 38 Exportar resumo
+  // 41 Exportar resumo
   S.push({title:"Exportar resumo", render:function(){
     return {body:'<span class="eyebrow">Exportação</span>'+
       '<h2 class="title sm">Resumo pronto para compartilhar na consulta.</h2>'+
@@ -1303,7 +1428,10 @@
           exportLine("Peso atual",state.weight+" kg")+
           exportLine("Dose registrada",state.dose||"Não informada")+
           exportLine("Último local",localLabel())+
+          exportLine("Hidratação pós-dose",state.didPostDose?hydrationLabel():"Sem registro")+
+          exportLine("Refeição pós-dose",state.didPostDose?mealLabel():"Sem registro")+
           exportLine("Sintoma recente",symptomLabel())+
+          exportLine("Fotos e medidas",state.didMeasure?(state.measureNote||"Observação visual registrada"):"Sem registro")+
           exportLine("Lembrete",reminderLabel())+
           '<div class="toast" id="exportToast">Resumo preparado. No app real, aqui entram PDF e compartilhamento seguro.</div>'+
         '</div>'+
@@ -1313,7 +1441,7 @@
       cta:'<button class="btn btn-pri" id="exportHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="exportTimeline">Ver linha do tempo</button>',
       init:function(){
-        bindGo("exportHome",29); bindGo("exportTimeline",38);
+        bindGo("exportHome",29); bindGo("exportTimeline",41);
         var copy=document.getElementById("copySummary"), down=document.getElementById("downloadSummary"), toast=document.getElementById("exportToast");
         function show(){ if(toast) toast.classList.add("on"); }
         if(copy) copy.addEventListener("click",function(){
@@ -1324,14 +1452,16 @@
       }};
   }});
 
-  // 39 Linha do tempo
+  // 42 Linha do tempo
   S.push({title:"Linha do tempo", render:function(){
     var evts='';
+    if(state.didMeasure) evts+=eventRow("Hoje","Fotos e medidas",state.measureNote?"Observação salva":"Observação visual salva","📷");
     if(state.didWeight) evts+=eventRow("Hoje","Peso registrado",state.newWeight+" kg · registro factual","⚖️");
-    if(state.didSymptom) evts+=eventRow("Hoje","Check-in de sintomas",symptomLabel()+(state.symptomNote?" · com nota":""),"🩺");
+    if(state.didPostDose) evts+=eventRow("Hoje","Check-in pós-dose",hydrationLabel()+" · "+mealLabel()+" · "+symptomLabel(),"🩺");
+    if(state.didSymptom&&!state.didPostDose) evts+=eventRow("Hoje","Check-in de sintomas",symptomLabel()+(state.symptomNote?" · com nota":""),"🩺");
     if(state.didDose) evts+=eventRow("Hoje","Aplicação registrada",med()+" · "+(state.dose||"dose não informada")+" · "+localLabel(),"💉");
     evts+=eventRow(reminderLabel(),"Próximo lembrete","Configurável a qualquer momento","🔔");
-    var vazia=!(state.didWeight||state.didSymptom||state.didDose);
+    var vazia=!(state.didMeasure||state.didWeight||state.didPostDose||state.didSymptom||state.didDose);
     return {body:'<span class="eyebrow">Histórico</span>'+
       '<h2 class="title sm">Sua jornada em ordem cronológica.</h2>'+
       '<p class="sub tight">Registros ficam agrupados para facilitar revisão e conversa em consulta.</p>'+
@@ -1341,12 +1471,105 @@
       '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🔎</span><span style="font-size:12.5px;color:var(--ink-soft)">Padrões aparecem quando houver histórico suficiente. O app apenas descreve o que você registrou.</span></div>',
       cta:'<button class="btn btn-pri" id="timelineHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="timelineReport">Ver resumo da consulta</button>',
-      init:function(){ bindGo("timelineHome",29); bindGo("timelineReport",36); }};
+      init:function(){ bindGo("timelineHome",29); bindGo("timelineReport",39); }};
+  }});
+
+  // 43 Calendário
+  S.push({title:"Calendário", render:function(){
+    return {body:'<span class="eyebrow">Rotina</span>'+
+      '<h2 class="title sm">Calendário da sua jornada.</h2>'+
+      '<p class="sub tight">Uma visão de lembretes e registros salvos. O calendário não define horário ideal nem conduta médica.</p>'+
+      '<div class="calendar-card">'+
+        '<div class="rrow"><span class="rk">Lembrete ativo</span><span class="rv">'+reminderLabel()+'</span></div>'+
+        '<div class="calendar-grid">'+calDays()+'</div>'+
+      '</div>'+
+      '<div class="timeline-mini">'+
+        eventRow(state.didDose?"Hoje":"—","Aplicação",state.didDose?med()+" · "+localLabel():"Sem registro salvo","💉")+
+        eventRow(state.didPostDose?"Hoje":"—","Pós-dose",state.didPostDose?hydrationLabel()+" · "+mealLabel():"Sem check-in salvo","🩺")+
+        eventRow(reminderLabel(),"Próximo lembrete","Configurável a qualquer momento","🔔")+
+      '</div>'+
+      '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📌</span><span style="font-size:12.5px;color:var(--ink-soft)">No app real, esta tela recebe calendário, notificações e edição recorrente. Aqui ela mostra a estrutura do fluxo.</span></div>',
+      cta:'<button class="btn btn-pri" id="calendarHome">Voltar para a home</button>'+
+        '<button class="btn btn-ghost" id="calendarPhotos">Fotos e medidas</button>',
+      init:function(){ bindGo("calendarHome",29); bindGo("calendarPhotos",43); }};
+  }});
+
+  // 44 Fotos e medidas
+  S.push({title:"Fotos e medidas", render:function(){
+    return {body:'<span class="eyebrow">Progresso</span>'+
+      '<h2 class="title sm">Fotos e medidas sob seu controle.</h2>'+
+      '<p class="sub tight">Registre evidências visuais se fizer sentido para você. O Canetta organiza o histórico sem avaliar corpo ou prometer resultado.</p>'+
+      '<div class="photo-strip">'+
+        photoSlot("Semana 1","Adicionar foto")+
+        photoSlot("Semana 2","Espaço reservado")+
+        photoSlot("Semana 4","Espaço reservado")+
+      '</div>'+
+      '<div class="metricgrid">'+
+        metric("Peso inicial",state.weight+" kg","Informado no onboarding")+
+        metric("Último peso",state.didWeight?state.newWeight+" kg":"—","Registro factual")+
+      '</div>'+
+      '<div class="field"><label>Medida ou observação opcional</label>'+
+        '<textarea class="note" id="measureNote" placeholder="Ex.: roupa vestiu diferente; medida registrada por mim." autocomplete="off">'+esc(state.measureNote)+'</textarea>'+
+      '</div>'+
+      '<div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🔒</span><span style="font-size:12.5px;color:var(--ink-soft)">Fotos devem ser privadas por padrão e compartilhadas apenas por escolha do usuário.</span></div>',
+      cta:'<button class="btn btn-pri" id="saveMeasure">Salvar observação</button>'+
+        '<button class="btn btn-ghost" id="photosSources">Ver fontes educativas</button>',
+      init:function(){
+        var n=document.getElementById("measureNote");
+        if(n) n.addEventListener("input",function(){ state.measureNote=n.value.trim(); });
+        var b=document.getElementById("saveMeasure");
+        if(b) b.addEventListener("click",function(){ state.didMeasure=true; goTo(41); });
+        bindGo("photosSources",44);
+      }};
+  }});
+
+  // 45 Fontes educativas
+  S.push({title:"Fontes educativas", render:function(){
+    return {body:'<span class="eyebrow">Conteúdo</span>'+
+      '<h2 class="title sm">Fontes educativas e revisão.</h2>'+
+      '<p class="sub tight">Biblioteca para conteúdo geral, sempre com fonte nomeada e sem respostas personalizadas de tratamento.</p>'+
+      sourceCard("🏛️","Bulário Eletrônico Anvisa","Bulas e informações oficiais de medicamentos. No app real, cada medicamento deve apontar para a bula específica.")+
+      sourceCard("📄","ABESO","Diretrizes e materiais sobre obesidade e síndrome metabólica, usados como referência educativa geral.")+
+      sourceCard("🩺","SBEM","Conteúdo de endocrinologia e metabolismo para apoiar linguagem responsável e revisão clínica.")+
+      '<div class="report" style="margin-top:14px">'+
+        '<div class="rhead"><span class="ri">✓</span><div><b>Checklist editorial</b><span>Antes de publicar conteúdo</span></div></div>'+
+        '<div class="rsec"><div class="rq"><span>•</span><span>Fonte nomeada e link profundo.</span></div><div class="rq"><span>•</span><span>Revisão por profissional habilitado.</span></div><div class="rq"><span>•</span><span>Sem diagnóstico, prescrição ou recomendação individual.</span></div></div>'+
+      '</div>',
+      cta:'<button class="btn btn-pri" id="sourcesHome">Voltar para a home</button>'+
+        '<button class="btn btn-ghost" id="sourcesReport">Resumo de consulta</button>',
+      init:function(){ bindGo("sourcesHome",29); bindGo("sourcesReport",39); }};
   }});
   function symptomLabel(){
     var m={nausea:"Náusea",apetite:"Apetite",energia:"Energia",digestao:"Digestão"};
     return m[state.symptomFocus]||"Náusea";
   }
+  function hydrationLabel(){
+    var m={ok:"Ok",baixo:"Baixa",alto:"Alta","nao-sei":"Não acompanhada"};
+    return m[state.hydration]||"Ok";
+  }
+  function mealLabel(){
+    var m={leve:"Leve",normal:"Normal","sem-apetite":"Sem apetite","nao-sei":"Não acompanhada"};
+    return m[state.mealCheck]||"Leve";
+  }
+  function siteCount(val){ return state.didDose && state.doseLocal===val ? 1 : 0; }
+  function sitePin(val,label){
+    var on=siteCount(val)>0?" on":"";
+    return '<span class="site-pin '+val+on+'">'+label+'</span>';
+  }
+  function siteStat(label,val){
+    var n=siteCount(val);
+    return '<div class="site-stat"><b>'+label+'</b><span>'+n+' registro'+(n===1?"":"s")+'</span></div>';
+  }
+  function calDays(){
+    var names=["S","T","Q","Q","S","S","D"], out="";
+    for(var i=0;i<14;i++){
+      var on=(state.reminderDay==="quinta"&&i===3)||(state.reminderDay==="segunda"&&i===0)||(state.reminderDay==="sabado"&&i===5)||(state.reminderDay==="domingo"&&i===6)||(state.reminderDay==="terca"&&i===1)||(state.reminderDay==="quarta"&&i===2)||(state.reminderDay==="sexta"&&i===4);
+      out+='<div class="cal-day'+(on?" on":"")+'">'+(i<7?names[i]:(i+1))+'</div>';
+    }
+    return out;
+  }
+  function photoSlot(t,d){ return '<div class="photo-slot"><b>'+t+'</b><span>'+d+'</span></div>'; }
+  function sourceCard(ic,t,d){ return '<div class="source-card"><span class="ic">'+ic+'</span><div><b>'+t+'</b><span>'+d+'</span></div></div>'; }
   function metric(k,v,d){ return '<div class="metric"><div class="mk">'+k+'</div><div class="mv">'+v+'</div><div class="md">'+d+'</div></div>'; }
   function eventRow(t,k,d,ic){ return '<div class="event"><span class="dot">'+ic+'</span><div><b>'+k+'</b><span>'+t+' · '+d+'</span></div></div>'; }
   function exportLine(k,v){ return '<div class="export-line"><span>•</span><span><b>'+k+':</b> '+v+'</span></div>'; }
@@ -1358,7 +1581,10 @@
       "Peso atual: "+state.weight+" kg",
       "Dose registrada: "+(state.dose||"Não informada"),
       "Último local registrado: "+localLabel(),
+      "Hidratação pós-dose: "+(state.didPostDose?hydrationLabel():"Sem registro"),
+      "Refeição pós-dose: "+(state.didPostDose?mealLabel():"Sem registro"),
       "Sintoma recente: "+symptomLabel(),
+      "Fotos e medidas: "+(state.didMeasure?(state.measureNote||"Observação visual registrada"):"Sem registro"),
       "Lembrete: "+reminderLabel(),
       "",
       "Observação: este resumo organiza registros do usuário. Não contém diagnóstico, prescrição ou recomendação de conduta."
@@ -1583,7 +1809,7 @@
   S.forEach(function(s,i){
     if(i===0||i===28){
       var sec=document.createElement("div"); sec.className="thumbs-sec";
-      sec.textContent = i===0 ? "Onboarding · telas 01–28" : "Pós-compra · telas 29–39";
+      sec.textContent = i===0 ? "Onboarding · telas 01–28" : "Pós-compra · telas 29–45";
       thumbs.appendChild(sec);
     }
     var t=document.createElement("div"); t.className="thumb"; t.dataset.i=i;

@@ -21,8 +21,8 @@ emagrecimento".
 
 ## 2. Status atual
 
-- **Entregue:** protótipo mobile navegável de **39 telas** (28 de onboarding +
-  11 pós-compra/pós-onboarding), em pt-BR, como
+- **Entregue:** protótipo mobile navegável de **45 telas** (28 de onboarding +
+  17 pós-compra/pós-onboarding), em pt-BR, como
   **arquivo único** `canetta-onboarding.html` (HTML+CSS+JS inline, SVG do mascote
   inline, zero dependências, zero build). Abre direto no navegador e também é
   publicável como Artifact.
@@ -53,13 +53,14 @@ clínica**. Qualquer copy ou feature nova precisa respeitar isto:
 Boundary explícito já presente no app (tela 04 e 23): *"O Canetta organiza sua
 jornada e não substitui profissionais de saúde — não diagnostica nem prescreve."*
 
-## 4. As 39 telas
+## 4. As 45 telas
 
 Ordem estratégica do onboarding (não reordenar sem motivo forte — perguntas são
 intercaladas com telas de valor de propósito). Barra de progresso só nas **12
-telas de coleta**. As telas 29–39 cobrem o primeiro fluxo pós-compra:
-lembretes, home, aplicação, sintomas, peso, consulta, exportação e linha do
-tempo.
+telas de coleta**. As telas 29–45 cobrem o primeiro fluxo pós-compra:
+lembretes, home, aplicação, check-in pós-dose, histórico visual de locais,
+sintomas, peso, consulta, exportação, linha do tempo, calendário, fotos/medidas
+e fontes educativas.
 
 | # | Tela | Coleta? |
 |---|------|:---:|
@@ -95,13 +96,19 @@ tempo.
 | 30 | Home da jornada | |
 | 31 | Registro de aplicação | |
 | 32 | Registro salvo | |
-| 33 | Registro de sintomas | |
-| 34 | Sintomas salvos | |
-| 35 | Registro de peso | |
-| 36 | Peso salvo | |
-| 37 | Resumo de consulta | |
-| 38 | Exportar resumo | |
-| 39 | Linha do tempo | |
+| 33 | Check-in pós-dose | |
+| 34 | Check-in salvo | |
+| 35 | Histórico de locais | |
+| 36 | Registro de sintomas | |
+| 37 | Sintomas salvos | |
+| 38 | Registro de peso | |
+| 39 | Peso salvo | |
+| 40 | Resumo de consulta | |
+| 41 | Exportar resumo | |
+| 42 | Linha do tempo | |
+| 43 | Calendário | |
+| 44 | Fotos e medidas | |
+| 45 | Fontes educativas | |
 
 ## 5. Design system
 
@@ -117,7 +124,9 @@ light/dark do visualizador.
 - **Componentes:** cards de opção (`.opt`), chips (`.chip`), régua com scroll
   (`.ruler`), slider de ritmo (`.pace`), barra de progresso (`.ptrack/.pfill`),
   gráfico SVG (`projChart`), anéis (`activityRings`), timeline de dose (`.tl`),
-  relatório pré-consulta (`.report`), planos (`.plan`), mascote (`mascot()`).
+  mapa de locais (`.bodymap`), calendário (`.calendar-card`), fotos/medidas
+  (`.photo-strip`), fontes educativas (`.source-card`), relatório pré-consulta
+  (`.report`), planos (`.plan`), mascote (`mascot()`).
 
 ## 6. Arquitetura do protótipo (para estender)
 
@@ -126,10 +135,11 @@ Tudo em `canetta-onboarding.html`. O arquivo **não** tem `<!doctype>/<html>/<he
 
 - **`state`** (objeto JS): `name, stage, medication, dose, freq, weight, height,
   goal, ritmo, difficulty, mascot, plan, doseLocal, doseNote, reminderDay,
-  reminderTime, symptomFocus, symptomNote, newWeight, didDose, didSymptom,
-  didWeight`. Placeholders se propagam entre telas. As flags `did*` são setadas
-  pelos botões "Salvar" das telas 31/33/35 e controlam os estados vazios de
-  home (30), resumo (37) e linha do tempo (38).
+  reminderTime, symptomFocus, symptomNote, hydration, mealCheck, newWeight,
+  measureNote, didDose, didPostDose, didSymptom, didWeight, didMeasure`.
+  Placeholders se propagam entre telas. As flags `did*` são setadas pelos botões
+  "Salvar" das telas 31/33/36/38/44 e controlam os estados vazios de home (30),
+  resumo (40) e linha do tempo (42).
 - **Helpers de texto:** `nm()/Nm()` (nome), `med()`, `mascotN()`, `difLabel()`,
   `diffKg()`, `estDate()` (data estimada a partir do ritmo).
 - **`DOSES`**: mapa medicamento → lista de doses (usado na tela 09).
@@ -168,20 +178,29 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
   fontes (Bulário Eletrônico Anvisa, diretrizes ABESO, SBEM), mas os links
   profundos (URL da bula de cada medicamento, documento específico de diretriz)
   e a revisão por consultor médico/nutricionista ainda estão pendentes.
-- **Pós-onboarding (telas 29–39):** persistem só no `state` local (sem backend/
-  notificações). Home (30), resumo (37) e linha do tempo (39) têm **estados
-  vazios reais**: só mostram aplicação/sintoma/peso que o usuário registrou na
-  sessão (flags `didDose/didSymptom/didWeight`); antes de qualquer registro,
+- **Pós-onboarding (telas 29–45):** persistem só no `state` local (sem backend/
+  notificações). Home (30), resumo (40) e linha do tempo (42) têm **estados
+  vazios reais**: só mostram aplicação/check-in pós-dose/sintoma/peso/fotos e
+  medidas que o usuário registrou na sessão (flags
+  `didDose/didPostDose/didSymptom/didWeight/didMeasure`); antes de qualquer registro,
   exibem estado vazio explicativo. O peso do onboarding aparece como "Informado
-  no onboarding" (dado real do usuário, não mock). A exportação (38) baixa um
-  `.txt` local no protótipo; no app real deve virar PDF e compartilhamento
-  controlado pelo usuário.
+  no onboarding" (dado real do usuário, não mock). O check-in pós-dose registra
+  sintomas, hidratação e refeição como fatos do dia. O histórico de locais (35)
+  é factual e não recomenda próximo local ou rotação. O calendário (43) mostra
+  lembretes sem definir horário ideal. Fotos e medidas (44) são privadas por
+  padrão e não avaliam corpo. Fontes educativas (45) organizam fonte + checklist
+  editorial. A exportação (41) baixa um `.txt` local no protótipo; no app real
+  deve virar PDF e compartilhamento controlado pelo usuário.
 
 ## 8. Próximos passos candidatos (a decidir)
 
 **Refino do protótipo:**
 - ~~Estados vazios~~ (feitos para home/resumo/linha do tempo) — restam
   microinterações adicionais.
+- ~~Histórico visual de locais~~ e ~~check-in pós-dose~~ (feitos como registros
+  factuais, sem recomendação clínica).
+- ~~Calendário~~, ~~fotos/medidas~~ e ~~fontes educativas~~ (estruturados no
+  protótipo; ainda sem backend, upload real ou links profundos).
 - Fontes: nomeadas (Anvisa/ABESO/SBEM); faltam links profundos e revisão de
   consultor.
 - Decisão de preços e trial do paywall (segue placeholder).

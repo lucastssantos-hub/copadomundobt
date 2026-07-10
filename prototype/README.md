@@ -13,18 +13,19 @@ build, servidor ou conexão.
 
 - **‹ / ›** e **setas do teclado** avançam/voltam entre as telas.
 - **▦ Ver todas as telas** abre a visão geral do fluxo, agrupada em Onboarding
-  (01–28) e Pós-compra (29–39) — salte para qualquer tela.
+  (01–28) e Pós-compra (29–45) — salte para qualquer tela.
 - **◐ Tema** alterna o tema claro/escuro da moldura da página (a tela do app mantém
   o próprio tema, como um app real).
 - **↺ Reiniciar** volta ao início com o estado zerado (útil para demos).
 - Toque nas opções, digite o nome, arraste a régua e o slider — o estado se
   propaga entre as telas (nome, mascote, medicamento, peso, meta, data estimada).
 
-## Fluxo (39 telas)
+## Fluxo (45 telas)
 
-As telas 01–28 continuam sendo o onboarding/paywall. As telas 29–39 completam o
-primeiro fluxo pós-compra da aplicação: lembretes, home, aplicação, sintomas,
-peso, resumo de consulta, exportação e linha do tempo.
+As telas 01–28 continuam sendo o onboarding/paywall. As telas 29–45 completam o
+primeiro fluxo pós-compra da aplicação: lembretes, home, aplicação, check-in
+pós-dose, histórico visual de locais, sintomas, peso, resumo de consulta,
+exportação, linha do tempo, calendário, fotos/medidas e fontes educativas.
 
 | # | Tela | # | Tela |
 |---|------|---|------|
@@ -44,13 +45,19 @@ peso, resumo de consulta, exportação e linha do tempo.
 | 14 | Evolução prevista (gráfico) | 30 | Home da jornada |
 | 15 | Ritmo desejado (slider) | 31 | Registro de aplicação |
 | 16 | Maior dificuldade | 32 | Registro salvo |
-|  |  | 33 | Registro de sintomas |
-|  |  | 34 | Sintomas salvos |
-|  |  | 35 | Registro de peso |
-|  |  | 36 | Peso salvo |
-|  |  | 37 | Resumo de consulta |
-|  |  | 38 | Exportar resumo |
-|  |  | 39 | Linha do tempo |
+|  |  | 33 | Check-in pós-dose |
+|  |  | 34 | Check-in salvo |
+|  |  | 35 | Histórico de locais |
+|  |  | 36 | Registro de sintomas |
+|  |  | 37 | Sintomas salvos |
+|  |  | 38 | Registro de peso |
+|  |  | 39 | Peso salvo |
+|  |  | 40 | Resumo de consulta |
+|  |  | 41 | Exportar resumo |
+|  |  | 42 | Linha do tempo |
+|  |  | 43 | Calendário |
+|  |  | 44 | Fotos e medidas |
+|  |  | 45 | Fontes educativas |
 
 A barra de progresso aparece apenas nas 12 telas de coleta reais (05–07, 09–13,
 15–17, 22).
@@ -106,10 +113,11 @@ Mudanças aplicadas nesta revisão:
   onboarding.
 - **Fluxo "Quero começar":** copy inicial adaptada para pré-tratamento nas telas de
   medicamento, dose, frequência e registro, com a opção "Ainda não sei" na dose.
-- **Pós-onboarding:** expandidas telas de lembretes, home, aplicação, sintomas,
-  peso, resumo de consulta, exportação e linha do tempo. O fluxo usa dose,
-  horário, local, peso e sintomas como dados registrados pelo usuário, sem
-  recomendar conduta.
+- **Pós-onboarding:** expandidas telas de lembretes, home, aplicação, check-in
+  pós-dose, histórico visual de locais, sintomas, peso, resumo de consulta,
+  exportação, linha do tempo, calendário, fotos/medidas e fontes educativas. O
+  fluxo usa dose, horário, local, hidratação, refeição, peso, fotos/medidas e
+  sintomas como dados registrados pelo usuário, sem recomendar conduta.
 
 ## Design system
 
@@ -120,7 +128,8 @@ Mudanças aplicadas nesta revisão:
   tabulares para todos os dados (kg, datas, preços).
 - **Componentes:** cards de opção, chips, régua com rolagem, slider, barra de
   progresso, gráfico SVG, anéis de atividade, timeline de dose, paywall, cards
-  rápidos, slots de lembrete, métricas e linha do tempo.
+  rápidos, slots de lembrete, mapa de locais, calendário, fotos/medidas,
+  fontes educativas, métricas e linha do tempo.
 
 ## Estados vazios (revisão de 09/07/2026)
 
@@ -128,11 +137,19 @@ As telas pós-compra reagem ao que você realmente registra na sessão:
 
 - **Home (30):** os cards mostram "Registrada hoje ✓" só depois de salvar; o hero
   muda para "Feito por hoje" após a aplicação.
-- **Resumo de consulta (37):** começa vazio ("Seu resumo começa vazio…") e ganha
+- **Resumo de consulta (40):** começa vazio ("Seu resumo começa vazio…") e ganha
   seções conforme os registros. O peso do onboarding aparece rotulado como
   "Informado no onboarding".
-- **Linha do tempo (38):** começa com estado vazio e mostra apenas os eventos
-  registrados (aplicação, sintomas, peso) + o próximo lembrete.
+- **Histórico de locais (35):** mostra apenas os locais registrados pelo usuário
+  em mapa visual factual; não sugere próximo local nem rotação.
+- **Linha do tempo (42):** começa com estado vazio e mostra apenas os eventos
+  registrados (aplicação, check-in pós-dose, sintomas, peso) + o próximo lembrete.
+- **Calendário (43):** mostra lembrete configurado e registros factuais, sem
+  definir horário ideal.
+- **Fotos e medidas (44):** estrutura o acompanhamento visual como dado privado
+  e controlado pelo usuário, sem avaliação corporal.
+- **Fontes educativas (45):** organiza fontes e checklist editorial; links
+  profundos e revisão clínica seguem pendentes.
 - **Ramificação "Quero começar":** no pós-compra, o lembrete vira check-in
   semanal de preparação, a home orienta a montar a lista de dúvidas e a tela de
   registro aceita guardar orientações recebidas.
@@ -150,7 +167,7 @@ documento específico) e revisão por consultor médico/nutricionista ainda pend
   depois de registros reais.
 - A projeção da tela 14 é uma estimativa visual, não uma promessa clínica.
 - Links profundos das fontes educativas (telas 18 e 25) ainda não apontam para
-  URLs reais.
+  URLs reais; a tela 45 já separa o espaço para esses links e revisão.
 - As telas pós-onboarding persistem apenas no `state` local do protótipo, não
   enviam notificações reais e não substituem backend/autenticação.
   A exportação baixa um `.txt` local no protótipo; no app real deve virar PDF e
