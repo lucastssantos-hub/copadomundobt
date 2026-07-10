@@ -36,7 +36,7 @@ interface AppState {
 const INITIAL: AppState = {
   nome: "Ana", mascotNome: "Canetta", medicamento: "Ozempic", dose: "Dose 2", freqLabel: "Semanal",
   objetivo: "Manter uma rotina saudável", faseAtual: "Primeiro mês", lembretesOn: true,
-  tab: "hoje", diarioSub: "timeline", consultaSub: "resumo", maisSub: "menu", periodo: "Últimos 7 dias",
+  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", maisSub: "menu", periodo: "Últimos 7 dias",
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
   aplicacoes: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], fotos: [], toastMsg: "",
 };
@@ -94,7 +94,7 @@ export default function JourneyPage() {
   const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", draft: {} });
   const cancelFlow = () => set({ registerFlow: null, registerStep: "form", draft: {} });
   const finishToHoje = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "hoje" });
-  const finishToHistorico = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "diario", diarioSub: "timeline" });
+  const finishToHistorico = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "diario", diarioSub: "registros" });
 
   const lastPeso = () => (st.pesos.length ? st.pesos[st.pesos.length - 1].kg : 78);
 
@@ -146,28 +146,18 @@ export default function JourneyPage() {
     return evs.sort((x, y) => y.t.getTime() - x.t.getTime());
   }, [st.aplicacoes, st.sintomas, st.pesos, st.rotinas, st.perguntas, st.medicamento]);
 
-  const calendar = useMemo(() => {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const eventDays = new Set(events.map((e) => e.t.getDate()));
-    const cal: { num: number | ""; bg: string; color: string; hasEvent: boolean }[] = [];
-    for (let i = 0; i < firstDay; i++) cal.push({ num: "", bg: "transparent", color: "transparent", hasEvent: false });
-    for (let d = 1; d <= daysInMonth; d++) {
-      const isToday = d === now.getDate();
-      cal.push({ num: d, bg: isToday ? "#0E6B5C" : "#fff", color: isToday ? "#fff" : "#16302B", hasEvent: eventDays.has(d) });
-    }
-    return { cal, mesLabel: now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) };
-  }, [events]);
-
-  const locaisHeat = useMemo(() => {
-    const counts: Record<string, number> = {};
-    st.aplicacoes.forEach((a) => { counts[a.local] = (counts[a.local] || 0) + 1; });
-    return REGION_COORDS.filter((r) => counts[r.label]).map((r) => ({ ...r, count: counts[r.label] }));
-  }, [st.aplicacoes]);
-
   const anyDado = st.aplicacoes.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.perguntas.length;
   const conquista = anyDado > 0;
+  const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
+  const espelhoFacts = useMemo(() => {
+    const facts = [
+      { label: "Aplicações", value: String(st.aplicacoes.length), detail: st.aplicacoes.length ? "salvas no histórico" : "sem registro" },
+      { label: "Pesos", value: String(st.pesos.length), detail: pesoAtual ? `${pesoAtual} kg no último registro` : "sem registro" },
+      { label: "Sintomas", value: String(st.sintomas.length), detail: st.sintomas.length ? "informados por você" : "sem registro" },
+      { label: "Rotina", value: String(st.rotinas.length), detail: st.rotinas.length ? "hábitos salvos" : "sem registro" },
+    ];
+    return facts.filter((fact) => fact.value !== "0");
+  }, [pesoAtual, st.aplicacoes.length, st.pesos.length, st.sintomas.length, st.rotinas.length]);
 
   const quickDefs = [
     { key: "aplicacao", icon: "💉", label: "Aplicação" }, { key: "peso", icon: "⚖️", label: "Peso" },
@@ -304,12 +294,13 @@ export default function JourneyPage() {
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#16302B" }}>📷 Adicionar foto ou medida</span><span style={{ color: "#0E6B5C", fontWeight: 800 }}>{st.draft.foto ? "✓" : ""}</span>
                 </div>
                 <div style={{ width: "100%", ...cardWhite, padding: "14px 16px" }}>
-                  <div style={{ ...fieldLabel, marginBottom: 8 }}>TENDÊNCIA (SEUS REGISTROS)</div>
+                  <div style={{ ...fieldLabel, marginBottom: 8 }}>ESPELHO DE REGISTROS</div>
                   {st.pesos.length ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {st.pesos.slice(-3).reverse().map((p, k) => (
                         <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span style={{ color: "#7A8E88" }}>{p.data}</span><span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{p.kg} kg</span></div>
                       ))}
+                      <div style={{ fontSize: 11.5, color: "#7A8E88", lineHeight: 1.4, marginTop: 4 }}>Fato neutro: mostra pesos informados por você, sem alerta, meta ou interpretação.</div>
                     </div>
                   ) : (
                     <div style={{ fontSize: 13, color: "#9AAAA5" }}>Ainda sem histórico — este será seu primeiro registro.</div>
@@ -407,12 +398,12 @@ export default function JourneyPage() {
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Diário</div>
                 <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
-                  {[["timeline", "Linha do tempo"], ["calendario", "Calendário"], ["locais", "Locais"], ["fotos", "Fotos"]].map(([k, label]) => (
+                  {[["registros", "Registros"], ["espelho", "Espelho"]].map(([k, label]) => (
                     <div key={k} onClick={() => set({ diarioSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", background: st.diarioSub === k ? "#fff" : "transparent", color: st.diarioSub === k ? "#0E6B5C" : "#7A8E88", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</div>
                   ))}
                 </div>
 
-                {st.diarioSub === "timeline" && (events.length ? (
+                {st.diarioSub === "registros" && (events.length ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {events.map((ev, k) => (
                       <div key={k} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "13px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
@@ -428,44 +419,22 @@ export default function JourneyPage() {
                   </div>
                 ))}
 
-                {st.diarioSub === "calendario" && (
-                  <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#16302B", marginBottom: 8 }}>{calendar.mesLabel}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
-                      {calendar.cal.map((d, k) => (
-                        <div key={k} style={{ aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRadius: 10, background: d.bg, fontSize: 12, fontWeight: 700, color: d.color }}>
-                          {d.num}{d.hasEvent && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#22B39A", marginTop: 2 }} />}
-                        </div>
-                      ))}
+                {st.diarioSub === "espelho" && (
+                  <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>Espelho de tendência</div>
+                      <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginTop: 4 }}>Mostra somente fatos salvos no diário. Não é alerta, diagnóstico, meta ou recomendação.</div>
                     </div>
-                    <div style={{ marginTop: 10, fontSize: 12.5, color: "#4B5F59" }}>{st.aplicacoes.length ? "Lembrete configurado conforme sua frequência habitual." : "Nenhum lembrete configurado ainda."}</div>
-                  </>
+                    {espelhoFacts.length ? espelhoFacts.map((fact) => (
+                      <div key={fact.label} style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "baseline", paddingTop: 10, borderTop: "1px solid #EDF0EC" }}>
+                        <div><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{fact.label}</div><div style={{ fontSize: 11.5, color: "#7A8E88" }}>{fact.detail}</div></div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: "#0E6B5C", fontVariantNumeric: "tabular-nums" }}>{fact.value}</div>
+                      </div>
+                    )) : (
+                      <div style={{ fontSize: 13, color: "#7A8E88", lineHeight: 1.45 }}>Ainda não há registros suficientes para espelhar uma tendência. Quando você salvar dados, eles aparecem aqui como contagem factual.</div>
+                    )}
+                  </div>
                 )}
-
-                {st.diarioSub === "locais" && (st.aplicacoes.length ? (
-                  <>
-                    <div style={{ position: "relative", width: 150, height: 210, margin: "10px auto" }}>
-                      <div style={{ position: "absolute", top: 0, left: 0 }} dangerouslySetInnerHTML={{ __html: BODY_SVG }} />
-                      {locaisHeat.map((r) => (
-                        <div key={r.label} style={{ position: "absolute", left: r.left, top: r.top, width: 26, height: 26, borderRadius: "50%", background: "#0E6B5C", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10.5, fontWeight: 800, color: "#fff" }}>{r.count}</div>
-                      ))}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: "#9AAAA5", textAlign: "center" }}>Não sugere próximo local nem rotação.</div>
-                  </>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "40px 20px", fontSize: 14, fontWeight: 700, color: "#16302B" }}>Registre uma aplicação para ver seus locais aqui.</div>
-                ))}
-
-                {st.diarioSub === "fotos" && (st.fotos.length ? (
-                  <>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                      {st.fotos.map((f, k) => (<div key={k} style={{ aspectRatio: "1", borderRadius: 12, background: "#EAF5F2", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{f.icon}</div>))}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: "#9AAAA5", marginTop: 8 }}>Galeria privada — sem avaliação corporal.</div>
-                  </>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "40px 20px", fontSize: 14, fontWeight: 700, color: "#16302B" }}>Nenhuma foto ainda. Adicione ao registrar.</div>
-                ))}
               </div>
             )}
 
