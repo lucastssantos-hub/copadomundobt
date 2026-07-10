@@ -6,7 +6,8 @@
 // Mantém os limites regulatórios (não diagnostica, não prescreve, não sugere conduta).
 // Estado é client-side; persistência no Supabase fica para a próxima fase.
 
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { loadProfile } from "@/lib/canetta-store";
 
 type Tab = "hoje" | "diario" | "consulta" | "mais";
 type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "pergunta" | null;
@@ -82,6 +83,24 @@ export default function JourneyPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
   const setDraft = (p: Partial<Draft>) => setStRaw((s) => ({ ...s, draft: { ...s.draft, ...p } }));
+
+  // Hidrata a identidade a partir do perfil salvo no onboarding. Sem env/perfil,
+  // mantém os valores de exemplo. Só sobrescreve campos realmente informados.
+  useEffect(() => {
+    let active = true;
+    loadProfile().then((profile) => {
+      if (!active || !profile) return;
+      const patch: Partial<AppState> = {};
+      if (profile.name) patch.nome = profile.name;
+      if (profile.medication) patch.medicamento = profile.medication;
+      if (profile.current_dose) patch.dose = profile.current_dose;
+      if (profile.frequency) patch.freqLabel = profile.frequency;
+      if (Object.keys(patch).length) setStRaw((s) => ({ ...s, ...patch }));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const toast = (msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);

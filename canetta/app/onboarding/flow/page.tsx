@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { saveOnboardingProfile } from "@/lib/canetta-store";
 
 type Plano = "anual" | "mensal";
 
@@ -141,6 +142,30 @@ export default function OnboardingFlowPage() {
   const back = () => setSt((s) => ({ ...s, i: Math.max(1, s.i - 1) }));
   const goto27 = () => set({ i: 27 });
   const restart = () => { if (timerRef.current) clearInterval(timerRef.current); setSt(INITIAL); };
+
+  // Fim do onboarding: persiste o perfil (best-effort, anônimo primeiro) e segue
+  // para a jornada. A persistência corre com um timeout de segurança para nunca
+  // prender o usuário caso a rede demore; sem env Supabase é no-op instantâneo.
+  const finishToJourney = async () => {
+    try {
+      await Promise.race([
+        saveOnboardingProfile({
+          nome: st.nome,
+          estagio: st.estagio,
+          medicamento: st.medicamento,
+          dose: st.dose,
+          freq: st.freq,
+          alturaCm: st.alturaCm,
+          dificuldade: st.dificuldade,
+          pesoKg: st.pesoKg
+        }),
+        new Promise((resolve) => setTimeout(resolve, 3000))
+      ]);
+    } catch (error) {
+      console.warn("[canetta] persistir onboarding falhou:", error);
+    }
+    router.push("/journey");
+  };
 
   // loading auto-advance (tela 23 -> 24)
   useEffect(() => {
@@ -703,7 +728,7 @@ export default function OnboardingFlowPage() {
           </div>
           <div style={{ position: "absolute", bottom: 48, left: 26, right: 26, display: "flex", flexDirection: "column", gap: 10, zIndex: 1 }}>
             <button onClick={() => set({ notifOn: !st.notifOn })} style={ctaLight}>{st.notifOn ? "Notificações ativadas ✓" : "Ativar notificações"}</button>
-            <button onClick={() => router.push("/journey")} style={{ width: "100%", padding: 14, background: "transparent", color: "#BEE0D6", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Começar minha jornada</button>
+            <button onClick={finishToJourney} style={{ width: "100%", padding: 14, background: "transparent", color: "#BEE0D6", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Começar minha jornada</button>
           </div>
         </div>
       )}
