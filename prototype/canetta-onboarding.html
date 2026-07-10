@@ -147,7 +147,7 @@
   .btn-line{background:var(--paper-2);border:1.5px solid var(--line);color:var(--ink)}
   .btn-line:hover{border-color:var(--brand)}
   .btn.sm{padding:13px;font-size:15px;border-radius:14px}
-  .btn:focus-visible,.opt:focus-visible,.chip:focus-visible,.legal-card:focus-visible,.plan:focus-visible,.quick:focus-visible,.site:focus-visible,.slot:focus-visible,.appbar .back:focus-visible,.ruler-units button:focus-visible,.pace input[type=range]:focus-visible{
+  .btn:focus-visible,.opt:focus-visible,.chip:focus-visible,.legal-card:focus-visible,.plan:focus-visible,.quick:focus-visible,.site:focus-visible,.slot:focus-visible,.appbar .back:focus-visible,.ruler-units button:focus-visible{
     outline:3px solid color-mix(in srgb,var(--brand-2) 36%,transparent);
     outline-offset:3px;
   }
@@ -260,23 +260,6 @@
     padding:6px 16px;font-weight:800;font-family:inherit;font-size:13px;cursor:pointer}
   .ruler-units button.on{border-color:var(--brand);background:var(--brand);color:#fff}
 
-  /* projection chart */
-  .chartcard{margin-top:20px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:16px}
-  .chartcard .legend{display:flex;gap:16px;font-size:11.5px;color:var(--ink-soft);margin-top:10px;justify-content:center}
-  .chartcard .legend b{color:var(--ink)}
-  .dotk{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
-
-  /* pace slider */
-  .pace{margin-top:22px}
-  .pace input[type=range]{width:100%;-webkit-appearance:none;height:8px;border-radius:8px;
-    background:linear-gradient(90deg,var(--brand-2),var(--accent));outline:none;margin-top:6px}
-  .pace input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;
-    background:#fff;border:4px solid var(--brand);cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.18)}
-  .pace .labels{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink-soft);margin-top:10px}
-  .pace .labels b.on{color:var(--brand)}
-  .pace .micro{margin-top:16px;font-size:13px;line-height:1.45;color:var(--ink-soft);background:color-mix(in srgb,var(--brand-2) 8%,#fff);
-    border:1px solid var(--line);border-radius:14px;padding:13px 14px;display:flex;gap:10px;align-items:flex-start}
-
   /* symptom sliders */
   .symrow{display:flex;align-items:center;gap:12px;margin-top:14px}
   .symrow b{width:96px;font-size:13px;font-weight:700}
@@ -310,11 +293,11 @@
     box-shadow:inset 0 0 0 10px #fff,inset 0 0 0 12px var(--line)}
   .plate .scan::after{content:"";position:absolute;inset:14px;border:2px dashed rgba(255,255,255,.85);border-radius:50%}
   .plate .frame{position:absolute;inset:-6px;border-radius:50%}
-  .macros{display:flex;gap:8px;margin-top:16px}
-  .macro{flex:1;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:11px 8px;text-align:center}
-  .macro b{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
-  .macro span{font-size:10.5px;color:var(--ink-soft);font-weight:700;letter-spacing:.03em;text-transform:uppercase}
-  .macro.p b{color:var(--brand)} .macro.c b{color:var(--accent-d)} .macro.f b{color:var(--data-d)}
+  .meal-tags{display:flex;gap:8px;margin-top:16px}
+  .meal-tag{flex:1;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:11px 8px;text-align:center}
+  .meal-tag b{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+  .meal-tag span{font-size:10.5px;color:var(--ink-soft);font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+  .meal-tag.p b{color:var(--brand)} .meal-tag.c b{color:var(--accent-d)} .meal-tag.f b{color:var(--data-d)}
 
   /* activity rings */
   .rings{display:flex;align-items:center;gap:18px;margin-top:18px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;padding:18px}
@@ -558,8 +541,9 @@
   /* ---------------- estado ---------------- */
   var state = {
     name:"", stage:"", medication:"", dose:"", freq:"",
-    weight:92, height:170, goal:75, unitW:"kg", unitH:"cm",
-    ritmo:2, difficulty:"", mascot:"Canetta", plan:"anual",
+    weight:92, height:170, unitW:"kg", unitH:"cm",
+    goalMode:"organizar", phase:"primeiro-mes", dosePattern:"fixa",
+    difficulty:"", mascot:"Canetta", plan:"anual",
     doseLocal:"abdomen", doseNote:"",
     reminderDay:"quinta", reminderTime:"20h",
     symptomFocus:"nausea", symptomNote:"", hydration:"ok", mealCheck:"leve", newWeight:91,
@@ -573,14 +557,8 @@
   function mascotN(){ return state.mascot || "Canetta"; }
   function isStarting(){ return state.stage==="comecar"; }
   function difLabel(){ var m={alimentacao:"a alimentação",atividade:"a atividade física",doses:"o registro de doses",progresso:"acompanhar o progresso",efeitos:"os efeitos colaterais"}; return m[state.difficulty]||"a alimentação"; }
-  function diffKg(){ return Math.max(0, state.weight - state.goal); }
-  function estDate(){
-    var rates={1:0.42,2:0.62,3:0.9}, r=rates[state.ritmo]||0.62;
-    var weeks = diffKg()>0 ? diffKg()/r : 8;
-    var d=new Date(2026,6,9); d.setDate(d.getDate()+Math.round(weeks*7));
-    var M=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-    return M[d.getMonth()]+" de "+d.getFullYear();
-  }
+  function goalLabel(){ var m={peso:"Acompanhar peso",efeitos:"Entender efeitos",consulta:"Preparar consulta",organizar:"Organizar rotina"}; return m[state.goalMode]||"Organizar rotina"; }
+  function phaseLabel(){ var m={"primeiro-mes":"Primeiro mês","ate-tres":"Até 3 meses","tres-seis":"3 a 6 meses",manutencao:"Manutenção","pausa":"Pausa ou mudança"}; return m[state.phase]||"Primeiro mês"; }
   function priceAnual(){ return "R$ 149,90"; }
   function localLabel(){ var m={abdomen:"Abdômen",coxa:"Coxa",braco:"Braço"}; return m[state.doseLocal]||"Abdômen"; }
   function reminderLabel(){ var d={segunda:"Segunda",terca:"Terça",quarta:"Quarta",quinta:"Quinta",sexta:"Sexta",sabado:"Sábado",domingo:"Domingo"}; return (d[state.reminderDay]||"Quinta")+" · "+state.reminderTime; }
@@ -815,45 +793,59 @@
       init:function(){ initRuler(); }};
   }});
 
-  // 13 Meta de peso (8)
-  S.push({title:"Meta de peso", step:8, render:function(){
-    return {body:'<span class="eyebrow">Seu objetivo</span>'+
-      '<h2 class="title sm">Qual peso você deseja alcançar?</h2>'+
-      '<div class="card soft" style="margin-top:14px;text-align:center">'+
-        '<div style="font-size:12px;font-weight:800;color:var(--ink-soft);letter-spacing:.04em">DIFERENÇA PARA A META</div>'+
-        '<div id="goalDiff" style="font-size:34px;font-weight:800;color:var(--brand);letter-spacing:-.03em" class="num">-'+diffKg()+' kg</div>'+
-      '</div>'+
-      ruler("goal",40,180,state.goal,"kg"),
-      cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>',
-      init:function(){ initRuler(); }};
-  }});
-
-  // 14 Evolução prevista (interstitial)
-  S.push({title:"Evolução prevista", render:function(){
-    return {body:'<span class="eyebrow">Projeção</span>'+
-      '<h2 class="title">Veja sua evolução acontecer semana a semana.</h2>'+
-      '<p class="sub tight">Uma projeção baseada nas suas respostas — não é uma promessa clínica.</p>'+
-      '<div class="chartcard">'+projChart()+
-        '<div class="legend"><span><i class="dotk" style="background:var(--data)"></i>Projeção de peso</span><span><i class="dotk" style="background:var(--brand-2)"></i><b>Meta '+state.goal+' kg</b></span></div>'+
+  // 13 Objetivo de acompanhamento (8)
+  S.push({title:"Objetivo", step:8, render:function(){
+    return {body:'<span class="eyebrow">Objetivo declarado</span>'+
+      '<h2 class="title sm">O que você quer acompanhar melhor?</h2>'+
+      '<p class="sub tight">Escolha um foco para organizar seus registros. O Canetta não calcula peso ideal, meta clínica ou promessa de resultado.</p>'+
+      '<div class="opts">'+
+        opt("goalMode","organizar","Organizar rotina","Doses, lembretes e anotações no mesmo lugar","🗓️")+
+        opt("goalMode","peso","Acompanhar peso","Guardar medidas informadas por você","⚖️")+
+        opt("goalMode","efeitos","Entender efeitos","Registrar sintomas e hábitos do dia","🩺")+
+        opt("goalMode","consulta","Preparar consulta","Chegar com fatos e perguntas organizadas","📋")+
       '</div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
 
-  // 15 Ritmo (9)
-  S.push({title:"Ritmo desejado", step:9, render:function(){
-    return {body:'<span class="eyebrow">Seu ritmo</span>'+
-      '<h2 class="title sm">Quão rápido você quer chegar lá?</h2>'+
-      '<div class="mascot-wrap" id="paceMascot" style="margin:14px 0 6px">'+mascot(paceMood(),120)+'</div>'+
-      '<div class="pace">'+
-        '<input type="range" min="1" max="3" step="1" value="'+state.ritmo+'" id="paceRange">'+
-        '<div class="labels"><b id="pl1">Suave</b><b id="pl2">Equilibrado</b><b id="pl3">Acelerado</b></div>'+
-        '<div class="micro">💚 <span>Ritmos mais rápidos podem pedir acompanhamento mais próximo. O Canetta organiza seus registros para a conversa com profissionais de saúde.</span></div>'+
+  // 14 Registros, não projeções (interstitial)
+  S.push({title:"Registros", render:function(){
+    return {body:'<span class="eyebrow">Como o Canetta trabalha</span>'+
+      '<h2 class="title">Sua jornada aparece a partir do que você registra.</h2>'+
+      '<p class="sub tight">Em vez de prever resultado, o app organiza fatos: peso informado, aplicação, sintomas, refeições, fotos e dúvidas para consulta.</p>'+
+      '<div class="metricgrid" style="margin-top:18px">'+
+        metric("Peso atual",state.weight+" kg","Informado por você")+
+        metric("Medicamento",med(),"Informado por você")+
+      '</div>'+
+      '<div class="daylist">'+
+        day("💉","Aplicações","Data, dose informada, local e observação")+
+        day("🩺","Check-ins","Sintomas, hidratação e refeição do dia")+
+        day("📋","Consulta","Resumo factual para discutir com seu médico")+
       '</div>',
-      cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>',
-      init:function(){ initPace(); }};
+      cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
-  function paceMood(){ return state.ritmo===3?"cheer":(state.ritmo===1?"calm":"wave"); }
 
+  // 15 Fase da jornada (9)
+  S.push({title:"Fase da jornada", step:9, render:function(){
+    return {body:'<span class="eyebrow">Fase atual</span>'+
+      '<h2 class="title sm">Em que fase você está agora?</h2>'+
+      '<p class="sub tight">Isso ajuda a organizar o diário por contexto, sem sugerir dose, ritmo ou mudança de tratamento.</p>'+
+      '<div class="slotgrid">'+
+        slot("phase","primeiro-mes","Primeiro mês","Começando")+
+        slot("phase","ate-tres","Até 3 meses","Ajustando rotina")+
+        slot("phase","tres-seis","3 a 6 meses","Com histórico")+
+        slot("phase","manutencao","Manutenção","Acompanhando")+
+      '</div>'+
+      '<div class="field"><label>Situação da dose informada por você</label>'+
+        '<div class="slotgrid" style="margin-top:9px">'+
+          slot("dosePattern","fixa","Fixa","Sem mudança recente")+
+          slot("dosePattern","mudou","Mudou","Registro recente")+
+          slot("dosePattern","pausa","Pausa","Anotação para consulta")+
+          slot("dosePattern","nao-sei","Não sei","Completar depois")+
+        '</div>'+
+      '</div>'+
+      '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📌</span><span style="font-size:12.5px;color:var(--ink-soft)">Se sua fase ou dose mudar, registre o que foi orientado por um profissional de saúde.</span></div>',
+      cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
+  }});
   // 16 Dificuldade (10)
   S.push({title:"Dificuldade", step:10, render:function(){
     return {body:'<span class="eyebrow">O que pesa hoje</span>'+
@@ -871,11 +863,11 @@
   S.push({title:"Nascimento", step:11, render:function(){
     return {body:'<span class="eyebrow">Quase lá</span>'+
       '<h2 class="title sm">Por último, sua data de nascimento</h2>'+
-      '<p class="sub tight">Para personalizar sua experiência no app.</p>'+
+      '<p class="sub tight">Para organizar seus registros de perfil e histórico.</p>'+
       '<div class="field"><label>Data de nascimento</label>'+
       '<input id="dobInput" type="date" value="1990-05-12"></div>'+
       '<div class="card" style="margin-top:16px;display:flex;gap:10px;align-items:center"><span style="font-size:20px">🔒</span>'+
-      '<span style="font-size:12.5px;color:var(--ink-soft)">Usamos sua idade apenas para personalizar seu plano.</span></div>',
+      '<span style="font-size:12.5px;color:var(--ink-soft)">Usamos sua idade apenas como dado de perfil informado por você.</span></div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
   }});
 
@@ -938,13 +930,13 @@
   // 20 Refeições
   S.push({title:"Refeições", render:function(){
     return {body:'<span class="eyebrow">Alimentação</span>'+
-      '<h2 class="title">Nunca mais estime calorias no chute.</h2>'+
+      '<h2 class="title">Registre refeições sem transformar comida em cálculo.</h2>'+
       '<div class="plate"><div class="scan"></div>'+
-        '<p class="sub tight" style="margin-top:14px">Escaneie o prato e veja os macros estimados.</p>'+
-        '<div class="macros">'+
-          '<div class="macro p"><b>38g</b><span>Proteína</span></div>'+
-          '<div class="macro c"><b>45g</b><span>Carbo</span></div>'+
-          '<div class="macro f"><b>16g</b><span>Gordura</span></div>'+
+        '<p class="sub tight" style="margin-top:14px">Adicione foto ou nota para lembrar como foi o dia. Sem meta de calorias, macros ou prescrição alimentar.</p>'+
+        '<div class="meal-tags">'+
+          '<div class="meal-tag p"><b>Foto</b><span>Opcional</span></div>'+
+          '<div class="meal-tag c"><b>Nota</b><span>Como foi</span></div>'+
+          '<div class="meal-tag f"><b>Água</b><span>Registro</span></div>'+
         '</div>'+
       '</div>',
       cta:'<button class="btn btn-pri" data-adv="1">Continuar</button>'};
@@ -996,8 +988,8 @@
       '<div class="pct" id="loadPct">0%</div></div>'+
       '<div class="loadsteps">'+
         '<div class="lstep on" id="ls0"><span class="lc">1</span>Analisando seu perfil</div>'+
-        '<div class="lstep" id="ls1"><span class="lc">2</span>Organizando suas metas</div>'+
-        '<div class="lstep" id="ls2"><span class="lc">3</span>Finalizando seu plano</div>'+
+        '<div class="lstep" id="ls1"><span class="lc">2</span>Organizando seus registros</div>'+
+        '<div class="lstep" id="ls2"><span class="lc">3</span>Preparando sua jornada</div>'+
       '</div></div>',
       init:function(){ runLoading(); }};
   }});
@@ -1005,14 +997,14 @@
   // 25 Reveal
   S.push({title:"Reveal do plano", render:function(){
     return {body:'<div class="mascot-wrap" style="margin:8px 0 2px">'+mascot("checkin",112)+'</div>'+
-      '<span class="eyebrow" style="text-align:center;display:block">Plano pronto</span>'+
-      '<h2 class="title" style="text-align:center">'+Nm()+', seu plano de acompanhamento para '+med()+' está pronto.</h2>'+
+      '<span class="eyebrow" style="text-align:center;display:block">Jornada organizada</span>'+
+      '<h2 class="title" style="text-align:center">'+Nm()+', seu espaço de acompanhamento para '+med()+' está pronto.</h2>'+
       '<div class="journey">'+
         '<div class="jw"><div class="k">Hoje</div><div class="v num">'+state.weight+'</div><div class="k" style="text-transform:none">kg</div></div>'+
         '<div class="arrowc"><svg width="40" height="20" viewBox="0 0 40 20"><path d="M2 10h32m-8-6 8 6-8 6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
-        '<div class="jw goal"><div class="k">Meta</div><div class="v num">'+state.goal+'</div><div class="k" style="text-transform:none">kg</div></div>'+
+        '<div class="jw goal"><div class="k">Foco</div><div class="v" style="font-size:17px;line-height:1.18">'+goalLabel()+'</div><div class="k" style="text-transform:none">'+phaseLabel()+'</div></div>'+
       '</div>'+
-      '<p class="estdate">Data estimada: <b>'+estDate()+'</b></p>'+
+      '<p class="estdate">Próximo passo: <b>registrar o que acontecer na sua rotina</b></p>'+
       '<div class="card soft" style="margin-top:16px;display:flex;gap:12px;align-items:flex-start">'+
         '<span style="font-size:22px">💡</span><div><b style="display:block;font-size:14px">Destaque da sua jornada</b>'+
         '<span style="font-size:13px;color:var(--ink-soft)">Acompanhamento das refeições e dos sintomas, com resumo pronto para levar à consulta.</span></div></div>'+
@@ -1033,7 +1025,7 @@
   S.push({title:"Paywall", render:function(){
     var a=state.plan==="anual", m=state.plan==="mensal";
     return {body:'<h2 class="title" style="margin-top:6px">'+Nm()+', seu plano está pronto. Vamos começar juntos.</h2>'+
-      '<p class="sub tight">Acompanhar seus registros até a meta informada de '+state.goal+' kg, com lembretes e resumo para consulta.</p>'+
+      '<p class="sub tight">Acompanhe seus registros informados por você, com lembretes e resumo para consulta.</p>'+
       '<div class="benefits">'+
         ben("🔔","Lembretes de dose para nunca mais esquecer")+
         ben("📋","Resumo pronto para levar à sua consulta")+
@@ -1080,7 +1072,7 @@
         :'Você pode mudar isso depois. O Canetta só lembra o horário que você registrar.')+'</p>'+
       '<div class="slotgrid">'+
         slot("reminderDay","segunda","Segunda","Começo da semana")+
-        slot("reminderDay","quinta","Quinta","Ritmo atual do preview")+
+        slot("reminderDay","quinta","Quinta","Dia atual do preview")+
         slot("reminderDay","sabado","Sábado","Fim de semana")+
         slot("reminderDay","domingo","Domingo","Preparar a semana")+
       '</div>'+
@@ -1332,11 +1324,11 @@
   S.push({title:"Registro de peso", render:function(){
     return {body:'<span class="eyebrow">Peso</span>'+
       '<h2 class="title sm">Adicionar novo registro de peso</h2>'+
-      '<p class="sub tight">Use como diário de acompanhamento. Metas e condutas devem ser discutidas com profissionais de saúde.</p>'+
+      '<p class="sub tight">Use como diário de acompanhamento. O Canetta salva o dado informado por você e não define peso ideal ou conduta.</p>'+
       ruler("newWeight",40,180,state.newWeight,"kg")+
       '<div class="metricgrid">'+
         metric("Anterior",state.weight+" kg","Informado no onboarding")+
-        metric("Meta informada",state.goal+" kg","Usada só como referência")+
+        metric("Foco atual",goalLabel(),"Escolhido no onboarding")+
       '</div>',
       cta:'<button class="btn btn-pri" id="saveWeight">Salvar peso</button>',
       init:function(){
@@ -1605,34 +1597,6 @@
     return out+'</div>';
   }
 
-  /* ---------- projection chart (SVG) ---------- */
-  function projChart(){
-    var w=280,ht=140,pad=8;
-    var start=state.weight, end=state.goal, n=8;
-    var pts=[];
-    for(var i=0;i<=n;i++){
-      var t=i/n, ease=1-Math.pow(1-t,1.7);
-      var val=start-(start-end)*ease;
-      var x=pad+(w-2*pad)*t;
-      pts.push([x,val]);
-    }
-    var min=Math.min(end,start)-3, max=Math.max(end,start)+3;
-    function Y(v){ return pad+(ht-2*pad)*(1-(v-min)/(max-min)); }
-    var d="M"+pts.map(function(p){return p[0].toFixed(1)+" "+Y(p[1]).toFixed(1);}).join(" L");
-    var area=d+" L"+pad+" "+(ht-pad)+" Z";
-    var dots="";
-    pts.forEach(function(p,i){ if(i%2===0){ dots+='<circle cx="'+p[0].toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="3" fill="#5F7FD6"/>'; } });
-    var endx=pts[n][0].toFixed(1), endy=Y(end).toFixed(1);
-    return '<svg width="100%" viewBox="0 0 '+w+' '+ht+'" preserveAspectRatio="none" style="height:150px">'+
-      '<line x1="'+pad+'" y1="'+Y(end).toFixed(1)+'" x2="'+(w-pad)+'" y2="'+Y(end).toFixed(1)+'" stroke="#22B39A" stroke-width="1.5" stroke-dasharray="4 4" opacity=".7"/>'+
-      '<path d="'+area+'" fill="url(#pg)" opacity=".28"/>'+
-      '<path d="'+d+'" fill="none" stroke="#5F7FD6" stroke-width="2.6" stroke-linecap="round"/>'+
-      dots+
-      '<circle cx="'+endx+'" cy="'+endy+'" r="6" fill="#22B39A" stroke="#fff" stroke-width="2.5"/>'+
-      '<defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8DA9E8"/><stop offset="1" stop-color="#8DA9E8" stop-opacity="0"/></linearGradient></defs>'+
-      '</svg>';
-  }
-
   /* ---------- activity rings SVG ---------- */
   function activityRings(){
     function ring(r,val,col){ var c=2*Math.PI*r; return '<circle cx="46" cy="46" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="9" opacity=".14"/>'+
@@ -1671,7 +1635,6 @@
       else if(curUnit==="lb"){ num.textContent=Math.round(v*2.2046); unitEl.textContent="lb"; }
       else if(curUnit==="cm"){ num.textContent=v; unitEl.textContent="cm"; }
       else if(curUnit==="ft"){ var ti=v/2.54, ft=Math.floor(ti/12), inc=Math.round(ti-ft*12); num.textContent=ft+"'"+inc; unitEl.textContent='"'; }
-      if(key==="weight"||key==="goal"){ var gd=document.getElementById("goalDiff"); if(gd) gd.textContent="-"+diffKg()+" kg"; }
     }
     track.scrollLeft=(val-min)*GAP;
     track.addEventListener("scroll",refresh,{passive:true});
@@ -1682,17 +1645,6 @@
       });
     });
     refresh();
-  }
-
-  /* ---------- pace ---------- */
-  function initPace(){
-    var r=document.getElementById("paceRange"); if(!r) return;
-    function upd(){
-      state.ritmo=+r.value;
-      var mw=document.getElementById("paceMascot"); if(mw) mw.innerHTML=mascot(paceMood(),120);
-      [1,2,3].forEach(function(i){ var e=document.getElementById("pl"+i); if(e) e.classList.toggle("on",i===state.ritmo); });
-    }
-    r.addEventListener("input",upd); upd();
   }
 
   /* ---------- loading ---------- */

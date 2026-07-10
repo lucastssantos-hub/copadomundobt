@@ -17,8 +17,8 @@ build, servidor ou conexão.
 - **◐ Tema** alterna o tema claro/escuro da moldura da página (a tela do app mantém
   o próprio tema, como um app real).
 - **↺ Reiniciar** volta ao início com o estado zerado (útil para demos).
-- Toque nas opções, digite o nome, arraste a régua e o slider — o estado se
-  propaga entre as telas (nome, mascote, medicamento, peso, meta, data estimada).
+- Toque nas opções, digite o nome e arraste a régua — o estado se propaga entre
+  as telas (nome, mascote, medicamento, peso, objetivo declarado, fase, lembrete).
 
 ## Fluxo (45 telas)
 
@@ -41,9 +41,9 @@ exportação, linha do tempo, calendário, fotos/medidas e fontes educativas.
 | 10 | Frequência | 26 | Compromisso |
 | 11 | Peso atual (régua) | 27 | Paywall |
 | 12 | Altura (régua) | 28 | Pós-compra / retenção |
-| 13 | Meta de peso (cálculo dinâmico) | 29 | Lembretes |
-| 14 | Evolução prevista (gráfico) | 30 | Home da jornada |
-| 15 | Ritmo desejado (slider) | 31 | Registro de aplicação |
+| 13 | Objetivo de acompanhamento | 29 | Lembretes |
+| 14 | Registros, não projeções | 30 | Home da jornada |
+| 15 | Fase da jornada | 31 | Registro de aplicação |
 | 16 | Maior dificuldade | 32 | Registro salvo |
 |  |  | 33 | Check-in pós-dose |
 |  |  | 34 | Check-in salvo |
@@ -75,7 +75,8 @@ um caminho separado completo para pré-tratamento.
   check-in.
 - Vende transformação, não funcionalidade. Sem promessas médicas agressivas, sem
   percentuais clínicos inventados, sem "milhares de usuários".
-- Projeções rotuladas como estimativas — "não é uma promessa clínica".
+- O onboarding evita meta ideal, projeção e ritmo de perda; usa objetivo declarado,
+  fase da jornada e registros informados pelo usuário.
 - Privacidade e confiança em destaque.
 
 ## Posicionamento e limites (segurança regulatória)
@@ -113,6 +114,11 @@ Mudanças aplicadas nesta revisão:
   onboarding.
 - **Fluxo "Quero começar":** copy inicial adaptada para pré-tratamento nas telas de
   medicamento, dose, frequência e registro, com a opção "Ainda não sei" na dose.
+- **Telas 13–15:** substituídas de "meta de peso / evolução prevista / ritmo
+  desejado" para objetivo de acompanhamento, lógica de registros e fase da jornada,
+  sem projeção de resultado.
+- **Tela 20 (Refeições):** deixou de prometer estimativa de calorias/macros; agora
+  registra foto, nota e água como fatos do dia.
 - **Pós-onboarding:** expandidas telas de lembretes, home, aplicação, check-in
   pós-dose, histórico visual de locais, sintomas, peso, resumo de consulta,
   exportação, linha do tempo, calendário, fotos/medidas e fontes educativas. O
@@ -122,12 +128,12 @@ Mudanças aplicadas nesta revisão:
 ## Design system
 
 - **Cores:** pinho-teal `#0E6B5C` (marca), menta `#22B39A` (ativo/progresso),
-  damasco `#FF9E7D` (mascote/comemoração), periwinkle `#8DA9E8` (projeções),
+  damasco `#FF9E7D` (mascote/comemoração), periwinkle `#8DA9E8` (dados visuais),
   neutro sage-quente `#F4F6F3`.
 - **Tipografia:** stack de sistema (iOS/Android nativo), com escala e numerais
   tabulares para todos os dados (kg, datas, preços).
-- **Componentes:** cards de opção, chips, régua com rolagem, slider, barra de
-  progresso, gráfico SVG, anéis de atividade, timeline de dose, paywall, cards
+- **Componentes:** cards de opção, chips, régua com rolagem, barra de progresso,
+  anéis de atividade, timeline de dose, paywall, cards
   rápidos, slots de lembrete, mapa de locais, calendário, fotos/medidas,
   fontes educativas, métricas e linha do tempo.
 
@@ -165,7 +171,6 @@ documento específico) e revisão por consultor médico/nutricionista ainda pend
 - Valores de preço (R$ 149,90/ano, R$ 29,90/mês) são placeholders para revisão.
 - O resumo pré-consulta da tela 19 é um exemplo visual de como os dados aparecerão
   depois de registros reais.
-- A projeção da tela 14 é uma estimativa visual, não uma promessa clínica.
 - Links profundos das fontes educativas (telas 18 e 25) ainda não apontam para
   URLs reais; a tela 45 já separa o espaço para esses links e revisão.
 - As telas pós-onboarding persistem apenas no `state` local do protótipo, não

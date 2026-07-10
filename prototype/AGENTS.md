@@ -76,14 +76,14 @@ e fontes educativas.
 | 10 | Frequência | 5/12 |
 | 11 | Peso atual (régua) | 6/12 |
 | 12 | Altura (régua) | 7/12 |
-| 13 | Meta de peso (−X kg dinâmico) | 8/12 |
-| 14 | Evolução prevista (gráfico) | |
-| 15 | Ritmo desejado (slider + mascote) | 9/12 |
+| 13 | Objetivo de acompanhamento | 8/12 |
+| 14 | Registros, não projeções | |
+| 15 | Fase da jornada | 9/12 |
 | 16 | Maior dificuldade | 10/12 |
 | 17 | Data de nascimento | 11/12 |
 | 18 | Sintomas → consulta | |
 | 19 | Resumo pré-consulta ("copiloto da consulta") | |
-| 20 | Refeições (scanner + macros) | |
+| 20 | Refeições (foto/nota/água, sem macros) | |
 | 21 | Atividade (anéis + integração saúde) | |
 | 22 | Nome do mascote | 12/12 |
 | 23 | Insight (padrão observado, descritivo) | |
@@ -117,13 +117,13 @@ Definido como CSS custom properties no topo do `<style>`. **Tokens do app são f
 light/dark do visualizador.
 
 - **Cores:** `--brand #0E6B5C` (pinho-teal), `--brand-2 #22B39A` (menta/ativo),
-  `--accent #FF9E7D` (damasco), `--data #8DA9E8` (periwinkle p/ gráficos),
+  `--accent #FF9E7D` (damasco), `--data #8DA9E8` (periwinkle p/ dados visuais),
   `--paper #F4F6F3` (neutro sage-quente), `--ink #16302B`.
 - **Tipografia:** stack de sistema (nativo iOS/Android). Hierarquia por
   peso/tamanho/tracking; `tabular-nums` em todos os dados (kg, datas, preços).
 - **Componentes:** cards de opção (`.opt`), chips (`.chip`), régua com scroll
-  (`.ruler`), slider de ritmo (`.pace`), barra de progresso (`.ptrack/.pfill`),
-  gráfico SVG (`projChart`), anéis (`activityRings`), timeline de dose (`.tl`),
+  (`.ruler`), barra de progresso (`.ptrack/.pfill`),
+  anéis (`activityRings`), timeline de dose (`.tl`),
   mapa de locais (`.bodymap`), calendário (`.calendar-card`), fotos/medidas
   (`.photo-strip`), fontes educativas (`.source-card`), relatório pré-consulta
   (`.report`), planos (`.plan`), mascote (`mascot()`).
@@ -134,26 +134,26 @@ Tudo em `canetta-onboarding.html`. O arquivo **não** tem `<!doctype>/<html>/<he
 <body>` (para ser compatível com Artifact) — começa em `<meta>/<title>/<style>`.
 
 - **`state`** (objeto JS): `name, stage, medication, dose, freq, weight, height,
-  goal, ritmo, difficulty, mascot, plan, doseLocal, doseNote, reminderDay,
+  goalMode, phase, dosePattern, difficulty, mascot, plan, doseLocal, doseNote, reminderDay,
   reminderTime, symptomFocus, symptomNote, hydration, mealCheck, newWeight,
   measureNote, didDose, didPostDose, didSymptom, didWeight, didMeasure`.
   Placeholders se propagam entre telas. As flags `did*` são setadas pelos botões
   "Salvar" das telas 31/33/36/38/44 e controlam os estados vazios de home (30),
   resumo (40) e linha do tempo (42).
 - **Helpers de texto:** `nm()/Nm()` (nome), `med()`, `mascotN()`, `difLabel()`,
-  `diffKg()`, `estDate()` (data estimada a partir do ritmo).
+  `goalLabel()`, `phaseLabel()`.
 - **`DOSES`**: mapa medicamento → lista de doses (usado na tela 09).
 - **`mascot(mood, size)`**: retorna SVG do mascote (uma "caneta" GLP-1). Moods:
   `wave`, `think`, `cheer`, `checkin`, `calm`.
 - **`S`** (array): cada tela é `S.push({ title, step?, render })`. `render()`
   retorna `{ body, cta?, init?, step?, bare?, tap? }`:
   - `body`: HTML da tela; `cta`: HTML do rodapé; `init`: callback pós-render
-    (wire de régua/slider/loading); `bare`: remove o padding padrão (splash,
+    (wire de régua/loading); `bare`: remove o padding padrão (splash,
     loading, pós-compra); `tap`: avança ao tocar (splash).
   - `step` (1..12) liga a barra de progresso (`STEP_TOTAL = 12`).
   - Botões/opções com `data-set="chave" data-val="valor"` atualizam `state`;
     `data-adv` avança automaticamente.
-- **Interações:** `initRuler()`, `initPace()`, `runLoading()`.
+- **Interações:** `initRuler()`, `runLoading()`.
 - **Navegação:** `draw()` renderiza a tela atual; `next()/prev()/goTo(i)`;
   setas do teclado; botão "▦ Ver todas as telas" (grid, agrupado em Onboarding /
   Pós-compra); "◐ Tema"; "↺ Reiniciar" (recarrega com estado zerado).
@@ -172,8 +172,10 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
   fotos Sem 1/2/4) para ilustrar o preview de onboarding; o usuário ainda não
   registrou nada nesse momento. O protótipo deve manter o rótulo explícito
   "Exemplo · seus dados aparecem aqui" nessa tela.
-- **Evolução prevista (tela 14):** projeção visual a partir das respostas, rotulada
-  como "não é uma promessa clínica". Não é cálculo clínico.
+- **Telas 13–15:** objetivo declarado, registros e fase da jornada. Não há meta
+  clínica, projeção de peso, ritmo desejado ou data estimada.
+- **Refeições (tela 20):** registra foto/nota/água como fatos do dia; não calcula
+  calorias, macros ou metas alimentares.
 - **Conteúdo educativo:** a tela 18 e o selo da tela 25 agora **nomeiam** as
   fontes (Bulário Eletrônico Anvisa, diretrizes ABESO, SBEM), mas os links
   profundos (URL da bula de cada medicamento, documento específico de diretriz)
