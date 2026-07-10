@@ -13,18 +13,18 @@ build, servidor ou conexão.
 
 - **‹ / ›** e **setas do teclado** avançam/voltam entre as telas.
 - **▦ Ver todas as telas** abre a visão geral do fluxo, agrupada em Onboarding
-  (01–28) e Pós-compra (29–38) — salte para qualquer tela.
+  (01–28) e Pós-compra (29–39) — salte para qualquer tela.
 - **◐ Tema** alterna o tema claro/escuro da moldura da página (a tela do app mantém
   o próprio tema, como um app real).
 - **↺ Reiniciar** volta ao início com o estado zerado (útil para demos).
 - Toque nas opções, digite o nome, arraste a régua e o slider — o estado se
   propaga entre as telas (nome, mascote, medicamento, peso, meta, data estimada).
 
-## Fluxo (38 telas)
+## Fluxo (39 telas)
 
-As telas 01–28 continuam sendo o onboarding/paywall. As telas 29–38 completam o
+As telas 01–28 continuam sendo o onboarding/paywall. As telas 29–39 completam o
 primeiro fluxo pós-compra da aplicação: lembretes, home, aplicação, sintomas,
-peso, resumo de consulta e linha do tempo.
+peso, resumo de consulta, exportação e linha do tempo.
 
 | # | Tela | # | Tela |
 |---|------|---|------|
@@ -49,7 +49,8 @@ peso, resumo de consulta e linha do tempo.
 |  |  | 35 | Registro de peso |
 |  |  | 36 | Peso salvo |
 |  |  | 37 | Resumo de consulta |
-|  |  | 38 | Linha do tempo |
+|  |  | 38 | Exportar resumo |
+|  |  | 39 | Linha do tempo |
 
 A barra de progresso aparece apenas nas 12 telas de coleta reais (05–07, 09–13,
 15–17, 22).
@@ -106,8 +107,9 @@ Mudanças aplicadas nesta revisão:
 - **Fluxo "Quero começar":** copy inicial adaptada para pré-tratamento nas telas de
   medicamento, dose, frequência e registro, com a opção "Ainda não sei" na dose.
 - **Pós-onboarding:** expandidas telas de lembretes, home, aplicação, sintomas,
-  peso, resumo de consulta e linha do tempo. O fluxo usa dose, horário, local,
-  peso e sintomas como dados registrados pelo usuário, sem recomendar conduta.
+  peso, resumo de consulta, exportação e linha do tempo. O fluxo usa dose,
+  horário, local, peso e sintomas como dados registrados pelo usuário, sem
+  recomendar conduta.
 
 ## Design system
 
@@ -151,3 +153,5 @@ documento específico) e revisão por consultor médico/nutricionista ainda pend
   URLs reais.
 - As telas pós-onboarding persistem apenas no `state` local do protótipo, não
   enviam notificações reais e não substituem backend/autenticação.
+  A exportação baixa um `.txt` local no protótipo; no app real deve virar PDF e
+  compartilhamento controlado pelo usuário.

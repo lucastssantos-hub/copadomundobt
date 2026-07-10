@@ -17,7 +17,7 @@ Onboarding de um app de **acompanhamento de tratamento GLP-1**. Hoje existe como
 de app. É um produto diferente do bt-vision — só compartilha o repositório.
 
 ➡️ **Se você vai trabalhar no Canetta, leia primeiro [`prototype/AGENTS.md`](prototype/AGENTS.md).**
-Ele traz a visão de produto, as 38 telas, o design system, os **limites
+Ele traz a visão de produto, as 39 telas, o design system, os **limites
 regulatórios obrigatórios** (o app não diagnostica nem prescreve) e a arquitetura
 do protótipo.
 

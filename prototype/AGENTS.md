@@ -21,8 +21,8 @@ emagrecimento".
 
 ## 2. Status atual
 
-- **Entregue:** protótipo mobile navegável de **38 telas** (28 de onboarding +
-  10 pós-compra/pós-onboarding), em pt-BR, como
+- **Entregue:** protótipo mobile navegável de **39 telas** (28 de onboarding +
+  11 pós-compra/pós-onboarding), em pt-BR, como
   **arquivo único** `canetta-onboarding.html` (HTML+CSS+JS inline, SVG do mascote
   inline, zero dependências, zero build). Abre direto no navegador e também é
   publicável como Artifact.
@@ -53,12 +53,13 @@ clínica**. Qualquer copy ou feature nova precisa respeitar isto:
 Boundary explícito já presente no app (tela 04 e 23): *"O Canetta organiza sua
 jornada e não substitui profissionais de saúde — não diagnostica nem prescreve."*
 
-## 4. As 38 telas
+## 4. As 39 telas
 
 Ordem estratégica do onboarding (não reordenar sem motivo forte — perguntas são
 intercaladas com telas de valor de propósito). Barra de progresso só nas **12
-telas de coleta**. As telas 29–38 cobrem o primeiro fluxo pós-compra:
-lembretes, home, aplicação, sintomas, peso, consulta e linha do tempo.
+telas de coleta**. As telas 29–39 cobrem o primeiro fluxo pós-compra:
+lembretes, home, aplicação, sintomas, peso, consulta, exportação e linha do
+tempo.
 
 | # | Tela | Coleta? |
 |---|------|:---:|
@@ -99,7 +100,8 @@ lembretes, home, aplicação, sintomas, peso, consulta e linha do tempo.
 | 35 | Registro de peso | |
 | 36 | Peso salvo | |
 | 37 | Resumo de consulta | |
-| 38 | Linha do tempo | |
+| 38 | Exportar resumo | |
+| 39 | Linha do tempo | |
 
 ## 5. Design system
 
@@ -166,12 +168,14 @@ array = ordem do fluxo). Reaproveite os componentes/helpers existentes.
   fontes (Bulário Eletrônico Anvisa, diretrizes ABESO, SBEM), mas os links
   profundos (URL da bula de cada medicamento, documento específico de diretriz)
   e a revisão por consultor médico/nutricionista ainda estão pendentes.
-- **Pós-onboarding (telas 29–38):** persistem só no `state` local (sem backend/
-  notificações). Home (30), resumo (37) e linha do tempo (38) agora têm
-  **estados vazios reais**: só mostram aplicação/sintoma/peso que o usuário
-  registrou na sessão (flags `didDose/didSymptom/didWeight`); antes de qualquer
-  registro, exibem estado vazio explicativo. O peso do onboarding aparece como
-  "Informado no onboarding" (dado real do usuário, não mock).
+- **Pós-onboarding (telas 29–39):** persistem só no `state` local (sem backend/
+  notificações). Home (30), resumo (37) e linha do tempo (39) têm **estados
+  vazios reais**: só mostram aplicação/sintoma/peso que o usuário registrou na
+  sessão (flags `didDose/didSymptom/didWeight`); antes de qualquer registro,
+  exibem estado vazio explicativo. O peso do onboarding aparece como "Informado
+  no onboarding" (dado real do usuário, não mock). A exportação (38) baixa um
+  `.txt` local no protótipo; no app real deve virar PDF e compartilhamento
+  controlado pelo usuário.
 
 ## 8. Próximos passos candidatos (a decidir)
 

@@ -408,6 +408,19 @@
   .event span{display:block;margin-top:2px;font-size:12px;line-height:1.35;color:var(--ink-soft)}
   .summary-actions{display:flex;flex-direction:column;gap:10px;margin-top:14px}
   .summary-actions .legal-card{padding:13px}
+  .export-card{margin-top:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .export-card .eh{padding:14px 16px;background:linear-gradient(180deg,color-mix(in srgb,var(--brand-2) 11%,#fff),#fff);border-bottom:1px solid var(--line);display:flex;gap:11px;align-items:center}
+  .export-card .eh .ic{width:38px;height:38px;border-radius:11px;background:var(--brand);color:#fff;display:grid;place-items:center;flex:0 0 auto}
+  .export-card .eh b{font-size:14.5px;font-weight:800;display:block}
+  .export-card .eh span{font-size:12px;color:var(--ink-soft)}
+  .export-body{padding:14px 16px}
+  .export-line{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.35;color:var(--ink-soft);margin-top:8px}
+  .export-line:first-child{margin-top:0}
+  .export-line b{color:var(--ink)}
+  .export-actions{display:flex;gap:9px;padding:0 16px 16px}
+  .export-actions .btn{min-height:44px;padding:12px;font-size:13px;border-radius:14px}
+  .toast{margin-top:12px;border:1px solid color-mix(in srgb,var(--brand-2) 32%,var(--line));background:color-mix(in srgb,var(--brand-2) 10%,#fff);border-radius:14px;padding:11px 12px;font-size:12.5px;font-weight:700;color:var(--brand-d);display:none}
+  .toast.on{display:block}
 
   /* micro-interações */
   @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -470,7 +483,7 @@
   <span class="brandmark"><span class="pen"><b></b></span> Canetta</span>
   <div>
     <h1 style="display:none">Canetta</h1>
-    <p>Protótipo Canetta · GLP-1 · pt-BR · 38 telas</p>
+    <p>Protótipo Canetta · GLP-1 · pt-BR · 39 telas</p>
   </div>
   <span class="sep"></span>
   <button class="theme-tog" id="gridBtn">▦ Ver todas as telas</button>
@@ -1237,7 +1250,7 @@
       '<div class="card soft" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">📋</span><span style="font-size:12.5px;color:var(--ink-soft)">O dado entra no resumo da consulta como registro factual.</span></div>',
       cta:'<button class="btn btn-pri" id="weightBackHome">Voltar para a home</button>'+
         '<button class="btn btn-ghost" id="weightTimeline">Ver linha do tempo</button>',
-      init:function(){ bindGo("weightBackHome",29); bindGo("weightTimeline",37); }};
+      init:function(){ bindGo("weightBackHome",29); bindGo("weightTimeline",38); }};
   }});
 
   // 37 Resumo de consulta
@@ -1269,14 +1282,49 @@
         '<div class="rfoot">🩺 Use este resumo para discutir dúvidas com seu médico.</div>'+
       '</div>'+
       '<div class="summary-actions">'+
+        '<button class="legal-card" type="button" id="openExport"><span class="ic">📤</span><div><b>Exportar resumo</b><span>Gerar arquivo para levar à consulta</span></div><span class="arr">›</span></button>'+
         '<button class="legal-card" type="button" id="openTimeline"><span class="ic">📈</span><div><b>Ver linha do tempo</b><span>Doses, peso e check-ins em ordem</span></div><span class="arr">›</span></button>'+
         '<button class="legal-card" type="button" id="openDoseAgain"><span class="ic">💉</span><div><b>Registrar nova aplicação</b><span>Adicionar data, local e observações</span></div><span class="arr">›</span></button>'+
       '</div>',
-      cta:'<button class="btn btn-pri" id="consultHome">Voltar para a home</button>',
-      init:function(){ bindGo("consultHome",29); bindGo("openTimeline",37); bindGo("openDoseAgain",30); }};
+      cta:'<button class="btn btn-pri" id="consultExport">Exportar resumo</button>'+
+        '<button class="btn btn-ghost" id="consultHome">Voltar para a home</button>',
+      init:function(){ bindGo("consultHome",29); bindGo("consultExport",37); bindGo("openExport",37); bindGo("openTimeline",38); bindGo("openDoseAgain",30); }};
   }});
 
-  // 38 Linha do tempo
+  // 38 Exportar resumo
+  S.push({title:"Exportar resumo", render:function(){
+    return {body:'<span class="eyebrow">Exportação</span>'+
+      '<h2 class="title sm">Resumo pronto para compartilhar na consulta.</h2>'+
+      '<p class="sub tight">O documento reúne somente dados registrados. Ele não contém diagnóstico, prescrição ou sugestão de conduta.</p>'+
+      '<div class="export-card">'+
+        '<div class="eh"><span class="ic">📄</span><div><b>Resumo Canetta · '+med()+'</b><span>Prévia do arquivo</span></div></div>'+
+        '<div class="export-body">'+
+          exportLine("Paciente",Nm())+
+          exportLine("Peso atual",state.weight+" kg")+
+          exportLine("Dose registrada",state.dose||"Não informada")+
+          exportLine("Último local",localLabel())+
+          exportLine("Sintoma recente",symptomLabel())+
+          exportLine("Lembrete",reminderLabel())+
+          '<div class="toast" id="exportToast">Resumo preparado. No app real, aqui entram PDF e compartilhamento seguro.</div>'+
+        '</div>'+
+        '<div class="export-actions"><button class="btn btn-line" id="copySummary">Copiar</button><button class="btn btn-pri" id="downloadSummary">Baixar .txt</button></div>'+
+      '</div>'+
+      '<div class="card" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px">🔒</span><span style="font-size:12.5px;color:var(--ink-soft)">Compartilhamento deve ficar sob controle do usuário. Nada é enviado automaticamente.</span></div>',
+      cta:'<button class="btn btn-pri" id="exportHome">Voltar para a home</button>'+
+        '<button class="btn btn-ghost" id="exportTimeline">Ver linha do tempo</button>',
+      init:function(){
+        bindGo("exportHome",29); bindGo("exportTimeline",38);
+        var copy=document.getElementById("copySummary"), down=document.getElementById("downloadSummary"), toast=document.getElementById("exportToast");
+        function show(){ if(toast) toast.classList.add("on"); }
+        if(copy) copy.addEventListener("click",function(){
+          if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(summaryText()).catch(function(){}); }
+          show();
+        });
+        if(down) down.addEventListener("click",function(){ downloadSummary(); show(); });
+      }};
+  }});
+
+  // 39 Linha do tempo
   S.push({title:"Linha do tempo", render:function(){
     var evts='';
     if(state.didWeight) evts+=eventRow("Hoje","Peso registrado",state.newWeight+" kg · registro factual","⚖️");
@@ -1301,6 +1349,29 @@
   }
   function metric(k,v,d){ return '<div class="metric"><div class="mk">'+k+'</div><div class="mv">'+v+'</div><div class="md">'+d+'</div></div>'; }
   function eventRow(t,k,d,ic){ return '<div class="event"><span class="dot">'+ic+'</span><div><b>'+k+'</b><span>'+t+' · '+d+'</span></div></div>'; }
+  function exportLine(k,v){ return '<div class="export-line"><span>•</span><span><b>'+k+':</b> '+v+'</span></div>'; }
+  function summaryText(){
+    return [
+      "Resumo Canetta para consulta",
+      "Paciente: "+Nm(),
+      "Medicamento: "+med(),
+      "Peso atual: "+state.weight+" kg",
+      "Dose registrada: "+(state.dose||"Não informada"),
+      "Último local registrado: "+localLabel(),
+      "Sintoma recente: "+symptomLabel(),
+      "Lembrete: "+reminderLabel(),
+      "",
+      "Observação: este resumo organiza registros do usuário. Não contém diagnóstico, prescrição ou recomendação de conduta."
+    ].join("\\n");
+  }
+  function downloadSummary(){
+    var blob=new Blob([summaryText()],{type:"text/plain;charset=utf-8"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="resumo-canetta-consulta.txt";
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },300);
+  }
   function formatDelta(v){ return (v>0?"−":(v<0?"+":""))+Math.abs(v).toFixed(0); }
   function confetti(){
     var cols=["#22B39A","#FF9E7D","#8DA9E8","#0E6B5C","#FFD79B"], out='<div class="confetti">';
@@ -1512,7 +1583,7 @@
   S.forEach(function(s,i){
     if(i===0||i===28){
       var sec=document.createElement("div"); sec.className="thumbs-sec";
-      sec.textContent = i===0 ? "Onboarding · telas 01–28" : "Pós-compra · telas 29–38";
+      sec.textContent = i===0 ? "Onboarding · telas 01–28" : "Pós-compra · telas 29–39";
       thumbs.appendChild(sec);
     }
     var t=document.createElement("div"); t.className="thumb"; t.dataset.i=i;
