@@ -25,13 +25,19 @@ const screens: ValidationScreen[] = [
   },
   {
     id: "02",
-    eyebrow: "Limite seguro",
-    title: "Espelho dos seus registros, não orientação médica.",
-    intent: "Fixar a fronteira regulatória logo no início.",
+    eyebrow: "Limite & privacidade",
+    title: "Espelho dos seus registros, e sob seu controle.",
+    intent:
+      "Fixar a fronteira regulatória e o consentimento de dados de saúde (LGPD) logo no início.",
     body:
-      "O app não diagnostica, não prescreve e não recomenda dose, alimento, treino ou mudança de tratamento.",
-    primary: "Entendi",
-    notes: ["Mudanças de tratamento devem ser combinadas com profissionais.", "Os dados exibidos vêm do usuário."]
+      "O app não diagnostica, não prescreve e não recomenda dose, alimento, treino ou mudança de tratamento. Seus dados de saúde são privados e você decide o que registrar.",
+    primary: "Aceitar e continuar",
+    secondary: "Ler termos e privacidade",
+    notes: [
+      "Mudanças de tratamento devem ser combinadas com profissionais.",
+      "Os dados exibidos vêm de você.",
+      "Você pode exportar ou apagar seus dados quando quiser."
+    ]
   },
   {
     id: "03",
@@ -62,11 +68,13 @@ const screens: ValidationScreen[] = [
   },
   {
     id: "06",
-    eyebrow: "Corpo e meta",
-    title: "Se quiser, registre altura e meta informada por você.",
+    eyebrow: "Contexto opcional",
+    title: "Se quiser, registre altura e um objetivo pessoal.",
     intent: "Permitir contexto sem cálculo de peso ideal ou projeção.",
-    body: "A meta aparece como referência declarada, sem promessa de resultado.",
+    body:
+      "Fica guardado como referência declarada por você, sem promessa de resultado e sem cálculo de peso ideal.",
     primary: "Salvar contexto",
+    secondary: "Pular por enquanto",
     notes: ["Sem IMC interpretativo.", "Sem previsão de tempo.", "Sem peso ideal calculado."]
   },
   {
@@ -80,42 +88,37 @@ const screens: ValidationScreen[] = [
   },
   {
     id: "08",
-    eyebrow: "Fase da jornada",
-    title: "Marque a fase que melhor descreve seu momento.",
-    intent: "Trazer a lógica por fases do protocolo sem parecer conduta clínica.",
-    body: "A fase serve para organizar seu diário e preparar conversa com profissional.",
-    primary: "Salvar fase",
-    chips: ["Primeiro mês", "Até 3 meses", "3 a 6 meses", "Manutenção", "Redução ou pausa"]
+    eyebrow: "Onde você está",
+    title: "Marque a fase e o estado atual da sua rotina.",
+    intent:
+      "Unir fase da jornada e estado da dose numa só tela (organização por fases), em linguagem simples e sem conduta clínica.",
+    body:
+      "Escolha a fase e diga se sua dose está aumentando, fixa ou reduzindo — tudo informado por você. Serve para organizar seu diário e preparar a consulta.",
+    primary: "Salvar",
+    chips: ["Primeiro mês", "Até 3 meses", "3 a 6 meses", "Manutenção", "Redução ou pausa"],
+    notes: ["Dose: aumentando · fixa · reduzindo (informado por você)."]
   },
   {
     id: "09",
-    eyebrow: "Eixos",
-    title: "Como você quer enxergar sua jornada?",
-    intent: "Configurar os dois eixos simples que alimentam o dashboard.",
-    body: "Escolha o estado da dose e o objetivo atual, ambos informados por você.",
-    primary: "Salvar eixos",
-    chips: ["Dose aumentando", "Dose fixa", "Perdendo peso", "Mantendo", "Reduzindo ou parou"]
+    eyebrow: "Seu diário",
+    title: "Escolha o que quer acompanhar primeiro.",
+    intent: "Dar controle, reduzir carga inicial e condicionar quais configurações aparecem a seguir.",
+    body:
+      "Você só configura o que escolher aqui — e pode ativar o resto depois. Começar simples ajuda na consistência.",
+    primary: "Montar meu diário",
+    chips: ["Aplicações", "Peso", "Sintomas", "Rotina & hábitos", "Perguntas"]
   },
   {
     id: "10",
-    eyebrow: "Plano de registros",
-    title: "Escolha o que quer acompanhar primeiro.",
-    intent: "Dar controle e reduzir carga inicial.",
-    body: "Você pode ativar mais registros depois. Começar simples ajuda a manter consistência.",
-    primary: "Montar meu diário",
-    chips: ["Aplicações", "Peso", "Sintomas", "Hábitos", "Perguntas"]
-  },
-  {
-    id: "11",
     eyebrow: "Aplicações",
-    title: "Lembrete baseado no dia e horário que você informar.",
-    intent: "Criar lembrete sem recomendar dia, horário ou intervalo.",
-    body: "O Canetta lembra o registro. O dia e o horário são definidos por você.",
-    primary: "Configurar lembrete",
+    title: "Lembrete no dia e horário que você informar.",
+    intent: "Criar lembrete sem recomendar dia, horário ou intervalo; solicitar permissão de notificação.",
+    body: "O Canetta lembra o registro no horário que você definir. O dia e o horário são seus.",
+    primary: "Permitir notificações e configurar",
     secondary: "Pular por enquanto"
   },
   {
-    id: "12",
+    id: "11",
     eyebrow: "Sintomas",
     title: "Quando algo aparecer, registre intensidade e duração.",
     intent: "Transformar o SOS em diário observacional, não em orientação terapêutica.",
@@ -124,34 +127,28 @@ const screens: ValidationScreen[] = [
     chips: ["Náusea", "Azia", "Constipação", "Cansaço", "Outro"]
   },
   {
-    id: "13",
-    eyebrow: "Anti-rebote",
-    title: "Acompanhe sinais de rotina sem promessa de resultado.",
-    intent: "Incluir anti-rebote como organização por hábitos observados.",
-    body: "Registre refeições, água, movimento, sono e fome percebida. O resumo mostra padrões informados por você.",
+    id: "12",
+    eyebrow: "Rotina & hábitos",
+    title: "Acompanhe sinais da rotina, sem metas prescritas.",
+    intent:
+      "Organização por hábitos observados (a lógica anti-rebote entra aqui como registro, nunca como promessa). Inclui o registro alimentar visual.",
+    body:
+      "Registre refeições (foto ou nota), água, movimento, sono e fome percebida. O resumo mostra apenas padrões informados por você — o Canetta não monta dieta.",
     primary: "Adicionar ao diário",
     notes: ["Sem calorias.", "Sem macros.", "Sem treino indicado.", "Sem previsão de reganho."]
   },
   {
-    id: "14",
-    eyebrow: "Alimentação",
-    title: "Registre o prato como memória visual simples.",
-    intent: "Permitir acompanhamento alimentar sem metas prescritivas.",
-    body: "Use fotos ou notas para lembrar o que aconteceu no dia. O Canetta não monta dieta.",
-    primary: "Ativar registro alimentar",
-    secondary: "Deixar para depois"
-  },
-  {
-    id: "15",
+    id: "13",
     eyebrow: "Peso",
     title: "Escolha se quer acompanhar peso informado por você.",
     intent: "Deixar claro que peso é registro, não julgamento.",
     body: "Os gráficos mostram entradas registradas, sem comparar corpos ou prometer velocidade de perda.",
     primary: "Ativar peso",
+    secondary: "Deixar para depois",
     notes: ["Exibir tendência visual.", "Sem classificação corporal.", "Sem meta automática."]
   },
   {
-    id: "16",
+    id: "14",
     eyebrow: "Consulta",
     title: "Prepare perguntas para levar ao profissional.",
     intent: "Transformar dados em pauta de consulta sem responder clinicamente.",
@@ -160,16 +157,16 @@ const screens: ValidationScreen[] = [
     chips: ["Sintomas", "Dose registrada", "Fome", "Peso", "Dúvidas"]
   },
   {
-    id: "17",
+    id: "15",
     eyebrow: "Revisão",
     title: "Confira o resumo antes de abrir sua jornada.",
     intent: "Dar transparência sobre o que foi salvo.",
     body: "Você pode editar tudo depois. Este resumo é apenas o ponto de partida do diário.",
     primary: "Confirmar",
-    sample: "Fase: até 3 meses · Eixo: dose fixa · Diário: aplicações, sintomas, consulta"
+    sample: "Fase: até 3 meses · Dose: fixa · Diário: aplicações, sintomas, consulta"
   },
   {
-    id: "18",
+    id: "16",
     eyebrow: "Ativação",
     title: "Pronto. Seu diário começa com o próximo registro.",
     intent: "Levar ao aha moment: a jornada virou um painel claro e acionável.",
