@@ -703,7 +703,7 @@ export default function OnboardingFlowPage() {
           </div>
           <div style={{ position: "absolute", bottom: 48, left: 26, right: 26, display: "flex", flexDirection: "column", gap: 10, zIndex: 1 }}>
             <button onClick={() => set({ notifOn: !st.notifOn })} style={ctaLight}>{st.notifOn ? "Notificações ativadas ✓" : "Ativar notificações"}</button>
-            <button onClick={() => router.push("/dashboard")} style={{ width: "100%", padding: 14, background: "transparent", color: "#BEE0D6", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Começar minha jornada</button>
+            <button onClick={() => router.push("/journey")} style={{ width: "100%", padding: 14, background: "transparent", color: "#BEE0D6", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Começar minha jornada</button>
           </div>
         </div>
       )}
