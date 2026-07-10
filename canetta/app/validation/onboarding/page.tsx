@@ -1,182 +1,448 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+type ScreenKind =
+  | "splash"
+  | "value"
+  | "boundary"
+  | "input"
+  | "choice"
+  | "ruler"
+  | "routine"
+  | "consult"
+  | "loading"
+  | "reveal"
+  | "commitment"
+  | "paywall"
+  | "success";
+
 type ValidationScreen = {
-  id: string;
+  id: number;
+  section: string;
   title: string;
-  intent: string;
-  eyebrow: string;
   body: string;
   primary: string;
   secondary?: string;
-  chips?: string[];
+  mascot: "wave" | "think" | "celebrate" | "check";
+  kind: ScreenKind;
+  collect?: boolean;
+  options?: string[];
   notes?: string[];
   sample?: string;
 };
 
+const collectTotal = 12;
+
 const screens: ValidationScreen[] = [
   {
-    id: "01",
-    eyebrow: "Entrada",
-    title: "Sua jornada registrada em um só lugar.",
-    intent: "Apresentar o valor central antes de pedir dados.",
-    body:
-      "Canetta organiza aplicações, peso, sintomas, hábitos e perguntas para consulta a partir do que você registrar.",
-    primary: "Começar meu registro",
+    id: 1,
+    section: "Abertura",
+    title: "Canetta",
+    body: "Seu tratamento GLP-1, do começo ao fim.",
+    primary: "Começar",
     secondary: "Já tenho conta",
-    chips: ["Dose", "Peso", "Sintomas", "Consulta"]
+    mascot: "wave",
+    kind: "splash"
   },
   {
-    id: "02",
-    eyebrow: "Limite & privacidade",
-    title: "Espelho dos seus registros, e sob seu controle.",
-    intent:
-      "Fixar a fronteira regulatória e o consentimento de dados de saúde (LGPD) logo no início.",
+    id: 2,
+    section: "Valor · doses",
+    title: "Menos dúvida sobre o que você registrou.",
+    body: "Registro de doses, contagem regressiva e lembretes definidos por você.",
+    primary: "Continuar",
+    mascot: "check",
+    kind: "value",
+    options: ["Dose registrada", "Próximo lembrete", "Histórico"]
+  },
+  {
+    id: 3,
+    section: "Valor · jornada",
+    title: "Você não precisa guardar tudo de cabeça.",
+    body: "Acompanhamento, lembretes e um diário para organizar cada etapa da sua jornada.",
+    primary: "Continuar",
+    mascot: "wave",
+    kind: "value",
+    options: ["Sintomas", "Fotos", "Perguntas", "Resumo"]
+  },
+  {
+    id: 4,
+    section: "Limite & privacidade",
+    title: "Espelho dos seus registros, sob seu controle.",
     body:
-      "O app não diagnostica, não prescreve e não recomenda dose, alimento, treino ou mudança de tratamento. Seus dados de saúde são privados e você decide o que registrar.",
+      "O Canetta não diagnostica, não prescreve e não recomenda dose, alimento, treino ou mudança de tratamento.",
     primary: "Aceitar e continuar",
-    secondary: "Ler termos e privacidade",
+    secondary: "Ver privacidade",
+    mascot: "check",
+    kind: "boundary",
     notes: [
-      "Mudanças de tratamento devem ser combinadas com profissionais.",
-      "Os dados exibidos vêm de você.",
+      "Seus dados de saúde são privados.",
+      "Você decide o que registrar.",
       "Você pode exportar ou apagar seus dados quando quiser."
     ]
   },
   {
-    id: "03",
-    eyebrow: "Momento",
-    title: "Em que ponto você está agora?",
-    intent: "Separar quem já usa GLP-1 de quem ainda vai conversar com profissional.",
-    body: "Essa escolha muda a ordem dos próximos registros, sem mudar orientações clínicas.",
+    id: 5,
+    section: "Nome",
+    title: "Como podemos te chamar?",
+    body: "Esse nome aparece nos resumos e lembretes do app.",
     primary: "Continuar",
-    chips: ["Já uso GLP-1", "Quero conversar com profissional"]
+    secondary: "Pular",
+    mascot: "wave",
+    kind: "input",
+    collect: true,
+    sample: "Digite seu nome"
   },
   {
-    id: "04",
-    eyebrow: "Identidade",
-    title: "Como o Canetta deve chamar você?",
-    intent: "Criar vínculo leve e coletar apenas o necessário.",
-    body: "O nome aparece nos resumos e nas telas de consulta.",
-    primary: "Salvar nome",
-    sample: "Lucas"
-  },
-  {
-    id: "05",
-    eyebrow: "Tratamento informado",
-    title: "Registre o medicamento como foi informado a você.",
-    intent: "Guardar medicamento, dose e frequência como campos declarados pelo usuário.",
-    body: "Esses campos são rótulos para o seu histórico. O Canetta não valida nem sugere dose.",
-    primary: "Salvar tratamento",
-    chips: ["Medicamento", "Dose registrada", "Frequência registrada"]
-  },
-  {
-    id: "06",
-    eyebrow: "Contexto opcional",
-    title: "Se quiser, registre altura e um objetivo pessoal.",
-    intent: "Permitir contexto sem cálculo de peso ideal ou projeção.",
-    body:
-      "Fica guardado como referência declarada por você, sem promessa de resultado e sem cálculo de peso ideal.",
-    primary: "Salvar contexto",
-    secondary: "Pular por enquanto",
-    notes: ["Sem IMC interpretativo.", "Sem previsão de tempo.", "Sem peso ideal calculado."]
-  },
-  {
-    id: "07",
-    eyebrow: "Maior dificuldade",
-    title: "O que mais costuma atrapalhar sua rotina?",
-    intent: "Capturar linguagem do usuário para personalizar registros e consultas.",
-    body: "Essa resposta ajuda a organizar lembretes e perguntas, sem transformar o app em prescrição.",
+    id: 6,
+    section: "Estágio",
+    title: "Onde você está na sua jornada GLP-1?",
+    body: "Isso ajuda a organizar a ordem dos registros iniciais.",
     primary: "Continuar",
-    chips: ["Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento"]
+    mascot: "think",
+    kind: "choice",
+    collect: true,
+    options: ["Já uso GLP-1", "Quero começar"]
   },
   {
-    id: "08",
-    eyebrow: "Onde você está",
-    title: "Marque a fase e o estado atual da sua rotina.",
-    intent:
-      "Unir fase da jornada e estado da dose numa só tela (organização por fases), em linguagem simples e sem conduta clínica.",
-    body:
-      "Escolha a fase e diga se sua dose está aumentando, fixa ou reduzindo — tudo informado por você. Serve para organizar seu diário e preparar a consulta.",
-    primary: "Salvar",
-    chips: ["Primeiro mês", "Até 3 meses", "3 a 6 meses", "Manutenção", "Redução ou pausa"],
-    notes: ["Dose: aumentando · fixa · reduzindo (informado por você)."]
+    id: 7,
+    section: "Medicamento",
+    title: "Qual medicamento você quer registrar?",
+    body: "Escolha o nome como foi informado a você.",
+    primary: "Continuar",
+    mascot: "check",
+    kind: "choice",
+    collect: true,
+    options: ["Zepbound", "Mounjaro", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"]
   },
   {
-    id: "09",
-    eyebrow: "Seu diário",
+    id: 8,
+    section: "Valor · dose",
+    title: "Cada registro vira uma dúvida a menos.",
+    body: "O histórico mostra o que você informou, quando informou e como quer lembrar.",
+    primary: "Registrar próxima etapa",
+    mascot: "check",
+    kind: "value",
+    options: ["Aplicação", "Local", "Observação"]
+  },
+  {
+    id: 9,
+    section: "Dose atual",
+    title: "Qual dose está registrada agora?",
+    body: "O Canetta não valida nem sugere dose. Ele só organiza o valor informado por você.",
+    primary: "Continuar",
+    mascot: "think",
+    kind: "choice",
+    collect: true,
+    options: ["2,5 mg", "5 mg", "7,5 mg", "10 mg", "12,5 mg", "15 mg", "Ainda não sei"]
+  },
+  {
+    id: 10,
+    section: "Frequência",
+    title: "Com que frequência você quer registrar?",
+    body: "Use a frequência informada por você ou pelo seu profissional.",
+    primary: "Continuar",
+    mascot: "check",
+    kind: "choice",
+    collect: true,
+    options: ["Diária", "Semanal", "Quinzenal", "Mensal", "Ainda não sei"]
+  },
+  {
+    id: 11,
+    section: "Peso atual",
+    title: "Quer registrar seu peso atual?",
+    body: "Opcional e sem julgamento. O app mostra apenas entradas informadas por você.",
+    primary: "Continuar",
+    secondary: "Pular",
+    mascot: "think",
+    kind: "ruler",
+    collect: true,
+    sample: "82,4 kg"
+  },
+  {
+    id: 12,
+    section: "Altura",
+    title: "Quer registrar sua altura?",
+    body: "Opcional. Esse dado ajuda a compor seu perfil, sem cálculo de meta ou peso ideal.",
+    primary: "Continuar",
+    secondary: "Pular",
+    mascot: "check",
+    kind: "ruler",
+    collect: true,
+    sample: "174 cm"
+  },
+  {
+    id: 13,
+    section: "Objetivo pessoal",
+    title: "Qual objetivo você quer acompanhar?",
+    body: "Escolha um rótulo declarado por você. O Canetta não calcula previsão nem meta ideal.",
+    primary: "Continuar",
+    secondary: "Pular",
+    mascot: "think",
+    kind: "choice",
+    collect: true,
+    options: ["Perder peso", "Manter", "Reduzir ou pausar", "Organizar consulta"]
+  },
+  {
+    id: 14,
+    section: "Fase",
+    title: "Marque sua fase e estado atual.",
+    body: "A fase organiza o diário. Ela não define conduta nem muda tratamento.",
+    primary: "Continuar",
+    mascot: "check",
+    kind: "choice",
+    collect: true,
+    options: ["Primeiro mês", "Até 3 meses", "3 a 6 meses", "Manutenção", "Redução ou pausa", "Dose aumentando", "Dose fixa", "Dose reduzindo"]
+  },
+  {
+    id: 15,
+    section: "Maior dificuldade",
+    title: "O que mais costuma aparecer na rotina?",
+    body: "Essa resposta ajuda a destacar padrões observados nos seus registros.",
+    primary: "Continuar",
+    mascot: "think",
+    kind: "choice",
+    collect: true,
+    options: ["Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento"]
+  },
+  {
+    id: 16,
+    section: "Diário",
     title: "Escolha o que quer acompanhar primeiro.",
-    intent: "Dar controle, reduzir carga inicial e condicionar quais configurações aparecem a seguir.",
-    body:
-      "Você só configura o que escolher aqui — e pode ativar o resto depois. Começar simples ajuda na consistência.",
+    body: "Você pode ativar mais registros depois.",
     primary: "Montar meu diário",
-    chips: ["Aplicações", "Peso", "Sintomas", "Rotina & hábitos", "Perguntas"]
+    mascot: "check",
+    kind: "choice",
+    collect: true,
+    options: ["Aplicações", "Peso", "Sintomas", "Rotina & hábitos", "Perguntas"]
   },
   {
-    id: "10",
-    eyebrow: "Aplicações",
-    title: "Lembrete no dia e horário que você informar.",
-    intent: "Criar lembrete sem recomendar dia, horário ou intervalo; solicitar permissão de notificação.",
-    body: "O Canetta lembra o registro no horário que você definir. O dia e o horário são seus.",
-    primary: "Permitir notificações e configurar",
-    secondary: "Pular por enquanto"
+    id: 17,
+    section: "Nascimento",
+    title: "Quer registrar sua data de nascimento?",
+    body: "Opcional. Usado para organizar seus registros, não para calcular metas.",
+    primary: "Continuar",
+    secondary: "Pular",
+    mascot: "wave",
+    kind: "input",
+    collect: true,
+    sample: "DD/MM/AAAA"
   },
   {
-    id: "11",
-    eyebrow: "Sintomas",
-    title: "Quando algo aparecer, registre intensidade e duração.",
-    intent: "Transformar o SOS em diário observacional, não em orientação terapêutica.",
-    body: "O app ajuda a levar fatos para consulta. Ele não interpreta gravidade nem indica conduta.",
-    primary: "Ativar diário de sintomas",
-    chips: ["Náusea", "Azia", "Constipação", "Cansaço", "Outro"]
+    id: 18,
+    section: "Sintomas → consulta",
+    title: "Chegue à consulta com fatos organizados.",
+    body: "Registre intensidade, duração e contexto. O Canetta não interpreta gravidade nem indica conduta.",
+    primary: "Ver exemplo",
+    mascot: "think",
+    kind: "consult",
+    sample: "Náusea · intensidade 4/10 · após almoço",
+    notes: ["Conteúdo educativo com fonte.", "Procure seu médico em caso de dúvida."]
   },
   {
-    id: "12",
-    eyebrow: "Rotina & hábitos",
+    id: 19,
+    section: "Resumo pré-consulta",
+    title: "Seu resumo pronto antes de cada consulta.",
+    body: "Exemplo: seus dados aparecem aqui quando você registrar sua jornada.",
+    primary: "Continuar",
+    mascot: "check",
+    kind: "consult",
+    options: ["Peso inicial/atual", "Dose registrada", "Aplicações", "Sintomas", "Perguntas"]
+  },
+  {
+    id: 20,
+    section: "Rotina & hábitos",
     title: "Acompanhe sinais da rotina, sem metas prescritas.",
-    intent:
-      "Organização por hábitos observados (a lógica anti-rebote entra aqui como registro, nunca como promessa). Inclui o registro alimentar visual.",
-    body:
-      "Registre refeições (foto ou nota), água, movimento, sono e fome percebida. O resumo mostra apenas padrões informados por você — o Canetta não monta dieta.",
-    primary: "Adicionar ao diário",
-    notes: ["Sem calorias.", "Sem macros.", "Sem treino indicado.", "Sem previsão de reganho."]
+    body: "Registre refeições, água, movimento, sono e fome percebida. Sem calorias, macros ou plano de treino.",
+    primary: "Continuar",
+    mascot: "wave",
+    kind: "routine",
+    options: ["Foto ou nota", "Água", "Movimento", "Sono", "Fome percebida"]
   },
   {
-    id: "13",
-    eyebrow: "Peso",
-    title: "Escolha se quer acompanhar peso informado por você.",
-    intent: "Deixar claro que peso é registro, não julgamento.",
-    body: "Os gráficos mostram entradas registradas, sem comparar corpos ou prometer velocidade de perda.",
-    primary: "Ativar peso",
-    secondary: "Deixar para depois",
-    notes: ["Exibir tendência visual.", "Sem classificação corporal.", "Sem meta automática."]
+    id: 21,
+    section: "Mascote",
+    title: "Esse é o Canetta.",
+    body: "Ele vai te acompanhar em cada etapa e lembrar seus próximos registros.",
+    primary: "Dar nome",
+    secondary: "Manter Canetta",
+    mascot: "wave",
+    kind: "input",
+    sample: "Nome do mascote"
   },
   {
-    id: "14",
-    eyebrow: "Consulta",
-    title: "Prepare perguntas para levar ao profissional.",
-    intent: "Transformar dados em pauta de consulta sem responder clinicamente.",
-    body: "O Canetta junta registros recentes e perguntas salvas para você revisar antes do atendimento.",
-    primary: "Criar checklist",
-    chips: ["Sintomas", "Dose registrada", "Fome", "Peso", "Dúvidas"]
+    id: 22,
+    section: "Padrões observados",
+    title: "O Canetta destaca padrões para você levar à consulta.",
+    body: "Ele mostra o que apareceu nos seus registros. Não diagnostica e não recomenda mudança de tratamento.",
+    primary: "Organizar meu diário",
+    mascot: "think",
+    kind: "consult",
+    sample: "Maior desafio registrado: fome à noite"
   },
   {
-    id: "15",
-    eyebrow: "Revisão",
-    title: "Confira o resumo antes de abrir sua jornada.",
-    intent: "Dar transparência sobre o que foi salvo.",
-    body: "Você pode editar tudo depois. Este resumo é apenas o ponto de partida do diário.",
-    primary: "Confirmar",
-    sample: "Fase: até 3 meses · Dose: fixa · Diário: aplicações, sintomas, consulta"
+    id: 23,
+    section: "Loading",
+    title: "Organizando seu diário",
+    body: "Preparando seus registros. Finalizando a estrutura inicial.",
+    primary: "Aguardar",
+    mascot: "check",
+    kind: "loading",
+    notes: ["Sem cálculo de metas.", "Sem projeção de peso.", "Sem promessa de resultado."]
   },
   {
-    id: "16",
-    eyebrow: "Ativação",
-    title: "Pronto. Seu diário começa com o próximo registro.",
-    intent: "Levar ao aha moment: a jornada virou um painel claro e acionável.",
-    body: "O dashboard abre com lembrete, registros rápidos e preparação de consulta.",
-    primary: "Abrir minha jornada",
-    secondary: "Enviar fluxo para validação"
+    id: 24,
+    section: "Reveal",
+    title: "Seu diário está pronto.",
+    body: "Você vai acompanhar os registros escolhidos e revisar sua fase atual quando quiser.",
+    primary: "Ver meu plano",
+    mascot: "celebrate",
+    kind: "reveal",
+    options: ["Aplicações", "Sintomas", "Perguntas", "Fase atual"],
+    notes: ["Conteúdo com fontes."]
+  },
+  {
+    id: 25,
+    section: "Compromisso",
+    title: "Você está comprometido em registrar sua jornada?",
+    body: "O compromisso aqui é com organização e clareza para suas próximas consultas.",
+    primary: "Sim, estou comprometido",
+    secondary: "Quero revisar",
+    mascot: "check",
+    kind: "commitment"
+  },
+  {
+    id: 26,
+    section: "Plano pago",
+    title: "Seu diário está pronto. Vamos começar juntos.",
+    body: "Acompanhamento organizado em cada etapa, com resumo pronto para a consulta.",
+    primary: "Começar meus 3 dias grátis",
+    secondary: "Restaurar compra",
+    mascot: "wave",
+    kind: "paywall",
+    options: ["Lembretes de dose", "Resumo para consulta", "Gráficos e fotos", "Padrões observados sem diagnóstico"]
+  },
+  {
+    id: 27,
+    section: "Pós-compra",
+    title: "Amanhã o Canetta faz seu primeiro check-in.",
+    body: "Sua primeira conquista desbloqueia amanhã.",
+    primary: "Ativar notificações",
+    secondary: "Começar minha jornada",
+    mascot: "celebrate",
+    kind: "success"
   }
 ];
 
+function collectStep(screen: ValidationScreen) {
+  if (!screen.collect) return null;
+  return screens.slice(0, screens.findIndex((item) => item.id === screen.id) + 1).filter((item) => item.collect).length;
+}
+
+function Mascot({ state }: { state: ValidationScreen["mascot"] }) {
+  return (
+    <div className={`mascot mascot-${state}`} aria-hidden="true">
+      <div className="mascot-cap" />
+      <div className="mascot-face">
+        <span />
+        <span />
+      </div>
+      <div className="mascot-band" />
+      <div className="mascot-arm mascot-arm-left" />
+      <div className="mascot-arm mascot-arm-right" />
+    </div>
+  );
+}
+
+function ScreenVisual({ screen }: { screen: ValidationScreen }) {
+  if (screen.kind === "splash") {
+    return (
+      <div className="visual-block visual-splash">
+        <Mascot state={screen.mascot} />
+        <div className="splash-logo">Canetta</div>
+      </div>
+    );
+  }
+
+  if (screen.kind === "ruler") {
+    return (
+      <div className="visual-block">
+        <div className="ruler-value">{screen.sample}</div>
+        <div className="ruler-track">
+          {Array.from({ length: 17 }).map((_, index) => (
+            <span className={index === 8 ? "is-major" : ""} key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (screen.kind === "loading") {
+    return (
+      <div className="visual-block loading-visual">
+        <div className="loading-ring" />
+        <div>
+          <span>Preparando seus registros</span>
+          <span>Finalizando</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen.kind === "paywall") {
+    return (
+      <div className="plan-stack">
+        <div className="plan-card plan-card-featured">
+          <span>Melhor valor</span>
+          <b>Anual</b>
+          <p>3 dias grátis, depois R$ XX/ano</p>
+        </div>
+        <div className="plan-card">
+          <b>Mensal</b>
+          <p>R$ XX,XX/mês</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen.kind === "consult") {
+    return (
+      <div className="visual-block consult-card">
+        <span>Exemplo · seus dados aparecem aqui</span>
+        <b>{screen.sample ?? "Resumo pré-consulta"}</b>
+        <p>Leve para discutir com seu médico.</p>
+      </div>
+    );
+  }
+
+  if (screen.options) {
+    return (
+      <div className="choice-grid">
+        {screen.options.map((option) => (
+          <span key={option}>{option}</span>
+        ))}
+      </div>
+    );
+  }
+
+  if (screen.sample) {
+    return <div className="input-preview">{screen.sample}</div>;
+  }
+
+  return (
+    <div className="visual-block">
+      <Mascot state={screen.mascot} />
+    </div>
+  );
+}
+
 export default function OnboardingValidationPage() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const active = screens[activeIndex];
+  const step = collectStep(active);
+
+  const sectionLabel = useMemo(() => `${active.id.toString().padStart(2, "0")} / ${screens.length}`, [active]);
+
   return (
     <>
       <header className="topbar">
@@ -184,73 +450,77 @@ export default function OnboardingValidationPage() {
           <span className="brand-mark" />
           Canetta
         </div>
-        <span className="validation-pill">Validação</span>
+        <span className="validation-pill">27 telas</span>
       </header>
-      <section className="page validation-page">
-        <span className="eyebrow">Onboarding completo</span>
-        <h1 className="title">Fluxo de validação das telas iniciais.</h1>
-        <p className="sub">
-          Storyboard público para revisar narrativa, ordem das perguntas e limites regulatórios antes de transformar tudo em
-          fluxo funcional.
-        </p>
 
-        <div className="validation-summary">
+      <section className="validation-stage">
+        <div className="flow-toolbar">
           <div>
-            <b>{screens.length}</b>
-            <span>telas</span>
+            <span>{sectionLabel}</span>
+            <b>{active.section}</b>
           </div>
-          <div>
-            <b>0</b>
-            <span>prescrições</span>
-          </div>
-          <div>
-            <b>1</b>
-            <span>diário inicial</span>
+          <div className="flow-controls">
+            <button className="icon-btn" disabled={activeIndex === 0} onClick={() => setActiveIndex((value) => value - 1)} type="button">
+              ‹
+            </button>
+            <button
+              className="icon-btn"
+              disabled={activeIndex === screens.length - 1}
+              onClick={() => setActiveIndex((value) => value + 1)}
+              type="button"
+            >
+              ›
+            </button>
           </div>
         </div>
 
-        <div className="screen-list">
-          {screens.map((screen) => (
-            <article className="validation-screen" key={screen.id}>
-              <div className="screen-meta">
-                <span>{screen.id}</span>
-                <p>{screen.intent}</p>
-              </div>
-              <div className="screen-preview">
-                <span className="eyebrow">{screen.eyebrow}</span>
-                <h2>{screen.title}</h2>
-                <p>{screen.body}</p>
+        <article className={`artboard artboard-${active.kind}`}>
+          {step ? (
+            <div className="collect-progress" aria-label={`Passo ${step} de ${collectTotal}`}>
+              {Array.from({ length: collectTotal }).map((_, index) => (
+                <span className={index < step ? "is-active" : ""} key={index} />
+              ))}
+            </div>
+          ) : null}
 
-                {screen.sample ? <div className="sample-box">{screen.sample}</div> : null}
+          <div className="artboard-hero">
+            <Mascot state={active.mascot} />
+            <span>{active.section}</span>
+          </div>
 
-                {screen.chips ? (
-                  <div className="chip-row">
-                    {screen.chips.map((chip) => (
-                      <span key={chip}>{chip}</span>
-                    ))}
-                  </div>
-                ) : null}
+          <div className="artboard-copy">
+            <h1>{active.title}</h1>
+            <p>{active.body}</p>
+          </div>
 
-                {screen.notes ? (
-                  <div className="note-list">
-                    {screen.notes.map((note) => (
-                      <span key={note}>{note}</span>
-                    ))}
-                  </div>
-                ) : null}
+          <ScreenVisual screen={active} />
 
-                <div className="screen-actions">
-                  <button className="btn btn-primary" type="button">
-                    {screen.primary}
-                  </button>
-                  {screen.secondary ? (
-                    <button className="btn btn-ghost" type="button">
-                      {screen.secondary}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </article>
+          {active.notes ? (
+            <div className="boundary-notes">
+              {active.notes.map((note) => (
+                <span key={note}>{note}</span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="artboard-footer">
+            <button className={active.kind === "paywall" ? "btn btn-apricot" : "btn btn-primary"} type="button">
+              {active.primary}
+            </button>
+            {active.secondary ? (
+              <button className="btn btn-ghost" type="button">
+                {active.secondary}
+              </button>
+            ) : null}
+          </div>
+        </article>
+
+        <div className="screen-index" aria-label="Lista de telas">
+          {screens.map((screen, index) => (
+            <button className={index === activeIndex ? "is-selected" : ""} key={screen.id} onClick={() => setActiveIndex(index)} type="button">
+              <span>{screen.id.toString().padStart(2, "0")}</span>
+              {screen.section}
+            </button>
           ))}
         </div>
       </section>
