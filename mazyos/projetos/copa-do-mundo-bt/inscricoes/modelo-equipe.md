@@ -29,7 +29,7 @@
 
 **Tamanhos aceitos:** PP · P · M · G · GG · XG
 **Modelagem:** Masculina · Feminina · Baby look
-**Categorias:** A · B · C · D · E · 40+ (acima de 40 anos) · 60+ (soma das idades da dupla ≥ 60)
+**Categorias:** A · B · C · D · E · 35+ (acima de 35 anos) · 60+ (soma das idades da dupla ≥ 60)
 
 > ⏰ **Prazo do tamanho de camiseta:** os tamanhos precisam chegar com **25 dias**
 > de antecedência do evento — bem antes do fechamento da inscrição. Manda o quanto

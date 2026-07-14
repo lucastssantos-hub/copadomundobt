@@ -74,13 +74,13 @@ Salvar em `inscricoes/<etapa>/bot-inscricao.csv` com as colunas exatas que o bot
 ```
 nome,categoria
 Fulano de Tal,A
-Beltrano de Tal,40+
+Beltrano de Tal,35+
 ```
 
 Regras do arquivo do bot:
 - Só entra atleta **com nome E categoria** preenchidos. Quem tiver categoria pendente
   (🟡) fica de fora do CSV e é listado à parte pra completar antes de rodar o bot.
-- Categoria normalizada pra: A, B, C, D, E, 40+, 60+.
+- Categoria normalizada pra: A, B, C, D, E, 35+, 60+.
 - Se o formato/ordem de colunas do bot for diferente do padrão acima, ajustar pra bater
   com o que o bot espera (confirmar com o Lucas na primeira vez).
 

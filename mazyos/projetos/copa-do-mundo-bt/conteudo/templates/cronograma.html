@@ -1,0 +1,119 @@
+<title>Cronograma</title>
+<style>
+  :root{
+    --violet:#7c3aed; --violet-glow:#a855f7;
+    --coral:#ff5b39; --coral-deep:#e23c1f;
+    --gold1:#ffe79a; --gold2:#e6a52b; --gold-deep:#b9791a;
+    --white:#fff; --lav:#c9b8ef; --lav-dim:#8f7fbf;
+    --disp:"Arial Black","Archivo Black",Impact,"Helvetica Neue",system-ui,sans-serif;
+    --body:"Helvetica Neue",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1350px}
+  body{
+    font-family:var(--disp);color:var(--white);position:relative;overflow:hidden;
+    background:
+      radial-gradient(1200px 620px at 50% -8%, rgba(168,85,247,.55), transparent 60%),
+      radial-gradient(900px 520px at 50% 8%, rgba(124,58,237,.38), transparent 62%),
+      linear-gradient(180deg,#1a0f33 0%, #120a24 44%, #0a0512 100%);
+  }
+  .beam{position:absolute;top:-160px;width:300px;height:820px;filter:blur(50px);opacity:.45;
+    background:linear-gradient(180deg,rgba(201,184,239,.9),transparent);pointer-events:none}
+  .beam.l{left:120px;transform:rotate(18deg)}
+  .beam.r{right:120px;transform:rotate(-18deg)}
+  .dust{position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:
+      radial-gradient(2px 2px at 18% 26%,rgba(255,255,255,.6),transparent),
+      radial-gradient(2px 2px at 82% 20%,rgba(255,224,138,.6),transparent),
+      radial-gradient(3px 3px at 62% 30%,rgba(201,184,239,.6),transparent);}
+  .vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 92% at 50% 40%,transparent 56%,rgba(0,0,0,.62))}
+
+  .inner{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:46px 76px 66px}
+
+  /* header */
+  .head{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .logo{display:flex;align-items:center;gap:14px}
+  .logo .mark{width:46px;height:46px;border-radius:50%;position:relative;
+    background:conic-gradient(from 200deg,#a855f7,#6d28d9,#c084fc,#7c3aed);
+    box-shadow:0 0 22px rgba(168,85,247,.7)}
+  .logo .mark::after{content:"";position:absolute;inset:12px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.85);border-right-color:transparent}
+  .logo .txt{text-transform:uppercase;line-height:.9;text-align:left}
+  .logo .txt b{display:block;font-size:30px;letter-spacing:.02em}
+  .logo .txt span{font-family:var(--body);font-weight:600;font-size:14px;letter-spacing:.34em;color:var(--lav)}
+  .title{font-size:90px;line-height:.9;letter-spacing:.03em;text-transform:uppercase;margin-top:4px;
+    background:linear-gradient(180deg,#fff 40%,#cbb8f2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 8px 40px rgba(124,58,237,.5)}
+  .sub{font-family:var(--body);font-weight:800;font-size:22px;letter-spacing:.5em;color:var(--coral);text-transform:uppercase;margin-top:2px}
+
+  /* rows */
+  .rows{display:flex;flex-direction:column;justify-content:center;gap:15px;margin:0}
+  .row{display:flex;align-items:center;gap:30px;
+    background:linear-gradient(90deg,rgba(124,58,237,.20),rgba(20,10,38,.35));
+    border:1px solid rgba(168,85,247,.28);border-radius:22px;padding:13px 34px;min-height:96px}
+  .day{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:210px;padding:14px 26px;border-radius:16px;background:rgba(10,5,18,.55);
+    border-left:6px solid var(--violet-glow)}
+  .day .wd{font-family:var(--body);font-weight:800;font-size:26px;letter-spacing:.28em;color:var(--lav);text-transform:uppercase}
+  .day .dt{font-size:64px;line-height:.95;letter-spacing:.02em}
+  .cats{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:40px;flex-wrap:wrap}
+  .slot{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .slot .lbl{font-family:var(--body);font-weight:800;font-size:20px;letter-spacing:.24em;color:var(--gold1);text-transform:uppercase}
+  .cat{font-size:80px;line-height:.9;letter-spacing:.04em;
+    background:linear-gradient(180deg,var(--gold1) 10%,var(--gold2) 70%,var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 6px 16px rgba(230,165,43,.35))}
+  .single .cat{font-size:104px}
+
+  /* footer */
+  .foot{display:flex;flex-direction:column;align-items:center;gap:11px}
+  .etapa{font-size:46px;text-transform:uppercase;letter-spacing:.02em;
+    text-shadow:0 4px 24px rgba(124,58,237,.6)}
+  .rule{width:66%;height:2px;background:linear-gradient(90deg,transparent,var(--violet-glow),transparent);opacity:.7}
+  .note{font-family:var(--body);font-weight:700;font-size:17px;letter-spacing:.16em;color:var(--lav-dim);text-transform:uppercase}
+  .sponsors{font-family:var(--body);font-weight:800;font-size:18px;letter-spacing:.26em;color:var(--lav);text-transform:uppercase;margin-top:2px}
+</style>
+
+<div class="beam l"></div><div class="beam r"></div>
+<div class="dust"></div>
+<div class="inner">
+  <div class="head">
+    <div class="logo">
+      <div class="mark"></div>
+      <div class="txt"><b>Copa do Mundo</b><span>De Beach Tennis</span></div>
+    </div>
+    <div class="title">Cronograma</div>
+    <div class="sub">Prévio</div>
+  </div>
+
+  <div class="rows">
+    <div class="row single">
+      <div class="day"><div class="wd">Qui</div><div class="dt">27/08</div></div>
+      <div class="cats"><div class="slot"><div class="cat">60+</div></div></div>
+    </div>
+    <div class="row single">
+      <div class="day"><div class="wd">Sex</div><div class="dt">28/08</div></div>
+      <div class="cats"><div class="slot"><div class="cat">35+</div></div></div>
+    </div>
+    <div class="row">
+      <div class="day"><div class="wd">Sáb</div><div class="dt">29/08</div></div>
+      <div class="cats">
+        <div class="slot"><div class="lbl">Manhã</div><div class="cat">D · E</div></div>
+        <div class="slot"><div class="lbl">Tarde</div><div class="cat">C</div></div>
+      </div>
+    </div>
+    <div class="row single">
+      <div class="day"><div class="wd">Dom</div><div class="dt">30/08</div></div>
+      <div class="cats"><div class="slot"><div class="cat">B · A</div></div></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="etapa">Etapa Umuarama — PR</div>
+    <div class="rule"></div>
+    <div class="note">Programação sujeita a alterações</div>
+    <div class="sponsors">YouBeach · Baper · Corona · Luna Sport</div>
+  </div>
+</div>
+<div class="vignette"></div>
