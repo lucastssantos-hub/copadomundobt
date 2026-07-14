@@ -1,0 +1,179 @@
+<title>Copa do Mundo de BT — Gerador de post "Faltam X dias"</title>
+<style>
+  :root{
+    --ink:#0a0512; --ink2:#140a26;
+    --violet:#7c3aed; --violet-glow:#a855f7;
+    --coral:#ff5b39; --coral-deep:#e23c1f;
+    --gold1:#ffe79a; --gold2:#e6a52b; --gold-deep:#b9791a;
+    --white:#ffffff; --lav:#c9b8ef; --lav-dim:#8f7fbf;
+    --disp:"Arial Black","Archivo Black",Impact,"Helvetica Neue",system-ui,sans-serif;
+    --body:"Helvetica Neue",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#050208;color:var(--white);font-family:var(--body);
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    gap:22px;padding:28px 16px 60px;
+  }
+  .intro{max-width:1080px;width:100%;text-align:center;color:var(--lav)}
+  .intro h1{font-family:var(--disp);font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:#fff}
+  .intro p{font-size:14px;margin-top:6px;line-height:1.5}
+
+  /* ---------- palco escala o card 1080x1350 pra caber ---------- */
+  .stage{width:100%;display:flex;justify-content:center}
+  .scaler{transform-origin:top center}
+
+  /* ---------- O POST ---------- */
+  .card{
+    width:1080px;height:1350px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(1200px 620px at 50% -8%, rgba(168,85,247,.55), transparent 60%),
+      radial-gradient(900px 520px at 50% 8%, rgba(124,58,237,.38), transparent 62%),
+      linear-gradient(180deg,#1a0f33 0%, #120a24 42%, #0a0512 100%);
+    font-family:var(--disp);
+  }
+  /* feixes de luz de estádio */
+  .beam{position:absolute;top:-140px;width:280px;height:760px;filter:blur(46px);opacity:.5;
+    background:linear-gradient(180deg,rgba(201,184,239,.9),transparent);pointer-events:none}
+  .beam.l{left:130px;transform:rotate(18deg)}
+  .beam.r{right:130px;transform:rotate(-18deg)}
+  /* partículas/poeira */
+  .dust{position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:
+      radial-gradient(2px 2px at 20% 70%,rgba(255,255,255,.7),transparent),
+      radial-gradient(2px 2px at 76% 62%,rgba(255,224,138,.7),transparent),
+      radial-gradient(3px 3px at 42% 82%,rgba(255,255,255,.5),transparent),
+      radial-gradient(2px 2px at 60% 88%,rgba(201,184,239,.6),transparent),
+      radial-gradient(2px 2px at 33% 58%,rgba(255,255,255,.5),transparent);}
+  .vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 42%,transparent 55%,rgba(0,0,0,.65));}
+
+  .inner{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;padding:70px 64px;text-align:center}
+
+  /* topo — lockup do logo em texto */
+  .brandtop{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .kicker{font-family:var(--body);font-weight:700;letter-spacing:.42em;font-size:19px;
+    color:var(--lav);text-transform:uppercase}
+  .logo{display:flex;align-items:center;gap:16px}
+  .logo .mark{width:52px;height:52px;border-radius:50%;
+    background:conic-gradient(from 200deg,#a855f7,#6d28d9,#c084fc,#7c3aed);
+    box-shadow:0 0 26px rgba(168,85,247,.7);position:relative}
+  .logo .mark::after{content:"";position:absolute;inset:14px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.85);border-right-color:transparent}
+  .logo .txt{font-family:var(--disp);text-transform:uppercase;line-height:.92;text-align:left}
+  .logo .txt b{display:block;font-size:34px;letter-spacing:.02em}
+  .logo .txt span{font-family:var(--body);font-weight:600;font-size:16px;letter-spacing:.36em;color:var(--lav)}
+
+  /* herói */
+  .hero{margin-top:auto;margin-bottom:auto;display:flex;flex-direction:column;align-items:center}
+  .faltam{font-size:96px;line-height:.9;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--coral);
+    text-shadow:0 4px 0 var(--coral-deep),0 18px 40px rgba(226,60,31,.5)}
+  .num{font-size:400px;line-height:.82;letter-spacing:-.02em;margin:6px 0 -6px;
+    background:linear-gradient(180deg,var(--gold1) 8%,var(--gold2) 62%,var(--gold-deep) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 26px rgba(230,165,43,.45));}
+  .dias{font-size:150px;line-height:.86;letter-spacing:.06em;text-transform:uppercase;color:#fff;
+    text-shadow:0 6px 30px rgba(124,58,237,.55)}
+  .trophy{font-size:80px;margin-top:14px;filter:drop-shadow(0 8px 22px rgba(230,165,43,.6))}
+
+  /* bandeiras */
+  .flags{font-family:var(--body);font-size:52px;letter-spacing:.06em;margin-top:8px;
+    text-shadow:0 4px 16px rgba(0,0,0,.6);line-height:1}
+
+  /* rodapé */
+  .foot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:18px;width:100%}
+  .event{font-family:var(--disp);text-transform:uppercase}
+  .event .etapa{font-size:60px;letter-spacing:.02em;color:#fff;
+    text-shadow:0 4px 24px rgba(124,58,237,.6)}
+  .event .meta{font-family:var(--body);font-weight:700;font-size:26px;letter-spacing:.16em;
+    color:var(--gold1);margin-top:8px}
+  .rule{width:70%;height:2px;background:linear-gradient(90deg,transparent,var(--violet-glow),transparent);opacity:.7}
+  .sponsors{font-family:var(--body);font-weight:700;font-size:18px;letter-spacing:.28em;
+    color:var(--lav-dim);text-transform:uppercase}
+
+  /* ---------- controles (fora do print) ---------- */
+  .panel{max-width:1080px;width:100%;background:#120b22;border:1px solid #2a1c47;
+    border-radius:16px;padding:22px 24px;display:grid;gap:16px;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));font-family:var(--body)}
+  .panel .full{grid-column:1/-1}
+  label{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--lav-dim);margin-bottom:7px;font-weight:700}
+  input{width:100%;background:#0b0716;border:1px solid #33244f;color:#fff;
+    border-radius:10px;padding:12px 14px;font-size:15px;font-family:var(--body)}
+  input:focus{outline:2px solid var(--violet-glow);outline-offset:1px;border-color:transparent}
+  .hint{font-family:var(--body);font-size:13px;color:var(--lav-dim);text-align:center;max-width:1080px;line-height:1.6}
+  .hint b{color:var(--lav)}
+</style>
+
+<div class="intro">
+  <h1>Gerador de post — “Faltam X dias”</h1>
+  <p>Troca os campos embaixo, tira um print do card (formato 4:5) e posta. Reutiliza a cada etapa.</p>
+</div>
+
+<div class="stage">
+  <div class="scaler" id="scaler">
+    <div class="card" id="card">
+      <div class="beam l"></div><div class="beam r"></div>
+      <div class="dust"></div>
+      <div class="inner">
+        <div class="brandtop">
+          <div class="kicker">Circuito de Equipes</div>
+          <div class="logo">
+            <div class="mark"></div>
+            <div class="txt"><b>Copa do Mundo</b><span>De Beach Tennis</span></div>
+          </div>
+        </div>
+
+        <div class="hero">
+          <div class="faltam">Faltam</div>
+          <div class="num" id="o-num">12</div>
+          <div class="dias">Dias</div>
+          <div class="trophy">🏆</div>
+          <div class="flags" id="o-flags">🇧🇷 🇦🇷 🇮🇹 🇺🇸 🇵🇹 🇸🇪 🇫🇷 🇳🇴 🇦🇺 🇨🇦</div>
+        </div>
+
+        <div class="foot">
+          <div class="event">
+            <div class="etapa" id="o-etapa">Etapa Umuarama</div>
+            <div class="meta"><span id="o-data">00 a 00/08</span> · <span id="o-local">Umuarama — PR</span></div>
+          </div>
+          <div class="rule"></div>
+          <div class="sponsors" id="o-sponsors">YouBeach · Baper · Corona · Luna Sport</div>
+        </div>
+      </div>
+      <div class="vignette"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div><label for="i-num">Faltam (dias)</label><input id="i-num" value="12" inputmode="numeric"></div>
+  <div><label for="i-etapa">Etapa</label><input id="i-etapa" value="Etapa Umuarama"></div>
+  <div><label for="i-data">Data</label><input id="i-data" value="00 a 00/08"></div>
+  <div><label for="i-local">Local</label><input id="i-local" value="Umuarama — PR"></div>
+  <div class="full"><label for="i-flags">Bandeiras das seleções (emoji)</label><input id="i-flags" value="🇧🇷 🇦🇷 🇮🇹 🇺🇸 🇵🇹 🇸🇪 🇫🇷 🇳🇴 🇦🇺 🇨🇦"></div>
+  <div class="full"><label for="i-sponsors">Patrocinadores</label><input id="i-sponsors" value="YouBeach · Baper · Corona · Luna Sport"></div>
+</div>
+
+<p class="hint">Dica de export: no computador, dá <b>zoom até o card ocupar a tela</b> e tira print só do card; no celular, print e recorta no 4:5. O card já está no tamanho de post do Instagram (<b>1080×1350</b>).</p>
+
+<script>
+  var map={"i-num":"o-num","i-etapa":"o-etapa","i-data":"o-data","i-local":"o-local","i-flags":"o-flags","i-sponsors":"o-sponsors"};
+  Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);
+    el.addEventListener("input",function(){
+      document.getElementById(map[id]).textContent=el.value||" ";
+    });
+  });
+  // escala o card 1080x1350 pra caber na largura disponível
+  function fit(){
+    var pad=32, avail=Math.min(document.body.clientWidth-pad,1080);
+    var s=avail/1080;
+    var sc=document.getElementById("scaler");
+    sc.style.transform="scale("+s+")";
+    sc.style.height=(1350*s)+"px";
+  }
+  window.addEventListener("resize",fit); fit();
+</script>
