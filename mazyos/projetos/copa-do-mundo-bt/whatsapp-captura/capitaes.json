@@ -1,0 +1,8 @@
+{
+  "etapa": "umuarama",
+  "capturarTodosPrivados": false,
+  "capitaes": [
+    { "nome": "Rafael Souza", "numero": "5544999990000" },
+    { "nome": "Exemplo Capitão 2", "numero": "5544988887777" }
+  ]
+}

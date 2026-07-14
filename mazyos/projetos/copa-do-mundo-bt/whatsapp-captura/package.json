@@ -1,0 +1,14 @@
+{
+  "name": "whatsapp-captura-copa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Captura as equipes que os capitães mandam no WhatsApp e gera pedido de camiseta + CSV do bot (sem IA).",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.25.0"
+  }
+}
