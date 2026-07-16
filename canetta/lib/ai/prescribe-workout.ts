@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type AiWorkoutExercise = {
@@ -162,35 +162,35 @@ Responda somente com o JSON pedido.`;
 }
 
 export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: AiWorkoutPlan; weekStart: string }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY is not configured.");
+    throw new Error("OPENAI_API_KEY is not configured.");
   }
 
   const context = await gatherUserContext(userId);
   const prompt = buildPrompt(context);
 
-  const anthropic = new Anthropic({ apiKey });
-  const response = await anthropic.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
-    output_config: {
-      format: { type: "json_schema", schema: PLAN_SCHEMA }
+  const openai = new OpenAI({ apiKey });
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_completion_tokens: 4000,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "weekly_workout_plan",
+        strict: true,
+        schema: PLAN_SCHEMA as unknown as Record<string, unknown>
+      }
     },
     messages: [{ role: "user", content: prompt }]
   });
 
-  if (response.stop_reason === "refusal") {
-    throw new Error("Model declined to generate a plan.");
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("No content in model response.");
   }
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("No text block in model response.");
-  }
-
-  const plan = JSON.parse(textBlock.text) as AiWorkoutPlan;
+  const plan = JSON.parse(content) as AiWorkoutPlan;
   const weekStart = currentWeekStart();
 
   const supabase = createSupabaseAdminClient();
@@ -210,7 +210,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         checkins: context.checkins.slice(0, 5),
         workout_count: context.workoutLogs.length
       },
-      ai_model: "claude-opus-4-8"
+      ai_model: "gpt-4o-mini"
     },
     { onConflict: "user_id,week_start" }
   );

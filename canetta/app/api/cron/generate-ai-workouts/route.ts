@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ ok: false, error: "anthropic_key_missing" }, { status: 500 });
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ ok: false, error: "openai_key_missing" }, { status: 500 });
   }
 
   const supabase = createSupabaseAdminClient();
