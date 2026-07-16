@@ -10,6 +10,7 @@ import {
   exportMyDataAction,
   loadJourneyAction,
   saveApplicationAction,
+  saveMissedDoseAction,
   saveProfileAction,
   saveQuestionAction,
   saveReminderAction,
@@ -21,14 +22,15 @@ import { signOutAction } from "@/app/auth/actions";
 
 type Tab = "hoje" | "diario" | "consulta" | "mais";
 type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "pergunta" | null;
-type RegisterStep = "form" | "saved" | "checkin";
+type RegisterStep = "form" | "missed" | "saved" | "missedSaved" | "checkin";
 
 interface Draft {
   dataHora?: string; obs?: string; nota?: string; contexto?: string; pergunta?: string;
-  local?: string; tipo?: string; duracao?: string; movimento?: string;
+  local?: string; tipo?: string; duracao?: string; movimento?: string; motivo?: string;
   sono?: string; fome?: string; intensidade?: number; pesoKg?: number; agua?: number;
 }
 interface Aplicacao { id?: string; dataHora: string; local: string; obs: string; data: Date; }
+interface DoseNaoAplicada { id?: string; dataHora: string; motivo: string; nota?: string; data: Date; }
 interface Sintoma { id?: string; tipo: string; intensidade: number; duracao?: string; contexto?: string; nota?: string; data: Date; }
 interface Peso { id?: string; kg: number; data: string; raw: Date; }
 interface Rotina extends Draft { id?: string; data: Date; }
@@ -39,16 +41,16 @@ interface AppState {
   objetivo: string; faseAtual: string; lembretesOn: boolean; reminderWeekday: number; reminderTime: string;
   tab: Tab; diarioSub: string; consultaSub: string; maisSub: string; periodo: string;
   sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; draft: Draft;
-  aplicacoes: Aplicacao[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[];
+  aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[];
   perguntas: Pergunta[]; toastMsg: string;
 }
 
 const INITIAL: AppState = {
-  nome: "Ana", mascotNome: "Canetta", medicamento: "Ozempic", dose: "Dose 2", freqLabel: "Semanal",
-  objetivo: "Manter uma rotina saudável", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
+  nome: "você", mascotNome: "Canetta", medicamento: "Medicamento", dose: "Dose atual", freqLabel: "Semanal",
+  objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
   tab: "hoje", diarioSub: "registros", consultaSub: "resumo", maisSub: "menu", periodo: "Últimos 7 dias",
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
-  aplicacoes: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], toastMsg: "",
+  aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], toastMsg: "",
 };
 
 const REGION_COORDS = [
@@ -61,6 +63,16 @@ const REGION_COORDS = [
 ];
 
 const fmtDate = (d: Date) => d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+const fmtDateTime = (d: Date) => d.toLocaleString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const toDatetimeLocal = (d: Date) => {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const fromDatetimeLocal = (value?: string) => {
+  if (!value) return new Date();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
 const ONBOARDING_STORAGE_KEY = "canetta:onboarding:v1";
 const JOURNEY_STORAGE_KEY = "canetta:journey:v1";
 
@@ -69,6 +81,7 @@ function reviveState(value: Partial<AppState>): Partial<AppState> {
   return {
     ...value,
     aplicacoes: value.aplicacoes?.map((item) => ({ ...item, data: date(item.data) })),
+    dosesNaoAplicadas: value.dosesNaoAplicadas?.map((item) => ({ ...item, data: date(item.data) })),
     sintomas: value.sintomas?.map((item) => ({ ...item, data: date(item.data) })),
     pesos: value.pesos?.map((item) => ({ ...item, raw: date(item.raw) })),
     rotinas: value.rotinas?.map((item) => ({ ...item, data: date(item.data) })),
@@ -167,10 +180,17 @@ export default function JourneyPage() {
         freqLabel: result.profile?.frequency || current.freqLabel,
         aplicacoes: result.applications.map((item) => ({
           id: item.id,
-          dataHora: fmtDate(new Date(item.applied_at)),
+          dataHora: fmtDateTime(new Date(item.applied_at)),
           local: item.site || "Não informado",
           obs: item.note || "",
           data: new Date(item.applied_at)
+        })),
+        dosesNaoAplicadas: result.missedDoses.map((item) => ({
+          id: item.id,
+          dataHora: fmtDateTime(new Date(item.scheduled_for)),
+          motivo: item.reason || "Não informado",
+          nota: item.note || undefined,
+          data: new Date(item.scheduled_for)
         })),
         pesos: result.weights.map((item) => ({ id: item.id, kg: Number(item.weight), data: fmtDate(new Date(item.recorded_at)), raw: new Date(item.recorded_at) })),
         sintomas: result.symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
@@ -185,7 +205,7 @@ export default function JourneyPage() {
 
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
-  const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", draft: {} });
+  const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", draft: type === "aplicacao" ? { dataHora: toDatetimeLocal(new Date()) } : {} });
   const cancelFlow = () => set({ registerFlow: null, registerStep: "form", draft: {} });
   const finishToHoje = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "hoje" });
   const finishToHistorico = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "diario", diarioSub: "registros" });
@@ -196,9 +216,24 @@ export default function JourneyPage() {
   const saveAplicacao = async () => {
     const d = st.draft;
     setBusyAction("aplicacao");
-    const result = await saveApplicationAction({ medication: st.medicamento, dose: st.dose, site: d.local, note: d.obs, appliedAt: d.dataHora });
-    const entry: Aplicacao = { id: result.synced ? result.id : undefined, dataHora: d.dataHora || "Hoje, agora", local: d.local || "Não informado", obs: d.obs || "", data: result.synced ? new Date(result.appliedAt) : new Date() };
+    const localDate = fromDatetimeLocal(d.dataHora);
+    const result = await saveApplicationAction({ medication: st.medicamento, dose: st.dose, site: d.local, note: d.obs, appliedAt: localDate.toISOString() });
+    const recordedAt = result.synced ? new Date(result.appliedAt) : localDate;
+    const entry: Aplicacao = { id: result.synced ? result.id : undefined, dataHora: fmtDateTime(recordedAt), local: d.local || "Não informado", obs: d.obs || "", data: recordedAt };
     set({ aplicacoes: [...st.aplicacoes, entry], registerStep: "saved" });
+    setBusyAction(null);
+    if (!result.synced && authenticated) toast("Registro salvo no aparelho; sincronização pendente.");
+  };
+  const saveDoseNaoAplicada = async () => {
+    const d = st.draft;
+    const localDate = fromDatetimeLocal(d.dataHora);
+    setBusyAction("missed");
+    const result = await saveMissedDoseAction({ medication: st.medicamento, dose: st.dose, reason: d.motivo, note: d.nota, scheduledFor: localDate.toISOString() });
+    const recordedAt = result.synced ? new Date(result.scheduledFor) : localDate;
+    set({
+      dosesNaoAplicadas: [...st.dosesNaoAplicadas, { id: result.synced ? result.id : undefined, dataHora: fmtDateTime(recordedAt), motivo: d.motivo || "Não informado", nota: d.nota, data: recordedAt }],
+      registerStep: "missedSaved"
+    });
     setBusyAction(null);
     if (!result.synced && authenticated) toast("Registro salvo no aparelho; sincronização pendente.");
   };
@@ -256,10 +291,17 @@ export default function JourneyPage() {
     const start = periodStart();
     const inPeriod = (date: Date) => !start || date >= start;
     const applications = st.aplicacoes.filter((item) => inPeriod(item.data));
+    const missedDoses = st.dosesNaoAplicadas.filter((item) => inPeriod(item.data));
     const weights = st.pesos.filter((item) => inPeriod(item.raw));
     const symptoms = st.sintomas.filter((item) => inPeriod(item.data));
     const routines = st.rotinas.filter((item) => inPeriod(item.data));
     const questions = st.perguntas.filter((item) => inPeriod(item.data));
+    const expected = applications.length + missedDoses.length;
+    const adherence = expected ? Math.round((applications.length / expected) * 100) : null;
+    const symptomSummary = symptoms.reduce<Record<string, number>>((acc, item) => {
+      acc[item.tipo] = (acc[item.tipo] ?? 0) + 1;
+      return acc;
+    }, {});
     const lines = [
       `Canetta — resumo de ${st.nome}`,
       `Período: ${st.periodo}`,
@@ -268,9 +310,13 @@ export default function JourneyPage() {
       `Medicamento registrado: ${st.medicamento || "Não informado"}`,
       `Dose registrada: ${st.dose || "Não informada"}`,
       `Aplicações: ${applications.length}`,
+      `Doses não aplicadas: ${missedDoses.length}`,
+      `Aderência registrada: ${adherence === null ? "sem dados suficientes" : `${adherence}% das doses registradas neste período`}`,
       `Pesos: ${weights.length}${weights.length ? ` (último: ${weights[weights.length - 1].kg} kg)` : ""}`,
       `Sintomas/check-ins: ${symptoms.length}`,
+      ...(Object.keys(symptomSummary).length ? ["Sintomas por tipo:", ...Object.entries(symptomSummary).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       `Registros de rotina: ${routines.length}`,
+      ...(missedDoses.length ? ["", "Doses não aplicadas:", ...missedDoses.map((item) => `• ${item.dataHora} — ${item.motivo}${item.nota ? ` (${item.nota})` : ""}`)] : []),
       "",
       "Perguntas para a consulta:",
       ...(questions.length ? questions.map((item) => `• ${item.texto}`) : ["• Nenhuma pergunta registrada neste período."]),
@@ -371,32 +417,47 @@ export default function JourneyPage() {
   const events = useMemo(() => {
     const evs = [
       ...st.aplicacoes.map((a) => ({ icon: "💉", label: "Aplicação · " + st.medicamento, data: a.dataHora, t: a.data })),
+      ...st.dosesNaoAplicadas.map((a) => ({ icon: "○", label: "Dose não aplicada · " + a.motivo, data: a.dataHora, t: a.data })),
       ...st.sintomas.map((a) => ({ icon: "📝", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data })),
       ...st.pesos.map((a) => ({ icon: "⚖️", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw })),
       ...st.rotinas.map((a) => ({ icon: "🗓️", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data })),
       ...st.perguntas.map((a) => ({ icon: "❓", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data })),
     ];
     return evs.sort((x, y) => y.t.getTime() - x.t.getTime());
-  }, [st.aplicacoes, st.sintomas, st.pesos, st.rotinas, st.perguntas, st.medicamento]);
+  }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.perguntas, st.medicamento]);
 
-  const anyDado = st.aplicacoes.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.perguntas.length;
+  const anyDado = st.aplicacoes.length || st.dosesNaoAplicadas.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.perguntas.length;
   const conquista = anyDado > 0;
   const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
+  const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
+  const adherencePct = expectedDoses ? Math.round((st.aplicacoes.length / expectedDoses) * 100) : null;
+  const siteSummary = useMemo(() => {
+    const sites = st.aplicacoes.reduce<Record<string, number>>((acc, item) => {
+      const site = item.local || "Não informado";
+      acc[site] = (acc[site] ?? 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(sites).sort((a, b) => b[1] - a[1]);
+  }, [st.aplicacoes]);
   const espelhoFacts = useMemo(() => {
     const facts = [
-      { label: "Aplicações", value: String(st.aplicacoes.length), detail: st.aplicacoes.length ? "salvas no histórico" : "sem registro" },
+      { label: "Aderência registrada", value: adherencePct === null ? "—" : `${adherencePct}%`, detail: expectedDoses ? `${st.aplicacoes.length} aplicadas de ${expectedDoses} dose(s) registradas` : "sem dados suficientes" },
+      { label: "Aplicações", value: String(st.aplicacoes.length), detail: siteSummary.length ? `local mais usado: ${siteSummary[0][0]}` : "sem registro" },
+      { label: "Doses não aplicadas", value: String(st.dosesNaoAplicadas.length), detail: st.dosesNaoAplicadas.length ? "com motivo salvo" : "sem registro" },
       { label: "Pesos", value: String(st.pesos.length), detail: pesoAtual ? `${pesoAtual} kg no último registro` : "sem registro" },
       { label: "Sintomas", value: String(st.sintomas.length), detail: st.sintomas.length ? "informados por você" : "sem registro" },
       { label: "Rotina", value: String(st.rotinas.length), detail: st.rotinas.length ? "hábitos salvos" : "sem registro" },
     ];
-    return facts.filter((fact) => fact.value !== "0");
-  }, [pesoAtual, st.aplicacoes.length, st.pesos.length, st.sintomas.length, st.rotinas.length]);
+    return facts.filter((fact) => fact.value !== "0" && fact.value !== "—");
+  }, [adherencePct, expectedDoses, pesoAtual, siteSummary, st.aplicacoes.length, st.dosesNaoAplicadas.length, st.pesos.length, st.sintomas.length, st.rotinas.length]);
 
   const quickDefs = [
     { key: "aplicacao", icon: "💉", label: "Aplicação" }, { key: "peso", icon: "⚖️", label: "Peso" },
     { key: "sintoma", icon: "📝", label: "Sintoma" }, { key: "rotina", icon: "🗓️", label: "Rotina" },
     { key: "pergunta", icon: "❓", label: "Pergunta" },
   ] as const;
+  const greetingName = st.nome.trim().toLowerCase() === "você" ? "Oi" : `Oi, ${st.nome}`;
+  const syncLabel = authenticated ? "Dados sincronizados na conta." : "Dados salvos neste aparelho.";
 
   const IntensityScale = ({ size = 26 }: { size?: number }) => {
     const cur = st.draft.intensidade ?? -1;
@@ -437,7 +498,7 @@ export default function JourneyPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", flex: 1 }}>
                 <div>
                   <div style={fieldLabel}>DATA E HORA</div>
-                  <input className="j-in" value={st.draft.dataHora || ""} onChange={(e) => setDraft({ dataHora: e.target.value })} placeholder="Hoje, 08:00" style={inputSt} />
+                  <input className="j-in" type="datetime-local" value={st.draft.dataHora || ""} onChange={(e) => setDraft({ dataHora: e.target.value })} style={inputSt} />
                 </div>
                 <div>
                   <div style={fieldLabel}>MEDICAMENTO E DOSE</div>
@@ -458,7 +519,31 @@ export default function JourneyPage() {
                   <textarea className="j-in" value={st.draft.obs || ""} onChange={(e) => setDraft({ obs: e.target.value })} placeholder="Alguma nota sobre esta aplicação" style={textareaSt} />
                 </div>
               </div>
-              <button type="button" disabled={busyAction === "aplicacao"} onClick={saveAplicacao} style={{ ...primaryBtn, marginTop: 14, opacity: busyAction === "aplicacao" ? 0.65 : 1 }}>{busyAction === "aplicacao" ? "Salvando…" : "Salvar"}</button>
+              <button type="button" disabled={busyAction === "aplicacao"} onClick={saveAplicacao} style={{ ...primaryBtn, marginTop: 14, opacity: busyAction === "aplicacao" ? 0.65 : 1 }}>{busyAction === "aplicacao" ? "Salvando…" : "Salvar aplicação"}</button>
+              <button type="button" onClick={() => set({ registerStep: "missed" })} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "none", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>Não apliquei esta dose</button>
+            </div>
+          )}
+
+          {/* APLICAÇÃO — NÃO APLICADA */}
+          {st.registerFlow === "aplicacao" && st.registerStep === "missed" && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
+              {flowHeader("Dose não aplicada", () => set({ registerStep: "form" }))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", flex: 1 }}>
+                <div>
+                  <div style={fieldLabel}>DATA PREVISTA</div>
+                  <input className="j-in" type="datetime-local" value={st.draft.dataHora || ""} onChange={(e) => setDraft({ dataHora: e.target.value })} style={inputSt} />
+                </div>
+                <div>
+                  <div style={{ ...fieldLabel, marginBottom: 8 }}>MOTIVO</div>
+                  <ChipRow options={["Esqueci", "Sem medicamento", "Efeito colateral", "Viagem/rotina", "Orientação médica", "Outro"]} current={st.draft.motivo} onPick={(v) => setDraft({ motivo: v })} radius={20} wrap />
+                </div>
+                <div>
+                  <div style={fieldLabel}>NOTA (OPCIONAL)</div>
+                  <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Contexto para lembrar na consulta" style={textareaSt} />
+                </div>
+                <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>Este registro não orienta compensação de dose. Ele apenas organiza o histórico para conversar com seu médico.</div>
+              </div>
+              <button type="button" disabled={busyAction === "missed"} onClick={saveDoseNaoAplicada} style={{ ...primaryBtn, marginTop: 14, opacity: busyAction === "missed" ? 0.65 : 1 }}>{busyAction === "missed" ? "Salvando…" : "Salvar dose não aplicada"}</button>
             </div>
           )}
 
@@ -472,6 +557,16 @@ export default function JourneyPage() {
                 <button onClick={() => set({ registerStep: "checkin" })} style={{ width: "100%", padding: 15, background: "#22B39A", color: "#0E2A23", border: "none", borderRadius: 14, fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>Registrar como me senti</button>
                 <button onClick={finishToHistorico} style={{ width: "100%", padding: 13, background: "transparent", color: "#BEE0D6", border: "none", fontSize: 13.5, fontWeight: 600, cursor: "pointer" }}>Ver no histórico</button>
               </div>
+            </div>
+          )}
+
+          {/* APLICAÇÃO — NÃO APLICADA SALVA */}
+          {st.registerFlow === "aplicacao" && st.registerStep === "missedSaved" && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: 40, background: "#16302B" }}>
+              <div style={{ width: 74, height: 74, borderRadius: "50%", background: "#EAF5F2", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, color: "#0E6B5C" }}>○</div>
+              <div style={{ textAlign: "center", fontSize: 20, fontWeight: 800, color: "#F4F6F3" }}>Dose não aplicada registrada.</div>
+              <div style={{ textAlign: "center", fontSize: 13.5, color: "#BEE0D6", maxWidth: 280 }}>O histórico guarda o motivo sem sugerir nenhuma conduta.</div>
+              <button onClick={finishToHistorico} style={{ width: "100%", maxWidth: 280, padding: 15, background: "#22B39A", color: "#0E2A23", border: "none", borderRadius: 14, fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>Ver no histórico</button>
             </div>
           )}
 
@@ -494,7 +589,7 @@ export default function JourneyPage() {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Registrar sintoma", cancelFlow)}
               <div style={{ ...fieldLabel, marginBottom: 8 }}>TIPO</div>
-              <div style={{ marginBottom: 16 }}><ChipRow options={["Náusea", "Fadiga", "Dor de cabeça", "Constipação", "Diarreia", "Outro"]} current={st.draft.tipo} onPick={(v) => setDraft({ tipo: v })} radius={20} wrap /></div>
+              <div style={{ marginBottom: 16 }}><ChipRow options={["Náusea", "Vômitos", "Diarreia", "Constipação", "Refluxo", "Dor abdominal", "Fadiga", "Dor de cabeça", "Outro"]} current={st.draft.tipo} onPick={(v) => setDraft({ tipo: v })} radius={20} wrap /></div>
               <div style={{ ...fieldLabel, marginBottom: 8 }}>INTENSIDADE</div>
               <div style={{ marginBottom: 16 }}><IntensityScale size={24} /></div>
               <div style={{ ...fieldLabel, marginBottom: 8 }}>DURAÇÃO</div>
@@ -584,8 +679,9 @@ export default function JourneyPage() {
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ animation: "floaty 3.5s ease-in-out infinite" }}><MascotBadge /></div>
-                  <div><div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Oi, {st.nome}</div><div style={{ fontSize: 12.5, color: "#596E68" }}>{st.mascotNome} está por aqui hoje.</div></div>
+                  <div><div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>{greetingName}</div><div style={{ fontSize: 12.5, color: "#596E68" }}>{st.mascotNome} está por aqui hoje.</div></div>
                 </div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "#596E68", marginTop: -8 }}>{syncLabel}</div>
                 <div style={{ background: "#0E6B5C", borderRadius: 18, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#BEE0D6", letterSpacing: "0.3px" }}>PRÓXIMA DOSE</div>
                   {st.aplicacoes.length ? (
@@ -678,12 +774,20 @@ export default function JourneyPage() {
                       {st.pesos.length > 0 && (<div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Peso inicial → atual</span><span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{st.pesos[0].kg} kg → {st.pesos[st.pesos.length - 1].kg} kg</span></div>)}
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Dose atual</span><span style={{ fontWeight: 700, color: "#16302B" }}>{st.medicamento} · {st.dose}</span></div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Aplicações registradas</span><span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{st.aplicacoes.length}</span></div>
+                      {expectedDoses > 0 && (<div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Aderência registrada</span><span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{adherencePct}%</span></div>)}
+                      {st.dosesNaoAplicadas.length > 0 && (<div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Doses não aplicadas</span><span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{st.dosesNaoAplicadas.length}</span></div>)}
                       {st.sintomas.length > 0 && (<div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Sintomas registrados</span><span style={{ fontWeight: 700, color: "#16302B" }}>{st.sintomas.length} registro(s)</span></div>)}
                       {st.rotinas.length > 0 && (<div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}><span style={{ color: "#596E68", fontWeight: 600 }}>Hábitos registrados</span><span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{st.rotinas.length}</span></div>)}
                       {st.perguntas.length > 0 && (
                         <>
                           <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", marginTop: 4 }}>PERGUNTAS ANOTADAS</div>
                           {st.perguntas.map((p, k) => (<div key={k} style={{ fontSize: 13, color: "#16302B", padding: "4px 0" }}>• {p.texto}</div>))}
+                        </>
+                      )}
+                      {st.dosesNaoAplicadas.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", marginTop: 4 }}>MOTIVOS DE DOSE NÃO APLICADA</div>
+                          {st.dosesNaoAplicadas.slice(-3).reverse().map((item, k) => (<div key={k} style={{ fontSize: 13, color: "#16302B", padding: "4px 0" }}>• {item.motivo} · {item.dataHora}</div>))}
                         </>
                       )}
                     </div>
@@ -737,13 +841,14 @@ export default function JourneyPage() {
                 {st.maisSub === "conteudo" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {[
-                      { titulo: "Náusea e efeitos digestivos: o que observar", fonte: "Fonte: bula do fabricante" },
-                      { titulo: "Como preparar perguntas para sua consulta", fonte: "Fonte: orientação médica geral" },
-                      { titulo: "Hidratação no dia a dia", fonte: "Fonte: Ministério da Saúde" },
-                      { titulo: "Entendendo as fases do tratamento", fonte: "Fonte: SBEM" },
+                      { titulo: "Náusea e efeitos digestivos: o que observar", fonte: "Fonte: bula do fabricante", corpo: "Anote tipo, duração, intensidade e contexto. Esses fatos ajudam a conversa na consulta." },
+                      { titulo: "Como preparar perguntas para sua consulta", fonte: "Fonte: orientação médica geral", corpo: "Salve dúvidas quando elas aparecem. O resumo junta tudo em uma pauta simples." },
+                      { titulo: "Hidratação no dia a dia", fonte: "Fonte: Ministério da Saúde", corpo: "Use o registro de rotina para lembrar como estavam água, fome, sono e movimento." },
+                      { titulo: "Entendendo as fases do tratamento", fonte: "Fonte: SBEM", corpo: "As fases ajudam a organizar o tempo de acompanhamento, sem definir conduta." },
                     ].map((a) => (
                       <div key={a.titulo} style={{ padding: "15px 17px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", flexDirection: "column", gap: 5 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>{a.titulo}</div>
+                        <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>{a.corpo}</div>
                         <div style={{ fontSize: 11.5, fontWeight: 700, color: "#8DA9E8" }}>{a.fonte}</div>
                         <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0E6B5C" }}>Procure seu médico para orientações.</div>
                       </div>

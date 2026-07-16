@@ -38,9 +38,10 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     }, { onConflict: "user_id" });
   }
 
-  const [profileResult, applicationsResult, weightsResult, symptomsResult, routinesResult, questionsResult, remindersResult] = await Promise.all([
+  const [profileResult, applicationsResult, missedDosesResult, weightsResult, symptomsResult, routinesResult, questionsResult, remindersResult] = await Promise.all([
     supabase.from("canetta_profiles").select("name, medication, current_dose, frequency, biggest_difficulty").eq("user_id", user.id).maybeSingle(),
     supabase.from("canetta_dose_applications").select("id, medication, dose, site, note, applied_at").eq("user_id", user.id).order("applied_at", { ascending: true }),
+    supabase.from("canetta_missed_doses").select("id, medication, dose, reason, note, scheduled_for, recorded_at").eq("user_id", user.id).order("scheduled_for", { ascending: true }),
     supabase.from("canetta_weight_entries").select("id, weight, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_side_effects").select("id, types, intensity, duration, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_routine_entries").select("id, water_cups, movement, sleep, hunger, note, photo, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
@@ -48,13 +49,14 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     supabase.from("canetta_reminders").select("id, weekday, time, active").eq("user_id", user.id).limit(1)
   ]);
 
-  const error = profileResult.error || applicationsResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error;
+  const error = profileResult.error || applicationsResult.error || missedDosesResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error;
   if (error) return { authenticated: true as const, error: "Não foi possível carregar os registros sincronizados." };
 
   return {
     authenticated: true as const,
     profile: profileResult.data,
     applications: applicationsResult.data ?? [],
+    missedDoses: missedDosesResult.data ?? [],
     weights: weightsResult.data ?? [],
     symptoms: symptomsResult.data ?? [],
     routines: routinesResult.data ?? [],
@@ -76,6 +78,21 @@ export async function saveApplicationAction(input: { medication: string; dose: s
     applied_at: appliedAt
   }).select("id, applied_at").single();
   return error ? { synced: false as const } : { synced: true as const, id: data.id, appliedAt: data.applied_at };
+}
+
+export async function saveMissedDoseAction(input: { medication: string; dose: string; reason?: string; note?: string; scheduledFor?: string }) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { synced: false as const };
+  const scheduledFor = input.scheduledFor && !Number.isNaN(Date.parse(input.scheduledFor)) ? input.scheduledFor : new Date().toISOString();
+  const { data, error } = await supabase.from("canetta_missed_doses").insert({
+    user_id: user.id,
+    medication: input.medication || null,
+    dose: input.dose || null,
+    reason: input.reason?.trim() || null,
+    note: input.note?.trim() || null,
+    scheduled_for: scheduledFor
+  }).select("id, scheduled_for, recorded_at").single();
+  return error ? { synced: false as const } : { synced: true as const, id: data.id, scheduledFor: data.scheduled_for, recordedAt: data.recorded_at };
 }
 
 export async function saveWeightAction(input: { weight: number }) {
@@ -181,6 +198,7 @@ export async function exportMyDataAction() {
     "canetta_journey_state",
     "canetta_journey_state_log",
     "canetta_dose_applications",
+    "canetta_missed_doses",
     "canetta_weight_entries",
     "canetta_daily_checkins",
     "canetta_weekly_checkins",
