@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase";
+import { configureWebPush, getVapidPublicKey } from "@/lib/push";
 import type { OnboardingPayload } from "@/app/onboarding/flow/actions";
 
 async function currentSession() {
@@ -168,6 +169,94 @@ export async function saveReminderAction(input: { active: boolean; weekday?: num
   return { synced: !error };
 }
 
+type BrowserPushSubscription = {
+  endpoint?: string;
+  keys?: {
+    p256dh?: string;
+    auth?: string;
+  };
+};
+
+export async function getPushPublicKeyAction() {
+  const publicKey = getVapidPublicKey();
+  return { available: !!publicKey, publicKey };
+}
+
+export async function savePushSubscriptionAction(input: { subscription: BrowserPushSubscription; userAgent?: string }) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { saved: false as const, authenticated: false as const };
+
+  const endpoint = input.subscription.endpoint;
+  const p256dh = input.subscription.keys?.p256dh;
+  const auth = input.subscription.keys?.auth;
+
+  if (!endpoint || !p256dh || !auth) {
+    return { saved: false as const, authenticated: true as const, validation: true as const };
+  }
+
+  const { error } = await supabase.from("canetta_push_subscriptions").upsert({
+    user_id: user.id,
+    endpoint,
+    p256dh,
+    auth,
+    user_agent: input.userAgent?.slice(0, 300) || null,
+    enabled: true,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "endpoint" });
+
+  return { saved: !error, authenticated: true as const };
+}
+
+export async function disablePushSubscriptionAction(endpoint?: string) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { disabled: false as const, authenticated: false as const };
+  if (!endpoint) return { disabled: false as const, authenticated: true as const, validation: true as const };
+
+  const { error } = await supabase
+    .from("canetta_push_subscriptions")
+    .update({ enabled: false, updated_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .eq("endpoint", endpoint);
+
+  return { disabled: !error, authenticated: true as const };
+}
+
+export async function sendTestPushAction(endpoint?: string) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { sent: false as const, authenticated: false as const };
+
+  let query = supabase
+    .from("canetta_push_subscriptions")
+    .select("endpoint, p256dh, auth")
+    .eq("user_id", user.id)
+    .eq("enabled", true)
+    .limit(1);
+
+  if (endpoint) query = query.eq("endpoint", endpoint);
+
+  const { data, error } = await query;
+  const subscription = data?.[0];
+  if (error || !subscription) return { sent: false as const, authenticated: true as const };
+
+  try {
+    const webpush = configureWebPush();
+    await webpush.sendNotification({
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subscription.p256dh,
+        auth: subscription.auth
+      }
+    }, JSON.stringify({
+      title: "Canetta",
+      body: "Push ativado. Vou te lembrar da dose no horário configurado.",
+      url: "/journey"
+    }));
+    return { sent: true as const, authenticated: true as const };
+  } catch {
+    return { sent: false as const, authenticated: true as const };
+  }
+}
+
 export async function saveProfileAction(input: {
   name: string;
   medication: string;
@@ -204,6 +293,7 @@ export async function exportMyDataAction() {
     "canetta_weekly_checkins",
     "canetta_side_effects",
     "canetta_reminders",
+    "canetta_push_subscriptions",
     "canetta_routine_entries",
     "canetta_questions"
   ] as const;

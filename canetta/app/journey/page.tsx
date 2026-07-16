@@ -7,15 +7,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   deleteMyAccountAction,
+  disablePushSubscriptionAction,
   exportMyDataAction,
+  getPushPublicKeyAction,
   loadJourneyAction,
   saveApplicationAction,
   saveMissedDoseAction,
   saveProfileAction,
+  savePushSubscriptionAction,
   saveQuestionAction,
   saveReminderAction,
   saveRoutineAction,
   saveSymptomAction,
+  sendTestPushAction,
   saveWeightAction
 } from "./actions";
 import { signOutAction } from "@/app/auth/actions";
@@ -86,6 +90,13 @@ const startOfWeek = (d: Date) => {
 const ONBOARDING_STORAGE_KEY = "canetta:onboarding:v1";
 const JOURNEY_STORAGE_KEY = "canetta:journey:v1";
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
 function reviveState(value: Partial<AppState>): Partial<AppState> {
   const date = (input: Date | string) => new Date(input);
   const list = <T,>(items: T[] | null | undefined) => Array.isArray(items) ? items : [];
@@ -136,6 +147,10 @@ export default function JourneyPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushEndpoint, setPushEndpoint] = useState<string | undefined>();
+  const [pushStatus, setPushStatus] = useState("Push ainda não ativado.");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -224,6 +239,24 @@ export default function JourneyPage() {
       }));
     }).catch(() => toast("Não foi possível sincronizar agora."));
   }, [ready, toast]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    setPushSupported(supported);
+    if (!supported) {
+      setPushStatus("Este navegador não suporta push web.");
+      return;
+    }
+    navigator.serviceWorker.getRegistration("/sw.js")
+      .then((registration) => registration?.pushManager.getSubscription())
+      .then((subscription) => {
+        setPushEnabled(!!subscription);
+        setPushEndpoint(subscription?.endpoint);
+        setPushStatus(subscription ? "Push ativo neste navegador." : "Push ainda não ativado.");
+      })
+      .catch(() => setPushStatus("Não foi possível verificar o push."));
+  }, [ready]);
 
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
@@ -440,6 +473,62 @@ export default function JourneyPage() {
     setBusyAction(null);
     if ("validation" in result) { toast("Escolha o dia e o horário do lembrete."); return; }
     toast(result.synced ? "Agenda sincronizada." : "Agenda salva neste dispositivo.");
+  };
+
+  const enablePush = async () => {
+    if (!pushSupported) { toast("Este navegador não suporta push web."); return; }
+    if (!authenticated) { toast("Entre na conta para ativar push sincronizado."); return; }
+    setBusyAction("push");
+    try {
+      const { available, publicKey } = await getPushPublicKeyAction();
+      if (!available || !publicKey) { toast("Push ainda não configurado no servidor."); return; }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") { toast("Permissão de notificação não concedida."); return; }
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const existing = await registration.pushManager.getSubscription();
+      const subscription = existing ?? await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+      const result = await savePushSubscriptionAction({
+        subscription: subscription.toJSON(),
+        userAgent: navigator.userAgent
+      });
+      if (!result.saved) { toast("Não foi possível salvar o push agora."); return; }
+      setPushEnabled(true);
+      setPushEndpoint(subscription.endpoint);
+      setPushStatus("Push ativo neste navegador.");
+      toast("Push ativado.");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const disablePush = async () => {
+    if (!pushSupported) return;
+    setBusyAction("push");
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+      const subscription = await registration?.pushManager.getSubscription();
+      await disablePushSubscriptionAction(subscription?.endpoint || pushEndpoint);
+      await subscription?.unsubscribe();
+      setPushEnabled(false);
+      setPushEndpoint(undefined);
+      setPushStatus("Push desativado neste navegador.");
+      toast("Push desativado.");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const sendTestPush = async () => {
+    setBusyAction("push-test");
+    try {
+      const result = await sendTestPushAction(pushEndpoint);
+      toast(result.sent ? "Push de teste enviado." : "Não foi possível enviar o teste.");
+    } finally {
+      setBusyAction(null);
+    }
   };
 
   const deleteAccount = async () => {
@@ -1045,6 +1134,22 @@ export default function JourneyPage() {
                       </div>
                     )}
                     <button type="button" disabled={busyAction === "reminder"} onClick={saveReminder} style={{ ...primaryBtn, padding: 13, fontSize: 14, opacity: busyAction === "reminder" ? 0.65 : 1 }}>{busyAction === "reminder" ? "Salvando…" : st.lembretesOn ? "Salvar agenda" : "Salvar agenda desativada"}</button>
+                    <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>Push da dose</div>
+                          <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 3 }}>{pushStatus}</div>
+                        </div>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: pushEnabled ? "#22B39A" : "#D9DED9", flex: "0 0 auto" }} />
+                      </div>
+                      {!authenticated && <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4 }}>Entre na conta para receber lembretes mesmo com o app fechado.</div>}
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button type="button" disabled={busyAction === "push" || !pushSupported || pushEnabled} onClick={enablePush} style={{ flex: 1, padding: 12, background: pushEnabled ? "#D9DED9" : "#0E6B5C", color: pushEnabled ? "#596E68" : "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: pushEnabled ? "not-allowed" : "pointer" }}>{busyAction === "push" ? "Ativando…" : pushEnabled ? "Ativo" : "Ativar push"}</button>
+                        <button type="button" disabled={busyAction === "push-test" || !pushEnabled} onClick={sendTestPush} style={{ flex: 1, padding: 12, background: "#fff", color: "#0E6B5C", border: "1.5px solid #C7D6D1", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: pushEnabled ? "pointer" : "not-allowed", opacity: pushEnabled ? 1 : 0.55 }}>{busyAction === "push-test" ? "Enviando…" : "Testar"}</button>
+                      </div>
+                      {pushEnabled && <button type="button" disabled={busyAction === "push"} onClick={disablePush} style={{ width: "100%", padding: 11, background: "transparent", color: "#75443C", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Desativar push neste navegador</button>}
+                      <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.4 }}>O lembrete usa o dia e horário da agenda acima. Máximo: um push por horário configurado.</div>
+                    </div>
                     <button type="button" disabled={busyAction === "profile"} onClick={saveProfile} style={{ ...primaryBtn, padding: 13, fontSize: 14, opacity: busyAction === "profile" ? 0.65 : 1 }}>{busyAction === "profile" ? "Salvando…" : "Salvar perfil"}</button>
                     {authenticated && <form action={signOutAction}><button type="submit" style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "1.5px solid #C7D6D1", borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Sair da conta</button></form>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}><span style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>Versão</span><span style={{ fontSize: 12.5, fontWeight: 700, color: "#0E6B5C" }}>MVP</span></div>
