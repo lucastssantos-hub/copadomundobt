@@ -28,6 +28,8 @@ interface Draft {
   dataHora?: string; obs?: string; nota?: string; contexto?: string; pergunta?: string;
   local?: string; tipo?: string; duracao?: string; movimento?: string; motivo?: string;
   sono?: string; fome?: string; intensidade?: number; pesoKg?: number; agua?: number;
+  nausea?: boolean; vomitos?: boolean; diarreia?: boolean; constipacao?: boolean; dorAbdominal?: boolean;
+  energia?: number; apetite?: string;
 }
 interface Aplicacao { id?: string; dataHora: string; local: string; obs: string; data: Date; }
 interface DoseNaoAplicada { id?: string; dataHora: string; motivo: string; nota?: string; data: Date; }
@@ -72,6 +74,14 @@ const fromDatetimeLocal = (value?: string) => {
   if (!value) return new Date();
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const startOfWeek = (d: Date) => {
+  const start = startOfDay(d);
+  const day = start.getDay();
+  start.setDate(start.getDate() - (day === 0 ? 6 : day - 1));
+  return start;
 };
 const ONBOARDING_STORAGE_KEY = "canetta:onboarding:v1";
 const JOURNEY_STORAGE_KEY = "canetta:journey:v1";
@@ -276,11 +286,25 @@ export default function JourneyPage() {
   };
   const saveRotina = async () => {
     setBusyAction("rotina");
-    const result = await saveRoutineAction({ waterCups: st.draft.agua, movement: st.draft.movimento, sleep: st.draft.sono, hunger: st.draft.fome, note: st.draft.nota });
+    const symptoms = [
+      st.draft.nausea ? "náusea" : "",
+      st.draft.vomitos ? "vômitos" : "",
+      st.draft.diarreia ? "diarreia" : "",
+      st.draft.constipacao ? "constipação" : "",
+      st.draft.dorAbdominal ? "dor abdominal" : ""
+    ].filter(Boolean);
+    const noteParts = [
+      symptoms.length ? `Sintomas: ${symptoms.join(", ")}` : "",
+      Number.isFinite(st.draft.energia) ? `Energia: ${st.draft.energia}/5` : "",
+      st.draft.apetite ? `Apetite: ${st.draft.apetite}` : "",
+      st.draft.nota
+    ].filter(Boolean);
+    const note = noteParts.join(" · ");
+    const result = await saveRoutineAction({ waterCups: st.draft.agua, movement: st.draft.movimento, sleep: st.draft.sono, hunger: st.draft.fome || st.draft.apetite, note });
     const recordedAt = result.synced ? new Date(result.recordedAt) : new Date();
-    set({ rotinas: [...st.rotinas, { ...st.draft, id: result.synced ? result.id : undefined, data: recordedAt }] });
+    set({ rotinas: [...st.rotinas, { ...st.draft, nota: note, id: result.synced ? result.id : undefined, data: recordedAt }] });
     setBusyAction(null);
-    toast("Rotina registrada."); finishToHoje();
+    toast("Check-in diário registrado."); finishToHoje();
   };
   const savePergunta = async () => {
     if (!st.draft.pergunta) { finishToHoje(); return; }
@@ -314,8 +338,18 @@ export default function JourneyPage() {
       acc[item.tipo] = (acc[item.tipo] ?? 0) + 1;
       return acc;
     }, {});
+    const routineSymptomMentions = routines.reduce<Record<string, number>>((acc, item) => {
+      const note = (item.nota || "").toLowerCase();
+      ["náusea", "vômitos", "diarreia", "constipação", "dor abdominal"].forEach((label) => {
+        if (note.includes(label)) acc[label] = (acc[label] ?? 0) + 1;
+      });
+      return acc;
+    }, {});
+    const firstWeight = weights[0]?.kg;
+    const lastWeight = weights[weights.length - 1]?.kg;
+    const weightDelta = Number.isFinite(firstWeight) && Number.isFinite(lastWeight) ? Number(lastWeight) - Number(firstWeight) : null;
     const lines = [
-      `Canetta — resumo de ${st.nome}`,
+      `Canetta — meu relatório de ${st.nome}`,
       `Período: ${st.periodo}`,
       `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
       "",
@@ -324,10 +358,11 @@ export default function JourneyPage() {
       `Aplicações: ${applications.length}`,
       `Doses não aplicadas: ${missedDoses.length}`,
       `Aderência registrada: ${adherence === null ? "sem dados suficientes" : `${adherence}% das doses registradas neste período`}`,
-      `Pesos: ${weights.length}${weights.length ? ` (último: ${weights[weights.length - 1].kg} kg)` : ""}`,
+      `Peso: ${weights.length ? `${firstWeight} kg → ${lastWeight} kg${weightDelta !== null ? ` (${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(1)} kg)` : ""}` : "sem registros"}`,
       `Sintomas/check-ins: ${symptoms.length}`,
       ...(Object.keys(symptomSummary).length ? ["Sintomas por tipo:", ...Object.entries(symptomSummary).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       `Registros de rotina: ${routines.length}`,
+      ...(Object.keys(routineSymptomMentions).length ? ["Sintomas citados nos check-ins diários:", ...Object.entries(routineSymptomMentions).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       ...(missedDoses.length ? ["", "Doses não aplicadas:", ...missedDoses.map((item) => `• ${item.dataHora} — ${item.motivo}${item.nota ? ` (${item.nota})` : ""}`)] : []),
       "",
       "Perguntas para a consulta:",
@@ -443,6 +478,33 @@ export default function JourneyPage() {
   const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
   const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
   const adherencePct = expectedDoses ? Math.round((st.aplicacoes.length / expectedDoses) * 100) : null;
+  const weekStart = startOfWeek(new Date());
+  const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
+  const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
+  const weeklyPlanned = Math.max(1, Math.round(7 / Math.max(1, freqDays)));
+  const weeklyProgress = Math.min(weeklyApplied, weeklyPlanned);
+  const weeklyPerfect = weeklyApplied >= weeklyPlanned && weeklyMissed === 0;
+  const recentDoseEvents = useMemo(() => ([
+    ...st.aplicacoes.map((item) => ({ status: "aplicada" as const, date: item.data, label: item.dataHora, local: item.local, detail: "✓ Aplicada" })),
+    ...st.dosesNaoAplicadas.map((item) => ({ status: "nao_aplicada" as const, date: item.data, label: item.dataHora, local: "--", detail: `○ ${item.motivo}` }))
+  ]).sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 3), [st.aplicacoes, st.dosesNaoAplicadas]);
+  const lastSevenDays = useMemo(() => Array.from({ length: 7 }, (_, index) => {
+    const date = startOfDay(new Date());
+    date.setDate(date.getDate() - (6 - index));
+    const applied = st.aplicacoes.some((item) => sameDay(item.data, date));
+    const missed = st.dosesNaoAplicadas.some((item) => sameDay(item.data, date));
+    return { date, applied, missed, label: date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "") };
+  }), [st.aplicacoes, st.dosesNaoAplicadas]);
+  const symptomDailyCount = (rotina: Rotina) => [
+    rotina.nausea,
+    rotina.vomitos,
+    rotina.diarreia,
+    rotina.constipacao,
+    rotina.dorAbdominal
+  ].filter(Boolean).length + (rotina.nota?.toLowerCase().includes("sintomas:") ? 1 : 0);
+  const symptomTrend = useMemo(() => st.rotinas.slice(-7).map((item) => ({ date: item.data, value: symptomDailyCount(item) })), [st.rotinas]);
+  const weightMin = st.pesos.length ? Math.min(...st.pesos.map((item) => item.kg)) : 0;
+  const weightMax = st.pesos.length ? Math.max(...st.pesos.map((item) => item.kg)) : 0;
   const siteSummary = useMemo(() => {
     const sites = st.aplicacoes.reduce<Record<string, number>>((acc, item) => {
       const site = item.local || "Não informado";
@@ -648,11 +710,31 @@ export default function JourneyPage() {
           {/* ROTINA */}
           {st.registerFlow === "rotina" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
-              {flowHeader("Rotina & hábitos", cancelFlow)}
+              {flowHeader("Check-in diário", cancelFlow)}
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>Registre o dia mesmo sem aplicação. O Canetta só organiza fatos para você acompanhar padrões.</div>
                 <div>
-                  <div style={fieldLabel}>REFEIÇÕES</div>
-                  <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Nota (opcional)" style={{ ...textareaSt, minHeight: 40, fontSize: 13.5 }} />
+                  <div style={{ ...fieldLabel, marginBottom: 8 }}>SINTOMAS DE HOJE</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {([
+                      ["nausea", "Náusea"],
+                      ["vomitos", "Vômitos"],
+                      ["diarreia", "Diarreia"],
+                      ["constipacao", "Constipação"],
+                      ["dorAbdominal", "Dor abdominal"]
+                    ] as const).map(([key, label]) => (
+                      <button key={key} type="button" aria-pressed={!!st.draft[key]} onClick={() => setDraft({ [key]: !st.draft[key] } as Partial<Draft>)} style={{ ...chipStyle(!!st.draft[key], 14), padding: "11px 8px", fontSize: 12.5 }}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ ...fieldLabel, marginBottom: 8 }}>ENERGIA</div>
+                  <ChipRow options={["1", "2", "3", "4", "5"]} current={st.draft.energia ? String(st.draft.energia) : undefined} onPick={(v) => setDraft({ energia: Number(v) })} equal />
+                </div>
+                <div><div style={fieldLabel}>APETITE</div><ChipRow options={["Reduzido", "Normal", "Aumentado"]} current={st.draft.apetite} onPick={(v) => setDraft({ apetite: v, fome: v })} equal /></div>
+                <div>
+                  <div style={fieldLabel}>NOTA LIVRE (OPCIONAL)</div>
+                  <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Ex: náusea após almoço, energia melhor à tarde" style={{ ...textareaSt, minHeight: 56, fontSize: 13.5 }} />
                 </div>
                 <div>
                   <div style={fieldLabel}>ÁGUA</div>
@@ -664,9 +746,8 @@ export default function JourneyPage() {
                 </div>
                 <div><div style={fieldLabel}>MOVIMENTO</div><ChipRow options={["Nenhum", "Leve", "Moderado", "Intenso"]} current={st.draft.movimento} onPick={(v) => setDraft({ movimento: v })} equal /></div>
                 <div><div style={fieldLabel}>SONO</div><ChipRow options={["Ruim", "Regular", "Bom", "Ótimo"]} current={st.draft.sono} onPick={(v) => setDraft({ sono: v })} equal /></div>
-                <div><div style={fieldLabel}>FOME PERCEBIDA</div><ChipRow options={["Baixa", "Normal", "Alta"]} current={st.draft.fome} onPick={(v) => setDraft({ fome: v })} equal /></div>
               </div>
-              <button type="button" disabled={busyAction === "rotina"} onClick={saveRotina} style={{ ...primaryBtn, marginTop: 18, opacity: busyAction === "rotina" ? 0.65 : 1 }}>{busyAction === "rotina" ? "Salvando…" : "Salvar"}</button>
+              <button type="button" disabled={busyAction === "rotina"} onClick={saveRotina} style={{ ...primaryBtn, marginTop: 18, opacity: busyAction === "rotina" ? 0.65 : 1 }}>{busyAction === "rotina" ? "Salvando…" : "Salvar check-in"}</button>
             </div>
           )}
 
@@ -697,13 +778,36 @@ export default function JourneyPage() {
                 <div style={{ background: "#0E6B5C", borderRadius: 18, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#BEE0D6", letterSpacing: "0.3px" }}>PRÓXIMA DOSE</div>
                   {st.aplicacoes.length ? (
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "#F4F6F3" }}>{nextReminderLabel}</div>
+                    <>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#F4F6F3" }}>{nextReminderLabel}</div>
+                      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                        <button type="button" onClick={() => startFlow("aplicacao")} style={{ flex: 1, padding: "10px 12px", background: "#22B39A", color: "#0E2A23", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Já apliquei</button>
+                        <button type="button" onClick={() => set({ sheetOpen: false, registerFlow: "aplicacao", registerStep: "missed", draft: { dataHora: toDatetimeLocal(new Date()) } })} style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,.12)", color: "#DFF0EA", border: "1px solid rgba(255,255,255,.18)", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Esqueci</button>
+                      </div>
+                    </>
                   ) : (
                     <>
                       <div style={{ fontSize: 14, fontWeight: 600, color: "#DFF0EA" }}>Nenhuma aplicação registrada ainda.</div>
                       <button onClick={() => startFlow("aplicacao")} style={{ alignSelf: "flex-start", marginTop: 4, padding: "9px 16px", background: "#22B39A", color: "#0E2A23", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Registrar aplicação</button>
                     </>
                   )}
+                </div>
+                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "#596E68" }}>ADERÊNCIA RÁPIDA</div>
+                      <div style={{ fontSize: 12.5, color: "#4B5F59", marginTop: 3 }}>Últimos 7 dias registrados</div>
+                    </div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: "#0E6B5C", fontVariantNumeric: "tabular-nums" }}>{adherencePct === null ? "—" : `${adherencePct}%`}</div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, alignItems: "end" }}>
+                    {lastSevenDays.map((day) => (
+                      <div key={day.date.toISOString()} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                        <div title={day.date.toLocaleDateString("pt-BR")} style={{ width: "100%", height: day.applied ? 34 : day.missed ? 22 : 10, borderRadius: 7, background: day.applied ? "#0E6B5C" : day.missed ? "#C49A36" : "#E2E7E2" }} />
+                        <div style={{ fontSize: 9.5, fontWeight: 700, color: "#596E68", textTransform: "capitalize" }}>{day.label}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 700, color: "#596E68", marginBottom: 10 }}>REGISTRO RÁPIDO</div>
@@ -718,6 +822,25 @@ export default function JourneyPage() {
                 <button type="button" onClick={() => set({ tab: "consulta", consultaSub: "resumo" })} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, cursor: "pointer" }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>📄 Resumo da consulta</span><span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
                 </button>
+                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#596E68" }}>HISTÓRICO RECENTE</div>
+                  {recentDoseEvents.length ? recentDoseEvents.map((item, index) => (
+                    <div key={`${item.status}-${item.date.toISOString()}-${index}`} style={{ display: "grid", gridTemplateColumns: "72px 1fr auto", gap: 8, alignItems: "center", fontSize: 12.5 }}>
+                      <span style={{ color: "#596E68", fontWeight: 700 }}>{item.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}</span>
+                      <span style={{ color: "#16302B", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.local}</span>
+                      <span style={{ color: item.status === "aplicada" ? "#0E6B5C" : "#8A6426", fontWeight: 800 }}>{item.detail}</span>
+                    </div>
+                  )) : <div style={{ fontSize: 13, color: "#596E68" }}>As últimas aplicações aparecerão aqui.</div>}
+                </div>
+                <div style={{ ...cardWhite, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, background: weeklyPerfect ? "#EAF5F2" : "#fff" }}>
+                  <div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{weeklyPerfect ? "Semana perfeita!" : "Meta semanal"}</div>
+                    <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 3 }}>{weeklyProgress}/{weeklyPlanned} aplicação(ões) planejadas</div>
+                  </div>
+                  <div style={{ width: 72, height: 10, borderRadius: 99, background: "#E2E7E2", overflow: "hidden" }}>
+                    <div style={{ width: `${Math.min(100, (weeklyProgress / weeklyPlanned) * 100)}%`, height: "100%", borderRadius: 99, background: "#0E6B5C" }} />
+                  </div>
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: conquista ? "#EAF5F2" : "#fff", borderRadius: 16 }}>
                   <span style={{ fontSize: 20 }}>🏅</span>
                   <div><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>Conquista do dia</div><div style={{ fontSize: 12, color: "#4B5F59" }}>{conquista ? "Você já registrou algo hoje." : "Faça seu primeiro registro para desbloquear."}</div></div>
@@ -752,19 +875,57 @@ export default function JourneyPage() {
                 ))}
 
                 {st.diarioSub === "espelho" && (
-                  <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>Espelho de tendência</div>
-                      <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginTop: 4 }}>Mostra somente fatos salvos no diário. Não é alerta, diagnóstico, meta ou recomendação.</div>
-                    </div>
-                    {espelhoFacts.length ? espelhoFacts.map((fact) => (
-                      <div key={fact.label} style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "baseline", paddingTop: 10, borderTop: "1px solid #EDF0EC" }}>
-                        <div><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{fact.label}</div><div style={{ fontSize: 11.5, color: "#596E68" }}>{fact.detail}</div></div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: "#0E6B5C", fontVariantNumeric: "tabular-nums" }}>{fact.value}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>Espelho de tendência</div>
+                        <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginTop: 4 }}>Mostra somente fatos salvos no diário. Não é alerta, diagnóstico, meta ou recomendação.</div>
                       </div>
-                    )) : (
-                      <div style={{ fontSize: 13, color: "#596E68", lineHeight: 1.45 }}>Ainda não há registros suficientes para espelhar uma tendência. Quando você salvar dados, eles aparecem aqui como contagem factual.</div>
-                    )}
+                      {espelhoFacts.length ? espelhoFacts.map((fact) => (
+                        <div key={fact.label} style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "baseline", paddingTop: 10, borderTop: "1px solid #EDF0EC" }}>
+                          <div><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{fact.label}</div><div style={{ fontSize: 11.5, color: "#596E68" }}>{fact.detail}</div></div>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#0E6B5C", fontVariantNumeric: "tabular-nums" }}>{fact.value}</div>
+                        </div>
+                      )) : (
+                        <div style={{ fontSize: 13, color: "#596E68", lineHeight: 1.45 }}>Ainda não há registros suficientes para espelhar uma tendência. Quando você salvar dados, eles aparecem aqui como contagem factual.</div>
+                      )}
+                    </div>
+                    <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Aplicações · últimos 7 dias</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, alignItems: "end" }}>
+                        {lastSevenDays.map((day) => (
+                          <div key={`diario-${day.date.toISOString()}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                            <div style={{ width: "100%", height: day.applied ? 38 : day.missed ? 24 : 12, borderRadius: 7, background: day.applied ? "#0E6B5C" : day.missed ? "#C49A36" : "#E2E7E2" }} />
+                            <div style={{ fontSize: 9.5, fontWeight: 700, color: "#596E68", textTransform: "capitalize" }}>{day.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Sintomas · check-ins recentes</div>
+                      {symptomTrend.length ? (
+                        <div style={{ display: "grid", gridTemplateColumns: `repeat(${symptomTrend.length}, 1fr)`, gap: 8, alignItems: "end", minHeight: 58 }}>
+                          {symptomTrend.map((item) => (
+                            <div key={item.date.toISOString()} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                              <div style={{ width: "100%", height: Math.max(8, item.value * 14), borderRadius: 7, background: item.value ? "#0E6B5C" : "#E2E7E2" }} />
+                              <div style={{ fontSize: 9.5, fontWeight: 700, color: "#596E68" }}>{fmtDate(item.date).split(",")[0]}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : <div style={{ fontSize: 13, color: "#596E68" }}>Registre um check-in diário para ver esta linha factual.</div>}
+                    </div>
+                    <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Peso</div>
+                      {st.pesos.length >= 2 ? (
+                        <div style={{ display: "flex", alignItems: "end", gap: 6, minHeight: 58 }}>
+                          {st.pesos.slice(-8).map((item) => {
+                            const span = Math.max(1, weightMax - weightMin);
+                            const height = 16 + ((item.kg - weightMin) / span) * 40;
+                            return <div key={item.raw.toISOString()} title={`${item.kg} kg`} style={{ flex: 1, height, borderRadius: 7, background: "#0E6B5C" }} />;
+                          })}
+                        </div>
+                      ) : <div style={{ fontSize: 13, color: "#596E68" }}>Com dois registros de peso, o gráfico aparece aqui.</div>}
+                    </div>
                   </div>
                 )}
               </div>
@@ -775,7 +936,7 @@ export default function JourneyPage() {
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Consulta</div>
                 <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
-                  {[["resumo", "Resumo"], ["exportar", "Exportar"], ["fases", "Fases"]].map(([k, label]) => (
+                  {[["resumo", "Relatório"], ["exportar", "Exportar"], ["fases", "Fases"]].map(([k, label]) => (
                     <button key={k} type="button" aria-pressed={st.consultaSub === k} onClick={() => set({ consultaSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.consultaSub === k ? "#fff" : "transparent", color: st.consultaSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
                   ))}
                 </div>
@@ -813,8 +974,8 @@ export default function JourneyPage() {
                   <>
                     <div style={{ ...fieldLabel, marginBottom: 4 }}>PERÍODO</div>
                     <ChipRow options={["Últimos 7 dias", "Últimos 30 dias", "Tudo"]} current={st.periodo} onPick={(v) => set({ periodo: v })} equal />
-                    <button type="button" onClick={generatePdf} style={{ ...primaryBtn, padding: 16, borderRadius: 14, fontSize: 15, marginTop: 16 }}>Gerar PDF</button>
-                    <button type="button" onClick={shareReport} style={{ width: "100%", padding: 14, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>Compartilhar</button>
+                    <button type="button" onClick={generatePdf} style={{ ...primaryBtn, padding: 16, borderRadius: 14, fontSize: 15, marginTop: 16 }}>Baixar PDF</button>
+                    <button type="button" onClick={shareReport} style={{ width: "100%", padding: 14, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginTop: 8 }}>Copiar resumo</button>
                     <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 10 }}>O relatório usa somente o período selecionado e os registros visíveis no Canetta.</div>
                   </>
                 )}
