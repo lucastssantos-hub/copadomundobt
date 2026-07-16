@@ -6,11 +6,14 @@
 // Mantém os limites regulatórios (não diagnostica, não prescreve, não sugere conduta).
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
+  type AiWorkoutPlanRow,
   deleteMyAccountAction,
   disablePushSubscriptionAction,
   exportMyDataAction,
   type ExerciseCatalogItem,
+  generateAiWorkoutPlanAction,
   getPushPublicKeyAction,
+  loadAiWorkoutPlanAction,
   loadJourneyAction,
   saveApplicationAction,
   saveMissedDoseAction,
@@ -59,7 +62,7 @@ interface AppState {
 const INITIAL: AppState = {
   nome: "você", mascotNome: "Canetta", medicamento: "Medicamento", dose: "Dose atual", freqLabel: "Semanal",
   objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
-  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "biblioteca", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "",
+  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "",
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
   aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
@@ -174,6 +177,10 @@ export default function JourneyPage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushEndpoint, setPushEndpoint] = useState<string | undefined>();
   const [pushStatus, setPushStatus] = useState("Push ainda não ativado.");
+  const [aiPlan, setAiPlan] = useState<AiWorkoutPlanRow | null>(null);
+  const [aiPlanLoaded, setAiPlanLoaded] = useState(false);
+  const [aiPlanBusy, setAiPlanBusy] = useState(false);
+  const [aiPlanError, setAiPlanError] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -285,6 +292,32 @@ export default function JourneyPage() {
       })
       .catch(() => setPushStatus("Não foi possível verificar o push."));
   }, [ready]);
+
+  useEffect(() => {
+    if (!ready || !authenticated || aiPlanLoaded || st.tab !== "treino") return;
+    setAiPlanLoaded(true);
+    loadAiWorkoutPlanAction().then((result) => {
+      if ("plan" in result) setAiPlan(result.plan ?? null);
+    }).catch(() => {});
+  }, [ready, authenticated, aiPlanLoaded, st.tab]);
+
+  const generateAiPlan = async () => {
+    setAiPlanBusy(true);
+    setAiPlanError("");
+    try {
+      const result = await generateAiWorkoutPlanAction();
+      if ("plan" in result && result.plan) {
+        setAiPlan(result.plan);
+        toast("Plano da semana gerado.");
+      } else if ("error" in result && result.error) {
+        setAiPlanError(result.error);
+      }
+    } catch {
+      setAiPlanError("Não foi possível gerar o plano agora. Tente novamente em instantes.");
+    } finally {
+      setAiPlanBusy(false);
+    }
+  };
 
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
@@ -1339,10 +1372,10 @@ export default function JourneyPage() {
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Meu treino</div>
-                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Biblioteca e histórico de movimento. Sem prescrição automática.</div>
+                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Plano semanal sugerido pela IA, biblioteca e histórico de movimento.</div>
                 </div>
                 <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
-                  {[["biblioteca", "Biblioteca"], ["historico", "Histórico"]].map(([k, label]) => (
+                  {[["plano", "Plano IA"], ["biblioteca", "Biblioteca"], ["historico", "Histórico"]].map(([k, label]) => (
                     <button key={k} type="button" aria-pressed={st.treinoSub === k} onClick={() => set({ treinoSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.treinoSub === k ? "#fff" : "transparent", color: st.treinoSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
                   ))}
                 </div>
@@ -1354,6 +1387,54 @@ export default function JourneyPage() {
                   </div>
                   <button type="button" onClick={() => startFlow("treino")} style={{ padding: "10px 12px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Registrar</button>
                 </div>
+
+                {st.treinoSub === "plano" && (
+                  <>
+                    {aiPlan ? (
+                      <>
+                        <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 8, background: "#EAF5F2", border: "1.5px solid #CBE3DC" }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: "#0E6B5C", letterSpacing: 0.4 }}>SEMANA DE {new Date(`${aiPlan.week_start}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>{aiPlan.focus}</div>
+                          {aiPlan.rationale && <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.5 }}>{aiPlan.rationale}</div>}
+                        </div>
+                        {aiPlan.warning && (
+                          <div style={{ ...cardWhite, background: "#FDF6E3", border: "1.5px solid #EAD9A8", fontSize: 12.5, color: "#7A6017", lineHeight: 1.5 }}>⚠️ {aiPlan.warning}</div>
+                        )}
+                        {(aiPlan.workouts ?? []).map((day) => (
+                          <div key={day.day} style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                              <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>{day.day}</div>
+                              <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0E6B5C" }}>{day.focus}</div>
+                            </div>
+                            {(day.exercises ?? []).map((exercise) => (
+                              <div key={`${day.day}-${exercise.name}`} style={{ borderLeft: "3px solid #0E6B5C", paddingLeft: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", whiteSpace: "nowrap" }}>{exercise.sets} × {exercise.reps}</div>
+                                </div>
+                                <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.45 }}>{exercise.why}</div>
+                                <button type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseName: exercise.name, series: exercise.sets, repeticoes: exercise.reps } })} style={{ alignSelf: "flex-start", marginTop: 3, padding: "6px 10px", background: "transparent", color: "#0E6B5C", border: "1.5px solid #CBE3DC", borderRadius: 10, fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Registrar este</button>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                        {aiPlan.nutrition_advice && (
+                          <div style={{ ...cardWhite, fontSize: 12.5, color: "#4B5F59", lineHeight: 1.5 }}>🥗 {aiPlan.nutrition_advice}</div>
+                        )}
+                        <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 13.5, fontWeight: 700, cursor: aiPlanBusy ? "wait" : "pointer", opacity: aiPlanBusy ? 0.6 : 1 }}>{aiPlanBusy ? "Gerando novo plano…" : "Gerar plano atualizado"}</button>
+                      </>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: "32px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                        <MascotBadge size={52} />
+                        <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>Seu plano de movimento da semana</div>
+                        <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.5, maxWidth: 300 }}>A IA analisa seus registros (peso, sintomas, energia, histórico de treino) e monta uma sugestão semanal de movimento para você.</div>
+                        <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ ...primaryBtn, maxWidth: 260, padding: 14, fontSize: 14, opacity: aiPlanBusy ? 0.6 : 1, cursor: aiPlanBusy ? "wait" : "pointer" }}>{aiPlanBusy ? "Analisando seus registros…" : "Gerar meu plano da semana"}</button>
+                      </div>
+                    )}
+                    {aiPlanError && <div style={{ fontSize: 12.5, color: "#A3552B", textAlign: "center" }}>{aiPlanError}</div>}
+                    <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.5, padding: "0 4px" }}>Sugestão gerada por IA com base nos seus registros. Não é prescrição médica nem substitui a orientação do seu médico ou educador físico.</div>
+                  </>
+                )}
 
                 {st.treinoSub === "biblioteca" && (
                   <>

@@ -384,3 +384,56 @@ export async function deleteMyAccountAction(confirmation: string) {
   await supabase.auth.signOut();
   return { deleted: true as const, authenticated: true as const };
 }
+
+export type AiWorkoutPlanRow = {
+  week_start: string;
+  focus: string;
+  rationale: string | null;
+  risk_level: "low" | "medium" | "high" | null;
+  nutrition_advice: string | null;
+  warning: string | null;
+  workouts: Array<{
+    day: string;
+    focus: string;
+    exercises: Array<{ name: string; sets: number; reps: string; why: string }>;
+  }>;
+  created_at: string;
+};
+
+export async function loadAiWorkoutPlanAction() {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { authenticated: false as const };
+
+  const { data, error } = await supabase
+    .from("canetta_ai_workout_plans")
+    .select("week_start, focus, rationale, risk_level, nutrition_advice, warning, workouts, created_at")
+    .eq("user_id", user.id)
+    .order("week_start", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { authenticated: true as const, error: "Não foi possível carregar o plano agora." };
+  }
+
+  return { authenticated: true as const, plan: (data as AiWorkoutPlanRow | null) ?? null };
+}
+
+export async function generateAiWorkoutPlanAction() {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { authenticated: false as const };
+
+  try {
+    const { prescribeWeeklyWorkout } = await import("@/lib/ai/prescribe-workout");
+    await prescribeWeeklyWorkout(user.id);
+  } catch (err) {
+    console.error("generateAiWorkoutPlanAction failed:", err);
+    return {
+      authenticated: true as const,
+      generated: false as const,
+      error: "Não foi possível gerar o plano agora. Tente novamente em instantes."
+    };
+  }
+
+  return loadAiWorkoutPlanAction();
+}
