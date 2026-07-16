@@ -30,7 +30,7 @@ export async function signInAction(_prevState: AuthState, formData: FormData): P
     return { message: "Não foi possível entrar. Verifique seus dados." };
   }
 
-  redirect("/dashboard");
+  redirect("/journey");
 }
 
 export async function signUpAction(_prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -42,13 +42,14 @@ export async function signUpAction(_prevState: AuthState, formData: FormData): P
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     return { message: "Não foi possível criar a conta. Tente outro e-mail ou senha." };
   }
 
-  return { message: "Conta criada. Se o Supabase pedir confirmação, valide o e-mail antes de entrar." };
+  if (data.session) redirect("/journey");
+  return { message: "Conta criada. Confirme o e-mail e depois entre para sincronizar seus dados." };
 }
 
 export async function signOutAction() {

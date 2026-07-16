@@ -3,14 +3,11 @@
 // Fluxo de onboarding do Canetta (27 telas), portado do design-code
 // "Canetta Onboarding.dc.html" (Claude Design) para React funcional.
 // Mantém os limites regulatórios: registra/organiza, sem prescrever, sem
-// projeção de resultado, sem meta calculada. Persistência real fica para a
-// próxima fase — aqui o estado vive no cliente.
+// projeção de resultado, sem meta calculada.
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { saveOnboardingProfile } from "@/lib/canetta-store";
-
-type Plano = "anual" | "mensal";
+import { completeOnboardingAction } from "./actions";
 
 interface FlowState {
   i: number;
@@ -27,10 +24,7 @@ interface FlowState {
   doseTrend: string | null;
   dificuldade: string | null;
   diario: string[];
-  nascimento: string;
   sintoma: number;
-  plano: Plano;
-  notifOn: boolean;
 }
 
 const INITIAL: FlowState = {
@@ -48,10 +42,7 @@ const INITIAL: FlowState = {
   doseTrend: null,
   dificuldade: null,
   diario: [],
-  nascimento: "",
   sintoma: 3,
-  plano: "anual",
-  notifOn: false,
 };
 
 const STEP_MAP: Record<number, number> = {
@@ -78,7 +69,7 @@ const backBtn: CSSProperties = {
   fontSize: 20, cursor: "pointer", padding: 0,
 };
 const title: CSSProperties = { fontSize: 22, fontWeight: 800, color: "#16302B", lineHeight: 1.3 };
-const subLine: CSSProperties = { fontSize: 13, color: "#7A8E88" };
+const subLine: CSSProperties = { fontSize: 13, color: "#596E68" };
 const inputStyle: CSSProperties = {
   width: "100%", padding: "16px 18px", border: "1.5px solid #E2E7E2", borderRadius: 16,
   fontSize: 16, fontWeight: 600, color: "#16302B", background: "#fff",
@@ -141,30 +132,29 @@ export default function OnboardingFlowPage() {
   const next = () => setSt((s) => ({ ...s, i: Math.min(27, s.i + 1) }));
   const back = () => setSt((s) => ({ ...s, i: Math.max(1, s.i - 1) }));
   const goto27 = () => set({ i: 27 });
-  const restart = () => { if (timerRef.current) clearInterval(timerRef.current); setSt(INITIAL); };
 
-  // Fim do onboarding: persiste o perfil (best-effort, anônimo primeiro) e segue
-  // para a jornada. A persistência corre com um timeout de segurança para nunca
-  // prender o usuário caso a rede demore; sem env Supabase é no-op instantâneo.
   const finishToJourney = async () => {
+    const payload = {
+      nome: st.nome,
+      estagio: st.estagio,
+      medicamento: st.medicamento,
+      dose: st.dose,
+      freq: st.freq,
+      alturaCm: st.alturaCm,
+      pesoKg: st.pesoKg,
+      objetivo: st.objetivo,
+      fase: st.fase,
+      doseTrend: st.doseTrend,
+      dificuldade: st.dificuldade,
+      mascotNome: st.mascotNome
+    };
+    window.localStorage.setItem("canetta:onboarding:v1", JSON.stringify(payload));
     try {
-      await Promise.race([
-        saveOnboardingProfile({
-          nome: st.nome,
-          estagio: st.estagio,
-          medicamento: st.medicamento,
-          dose: st.dose,
-          freq: st.freq,
-          alturaCm: st.alturaCm,
-          dificuldade: st.dificuldade,
-          pesoKg: st.pesoKg
-        }),
-        new Promise((resolve) => setTimeout(resolve, 3000))
-      ]);
-    } catch (error) {
-      console.warn("[canetta] persistir onboarding falhou:", error);
+      const result = await completeOnboardingAction(payload);
+      router.push(result.next);
+    } catch {
+      router.push("/journey");
     }
-    router.push("/journey");
   };
 
   // loading auto-advance (tela 23 -> 24)
@@ -220,7 +210,7 @@ export default function OnboardingFlowPage() {
   }) => (
     <div style={{ display: "flex", flexDirection: "column", gap }}>
       {options.map((label) => (
-        <div key={label} onClick={() => onPick(label)} style={optRowStyle(current === label, pad, fontSize)}>{label}</div>
+        <button key={label} type="button" aria-pressed={current === label} onClick={() => onPick(label)} style={{ width: "100%", ...optRowStyle(current === label, pad, fontSize) }}>{label}</button>
       ))}
     </div>
   );
@@ -234,7 +224,7 @@ export default function OnboardingFlowPage() {
   );
 
   const rotinaItems = [
-    { icon: "🍽️", label: "Refeições", sub: "Foto ou nota" },
+    { icon: "🍽️", label: "Refeições", sub: "Nota opcional" },
     { icon: "💧", label: "Água", sub: "Registro do dia" },
     { icon: "🚶", label: "Movimento", sub: "Como você se sentiu" },
     { icon: "😴", label: "Sono", sub: "Qualidade percebida" },
@@ -258,6 +248,7 @@ export default function OnboardingFlowPage() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
         .flow-input:focus{outline:none;border-color:#0E6B5C}
+        @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
       `}</style>
 
       {/* SCREEN 1 — SPLASH */}
@@ -285,8 +276,8 @@ export default function OnboardingFlowPage() {
               {["Ontem", "Hoje", "Amanhã"].map((label, k) => (
                 <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: k === 1 ? "#0E6B5C" : "#E2E7E2", display: "flex", alignItems: "center", justifyContent: "center", color: k === 1 ? "#fff" : "#7A8E88", fontWeight: 800, fontSize: 16 }}>{k === 0 ? "✓" : k === 1 ? "●" : ""}</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#7A8E88" }}>{label}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: k === 1 ? "#0E6B5C" : "#E2E7E2", display: "flex", alignItems: "center", justifyContent: "center", color: k === 1 ? "#fff" : "#596E68", fontWeight: 800, fontSize: 16 }}>{k === 0 ? "✓" : k === 1 ? "●" : ""}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#596E68" }}>{label}</div>
                   </div>
                   {k < 2 && <div style={{ width: 26, height: 2, background: "#E2E7E2" }} />}
                 </div>
@@ -294,7 +285,7 @@ export default function OnboardingFlowPage() {
             </div>
             <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ fontSize: 24, fontWeight: 800, color: "#16302B", lineHeight: 1.25 }}>Aplique com confiança e no dia certo</div>
-              <div style={{ fontSize: 14.5, color: "#4B5F59", lineHeight: 1.55, maxWidth: 290 }}>Registro de doses, contagem regressiva e lembretes — para você nunca ter dúvida se já aplicou.</div>
+              <div style={{ fontSize: 14.5, color: "#4B5F59", lineHeight: 1.55, maxWidth: 290 }}>Registro de doses e agenda — para você consultar quando aplicou e qual é a próxima data estimada.</div>
             </div>
           </div>
           <Pager active={0} />
@@ -314,7 +305,7 @@ export default function OnboardingFlowPage() {
             </div>
             <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ fontSize: 24, fontWeight: 800, color: "#16302B", lineHeight: 1.25 }}>Você não precisa passar por essa jornada no escuro.</div>
-              <div style={{ fontSize: 14.5, color: "#4B5F59", lineHeight: 1.55, maxWidth: 290 }}>Acompanhamento, lembretes e uma comunidade para quando você precisar.</div>
+              <div style={{ fontSize: 14.5, color: "#4B5F59", lineHeight: 1.55, maxWidth: 290 }}>Acompanhamento, agenda e um resumo claro para levar à consulta.</div>
             </div>
           </div>
           <Pager active={1} />
@@ -373,7 +364,7 @@ export default function OnboardingFlowPage() {
           <div style={{ ...title, margin: "18px 0" }}>Qual medicamento você usa?</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, overflowY: "auto" }}>
             {["Zepbound", "Mounjaro", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"].map((label) => (
-              <div key={label} onClick={() => set({ medicamento: label })} style={optRowStyle(st.medicamento === label, "15px 18px")}>{label}</div>
+              <button key={label} type="button" aria-pressed={st.medicamento === label} onClick={() => set({ medicamento: label })} style={{ width: "100%", ...optRowStyle(st.medicamento === label, "15px 18px") }}>{label}</button>
             ))}
           </div>
           <div style={spacer} />
@@ -429,7 +420,7 @@ export default function OnboardingFlowPage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
               <button onClick={() => set({ pesoKg: Math.max(35, st.pesoKg - 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
-              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.pesoKg}<span style={{ fontSize: 18, color: "#7A8E88", fontWeight: 700 }}> kg</span></div>
+              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.pesoKg}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> kg</span></div>
               <button onClick={() => set({ pesoKg: Math.min(220, st.pesoKg + 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
             </div>
             <Ruler />
@@ -448,7 +439,7 @@ export default function OnboardingFlowPage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
               <button onClick={() => set({ alturaCm: Math.max(120, st.alturaCm - 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
-              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.alturaCm}<span style={{ fontSize: 18, color: "#7A8E88", fontWeight: 700 }}> cm</span></div>
+              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.alturaCm}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> cm</span></div>
               <button onClick={() => set({ alturaCm: Math.min(220, st.alturaCm + 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
             </div>
             <Ruler />
@@ -479,10 +470,10 @@ export default function OnboardingFlowPage() {
           <Header />
           <div style={{ fontSize: 21, fontWeight: 800, color: "#16302B", lineHeight: 1.3, margin: "18px 0 14px" }}>Marque a fase e o estado atual da sua rotina.</div>
           <ChoiceList options={["Primeiro mês", "Até 3 meses", "3 a 6 meses", "Manutenção", "Redução ou pausa"]} current={st.fase} onPick={(v) => set({ fase: v })} pad="14px 18px" fontSize={14.5} gap={9} />
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#7A8E88", margin: "16px 0 8px", letterSpacing: "0.3px" }}>DOSE ESTÁ</div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#596E68", margin: "16px 0 8px", letterSpacing: "0.3px" }}>DOSE ESTÁ</div>
           <div style={{ display: "flex", gap: 8 }}>
             {["Aumentando", "Fixa", "Reduzindo"].map((label) => (
-              <div key={label} onClick={() => set({ doseTrend: label })} style={{ flex: 1, textAlign: "center", padding: "12px 6px", background: st.doseTrend === label ? "#EAF5F2" : "#fff", border: `1.5px solid ${st.doseTrend === label ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#16302B", cursor: "pointer" }}>{label}</div>
+              <button key={label} type="button" aria-pressed={st.doseTrend === label} onClick={() => set({ doseTrend: label })} style={{ flex: 1, textAlign: "center", padding: "12px 6px", background: st.doseTrend === label ? "#EAF5F2" : "#fff", border: `1.5px solid ${st.doseTrend === label ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#16302B", cursor: "pointer" }}>{label}</button>
             ))}
           </div>
           <div style={spacer} />
@@ -511,10 +502,10 @@ export default function OnboardingFlowPage() {
             {["Aplicações", "Peso", "Sintomas", "Rotina & hábitos", "Perguntas"].map((label) => {
               const on = st.diario.includes(label);
               return (
-                <div key={label} onClick={() => toggleDiario(label)} style={optRowStyle(on)}>
+                <button key={label} type="button" aria-pressed={on} onClick={() => toggleDiario(label)} style={{ width: "100%", ...optRowStyle(on) }}>
                   <span>{label}</span>
                   <span style={{ color: on ? "#0E6B5C" : "transparent" }}>✓</span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -523,16 +514,15 @@ export default function OnboardingFlowPage() {
         </div>
       )}
 
-      {/* SCREEN 17 — NASCIMENTO */}
+      {/* SCREEN 17 — PRIVACIDADE */}
       {st.i === 17 && (
         <div style={{ ...screenBase, padding: "8px 26px 26px" }}>
           <Header />
-          <div style={{ ...title, margin: "18px 0 6px" }}>Qual sua data de nascimento?</div>
-          <div style={{ ...subLine, marginBottom: 18 }}>Opcional — para organizar seus registros.</div>
-          <input className="flow-input" value={st.nascimento} onChange={(e) => set({ nascimento: e.target.value })} placeholder="DD/MM/AAAA" style={{ ...inputStyle, fontVariantNumeric: "tabular-nums" }} />
+          <div style={{ ...title, margin: "18px 0 6px" }}>Privacidade por padrão.</div>
+          <div style={{ ...subLine, marginBottom: 18, lineHeight: 1.55 }}>O Canetta salva somente o necessário para organizar seu diário. Você pode exportar ou apagar tudo quando quiser.</div>
+          <div style={{ padding: "16px 18px", background: "#EAF5F2", borderRadius: 14, color: "#0E6B5C", fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>Sem venda de dados. Sem diagnóstico automático. Sem recomendação de dose.</div>
           <div style={spacer} />
           <button onClick={next} style={primaryBtn}>Continuar</button>
-          <button onClick={next} style={ghostBtn}>Pular</button>
         </div>
       )}
 
@@ -541,13 +531,13 @@ export default function OnboardingFlowPage() {
         <div style={{ ...screenBase, padding: "24px 26px 26px" }}>
           <button onClick={back} style={backBtn}>←</button>
           <div style={{ ...title, margin: "14px 0 20px" }}>Chegue à consulta sabendo exatamente como seu corpo respondeu ao tratamento.</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#7A8E88", marginBottom: 10 }}>INTENSIDADE DO SINTOMA</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#596E68", marginBottom: 10 }}>INTENSIDADE DO SINTOMA</div>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 4, marginBottom: 8 }}>
             {Array.from({ length: 11 }, (_, n) => (
-              <div key={n} onClick={() => set({ sintoma: n })} style={{ width: 26, height: 26, borderRadius: "50%", background: st.sintoma === n ? "#0E6B5C" : "#fff", color: st.sintoma === n ? "#fff" : "#7A8E88", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>{n}</div>
+              <button key={n} type="button" aria-label={`Intensidade ${n}`} aria-pressed={st.sintoma === n} onClick={() => set({ sintoma: n })} style={{ width: 26, height: 26, padding: 0, border: "none", borderRadius: "50%", background: st.sintoma === n ? "#0E6B5C" : "#fff", color: st.sintoma === n ? "#fff" : "#596E68", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>{n}</button>
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9AAAA5", marginBottom: 22 }}><span>Nenhum</span><span>Intenso</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#596E68", marginBottom: 22 }}><span>Nenhum</span><span>Intenso</span></div>
           <div style={{ background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>Sobre náusea e efeitos digestivos</div>
             <div style={{ fontSize: 13, color: "#4B5F59", lineHeight: 1.55 }}>Efeitos gastrointestinais são comuns em tratamentos GLP-1 e costumam variar de intensidade. Fonte: bula do fabricante.</div>
@@ -570,11 +560,11 @@ export default function OnboardingFlowPage() {
               ["Dose atual", doseLabelSafe],
               ["Aplicações registradas", "6"],
               ["Sintomas mais frequentes", "Náusea leve (3x)"],
-              ["Fotos anexadas", "📷 4"],
+              ["Rotinas registradas", "4"],
               ["Perguntas anotadas", "2"],
             ].map(([k, v]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}>
-                <span style={{ color: "#7A8E88", fontWeight: 600 }}>{k}</span>
+                <span style={{ color: "#596E68", fontWeight: 600 }}>{k}</span>
                 <span style={{ fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{v}</span>
               </div>
             ))}
@@ -596,7 +586,7 @@ export default function OnboardingFlowPage() {
                 <div style={{ width: 38, height: 38, borderRadius: 11, background: "#EAF5F2", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{r.icon}</div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>{r.label}</span>
-                  <span style={{ fontSize: 12, color: "#7A8E88" }}>{r.sub}</span>
+                  <span style={{ fontSize: 12, color: "#596E68" }}>{r.sub}</span>
                 </div>
               </div>
             ))}
@@ -628,7 +618,7 @@ export default function OnboardingFlowPage() {
             <div style={{ textAlign: "center", fontSize: 17.5, fontWeight: 600, color: "#16302B", lineHeight: 1.5, maxWidth: 290 }}>
               Você apontou <b>{dificuldadeLabelSafe}</b> como seu maior desafio. O {mascotNomeDisplay} vai registrar sua jornada e destacar padrões observados — para você levar dados concretos à próxima consulta.
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#9AAAA5" }}>Não diagnostica nem recomenda.</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68" }}>Não diagnostica nem recomenda.</div>
           </div>
           <button onClick={next} style={primaryBtn}>Continuar</button>
         </div>
@@ -647,7 +637,7 @@ export default function OnboardingFlowPage() {
         <div style={{ ...screenBase, padding: 26 }}>
           <div style={{ fontSize: 23, fontWeight: 800, color: "#16302B", lineHeight: 1.3 }}>{nomeDisplay}, seu diário está pronto.</div>
           <div style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#0E6B5C", background: "#EAF5F2", padding: "5px 10px", borderRadius: 8, marginTop: 10 }}>✓ Conteúdo com fontes</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#7A8E88", margin: "20px 0 10px", letterSpacing: "0.3px" }}>VOCÊ VAI ACOMPANHAR</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#596E68", margin: "20px 0 10px", letterSpacing: "0.3px" }}>VOCÊ VAI ACOMPANHAR</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {revealItems.map((it) => (
               <div key={it.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
@@ -673,47 +663,27 @@ export default function OnboardingFlowPage() {
         </div>
       )}
 
-      {/* SCREEN 26 — PAYWALL */}
+      {/* SCREEN 26 — ACESSO AO MVP */}
       {st.i === 26 && (
         <div style={{ ...screenBase, padding: "24px 24px 22px" }}>
           <div style={{ fontSize: 21, fontWeight: 800, color: "#16302B", lineHeight: 1.3 }}>{nomeDisplay}, seu diário está pronto. Vamos começar juntos.</div>
-          <div style={{ fontSize: 13, color: "#4B5F59", marginTop: 8, lineHeight: 1.5 }}>Acompanhamento organizado em cada etapa, com resumo pronto para a consulta.</div>
+          <div style={{ fontSize: 13, color: "#4B5F59", marginTop: 8, lineHeight: 1.5 }}>Nesta versão MVP, o acesso é gratuito e não há cobrança ou renovação automática.</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 16 }}>
-            {["Lembretes de dose", "Resumo pronto para a consulta", "Progresso em gráficos, fotos e conquistas", "Padrões observados nos seus registros — sem diagnóstico"].map((b) => (
+            {["Registro de aplicações, peso e sintomas", "Rotina e perguntas para a consulta", "Resumo em PDF e compartilhamento", "Exportação e exclusão dos seus dados"].map((b) => (
               <div key={b} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ color: "#22B39A", fontWeight: 800 }}>✓</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#16302B" }}>{b}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
-            <div onClick={() => set({ plano: "anual" })} style={{ position: "relative", padding: 16, borderRadius: 16, background: st.plano === "anual" ? "#EAF5F2" : "#fff", border: `2px solid ${st.plano === "anual" ? "#0E6B5C" : "#E2E7E2"}`, cursor: "pointer" }}>
-              <div style={{ position: "absolute", top: -10, right: 14, background: "#FF9E7D", color: "#16302B", fontSize: 10.5, fontWeight: 800, padding: "3px 9px", borderRadius: 8 }}>MELHOR VALOR</div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>Anual</div>
-                  <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 2 }}>3 dias grátis, depois R$ 149,90/ano</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#0E6B5C", fontVariantNumeric: "tabular-nums" }}>R$ 12,49<span style={{ fontSize: 11, color: "#7A8E88" }}>/mês</span></div>
-                </div>
-              </div>
-            </div>
-            <div onClick={() => set({ plano: "mensal" })} style={{ padding: 16, borderRadius: 16, background: st.plano === "mensal" ? "#EAF5F2" : "#fff", border: `2px solid ${st.plano === "mensal" ? "#0E6B5C" : "#E2E7E2"}`, cursor: "pointer" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>Mensal</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>R$ 34,90<span style={{ fontSize: 11, color: "#7A8E88", fontWeight: 600 }}>/mês</span></div>
-              </div>
-            </div>
-          </div>
+          <div style={{ marginTop: 20, padding: 16, borderRadius: 16, background: "#EAF5F2", color: "#0E6B5C", fontSize: 14, fontWeight: 800 }}>Acesso MVP gratuito</div>
           <div style={{ flex: 1, minHeight: 10 }} />
-          <button onClick={next} style={{ width: "100%", padding: 18, background: "#FF9E7D", color: "#16302B", border: "none", borderRadius: 16, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Começar meus 3 dias grátis</button>
-          <div style={{ textAlign: "center", fontSize: 11.5, color: "#7A8E88", marginTop: 10 }}>Cancele quando quiser · Sem cobrança nos 3 primeiros dias</div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 12, fontSize: 11, color: "#9AAAA5" }}><span>Termos</span><span>Políticas</span><span>Restaurar compra</span></div>
+          <button onClick={next} style={{ width: "100%", padding: 18, background: "#FF9E7D", color: "#16302B", border: "none", borderRadius: 16, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Entrar no Canetta</button>
+          <div style={{ textAlign: "center", fontSize: 11.5, color: "#596E68", marginTop: 10 }}>Você poderá exportar ou apagar seus dados quando quiser.</div>
         </div>
       )}
 
-      {/* SCREEN 27 — PÓS-COMPRA */}
+      {/* SCREEN 27 — CONCLUSÃO */}
       {st.i === 27 && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22, background: "#0E6B5C", padding: 40, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
@@ -723,12 +693,11 @@ export default function OnboardingFlowPage() {
           </div>
           <Mascot pose="celebrate" />
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 8, zIndex: 1 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#F4F6F3", lineHeight: 1.35, maxWidth: 280 }}>Amanhã o {mascotNomeDisplay} faz seu primeiro check-in.</div>
-            <div style={{ fontSize: 14, color: "#BEE0D6" }}>Sua primeira conquista desbloqueia amanhã.</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#F4F6F3", lineHeight: 1.35, maxWidth: 280 }}>Seu diário está pronto, {nomeDisplay}.</div>
+            <div style={{ fontSize: 14, color: "#BEE0D6" }}>O {mascotNomeDisplay} acompanha os registros que você decidir salvar.</div>
           </div>
           <div style={{ position: "absolute", bottom: 48, left: 26, right: 26, display: "flex", flexDirection: "column", gap: 10, zIndex: 1 }}>
-            <button onClick={() => set({ notifOn: !st.notifOn })} style={ctaLight}>{st.notifOn ? "Notificações ativadas ✓" : "Ativar notificações"}</button>
-            <button onClick={finishToJourney} style={{ width: "100%", padding: 14, background: "transparent", color: "#BEE0D6", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Começar minha jornada</button>
+            <button onClick={finishToJourney} style={ctaLight}>Começar minha jornada</button>
           </div>
         </div>
       )}

@@ -1,41 +1,49 @@
-# Canetta App
+# Canetta MVP
 
-Aplicação real do Canetta em Next.js + Supabase. O protótipo HTML em
-`../prototype` continua sendo referência visual/UX; esta pasta é a base de
-produto para implementação em fases.
+Aplicação mobile-first em Next.js e Supabase para organizar registros informados pela própria pessoa usuária durante uma jornada com GLP-1.
 
-## Fase 0
+## Escopo entregue
 
-Inclui:
+- Onboarding persistente com continuidade entre sessões.
+- Uso local sem conta e sincronização por usuário autenticado.
+- Registro de aplicação, peso, sintomas, rotina e perguntas.
+- Agenda de dose configurável.
+- Diário, resumo factual e seleção por período.
+- Relatório imprimível em PDF e compartilhamento nativo.
+- Exportação completa em JSON.
+- Exclusão definitiva da conta e dos dados, com confirmação explícita.
+- RLS em todas as tabelas de dados do Canetta.
 
-- Next.js App Router mobile-first.
-- Auth com Supabase.
-- Dashboard protegido.
-- Perfil inicial persistido por usuário.
-- Schema Supabase com RLS para todas as tabelas do handoff.
-- Log automático de mudanças em `canetta_journey_state`.
-- Tabelas e tipos usam prefixo `canetta_*` para permitir uso temporário em Supabase compartilhado.
+O app organiza informações registradas pela pessoa usuária. Não diagnostica, prescreve, sugere dose, alimentação ou treino e não calcula peso ideal ou projeção de resultado.
 
-## Rodar localmente
+## Configuração
 
-1. Crie um projeto Supabase.
-2. Rode a migration em `supabase/migrations/0001_foundation.sql`.
-3. Copie `.env.example` para `.env.local` e preencha:
+1. Copie `.env.example` para `.env.local` e configure:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-4. Instale e rode:
+2. Aplique as migrations em ordem:
+
+```text
+supabase/migrations/0001_foundation.sql
+supabase/migrations/0002_routine_questions.sql
+supabase/migrations/0003_mvp_privacy.sql
+```
+
+3. Instale e valide:
 
 ```bash
 npm install
-npm run dev
+npm run lint
+npm run typecheck
+npm run build
 ```
 
-## Travas de produto
+4. Inicie localmente:
 
-O app organiza registros do usuário. Ele não diagnostica, não prescreve, não
-sugere dose, horário ideal, alimentação, treino, macro, caloria, peso ideal ou
-projeção de perda.
+```bash
+npm run dev
+```

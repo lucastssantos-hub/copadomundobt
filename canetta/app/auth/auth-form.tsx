@@ -35,7 +35,7 @@ export function AuthForm() {
         </div>
         <div className="field" style={{ marginTop: 12 }}>
           <label htmlFor="signup-password">Senha</label>
-          <input className="input" id="signup-password" name="password" type="password" autoComplete="new-password" minLength={6} required />
+          <input className="input" id="signup-password" name="password" type="password" autoComplete="new-password" minLength={8} required />
         </div>
         {signUpState.message ? <div className="alert">{signUpState.message}</div> : null}
         <button className="btn btn-ghost" type="submit" disabled={signUpPending} style={{ width: "100%", marginTop: 14 }}>

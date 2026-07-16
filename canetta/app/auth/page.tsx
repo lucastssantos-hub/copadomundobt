@@ -11,9 +11,9 @@ export default function AuthPage() {
         </Link>
       </header>
       <section className="page">
-        <span className="eyebrow">Conta</span>
-        <h1 className="title">Entre para manter seus registros entre sessões.</h1>
-        <p className="sub">A Fase 0 valida autenticação e persistência por usuário com Supabase.</p>
+        <span className="eyebrow">Sua conta</span>
+        <h1 className="title">Entre para sincronizar seus registros com segurança.</h1>
+        <p className="sub">Sem conta, seus registros continuam somente neste dispositivo.</p>
         <AuthForm />
       </section>
     </>
