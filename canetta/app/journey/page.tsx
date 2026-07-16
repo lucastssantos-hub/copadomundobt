@@ -145,6 +145,7 @@ export default function JourneyPage() {
   const [st, setStRaw] = useState<AppState>(INITIAL);
   const [ready, setReady] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [pushSupported, setPushSupported] = useState(false);
@@ -237,7 +238,8 @@ export default function JourneyPage() {
         reminderWeekday: result.reminder?.weekday ?? current.reminderWeekday,
         reminderTime: result.reminder?.time?.slice(0, 5) ?? current.reminderTime
       }));
-    }).catch(() => toast("Não foi possível sincronizar agora."));
+    }).catch(() => toast("Não foi possível sincronizar agora."))
+      .finally(() => setAuthChecked(true));
   }, [ready, toast]);
 
   useEffect(() => {
@@ -475,6 +477,39 @@ export default function JourneyPage() {
     toast(result.synced ? "Agenda sincronizada." : "Agenda salva neste dispositivo.");
   };
 
+  const saveLaunchSetup = async () => {
+    const medication = st.medicamento.trim();
+    const dose = st.dose.trim();
+    const name = st.nome.trim();
+    const time = st.reminderTime.trim();
+    if (!name || name.toLowerCase() === "você" || !medication || medication === "Medicamento" || !dose || dose === "Dose atual") {
+      toast("Complete nome, medicamento e dose para começar.");
+      return;
+    }
+    if (!Number.isInteger(st.reminderWeekday) || st.reminderWeekday < 0 || st.reminderWeekday > 6 || !/^\d{2}:\d{2}$/.test(time)) {
+      toast("Escolha o dia e o horário da dose.");
+      return;
+    }
+
+    setBusyAction("launch-setup");
+    const [profileResult, reminderResult, weightResult] = await Promise.all([
+      saveProfileAction({ name, medication, dose, frequency: st.freqLabel }),
+      saveReminderAction({ active: true, weekday: st.reminderWeekday, time }),
+      st.pesos.length ? Promise.resolve({ synced: true as const }) : saveWeightAction({ weight: st.draft.pesoKg ?? lastPeso() })
+    ]);
+    setBusyAction(null);
+    if ("validation" in reminderResult || "validation" in weightResult) {
+      toast("Revise agenda e peso inicial.");
+      return;
+    }
+    const setupWeight = st.draft.pesoKg ?? lastPeso();
+    set({
+      lembretesOn: true,
+      pesos: st.pesos.length ? st.pesos : [{ kg: setupWeight, data: fmtDate(new Date()), raw: new Date() }]
+    });
+    toast(profileResult.synced && reminderResult.synced ? "Setup salvo. Agora registre sua primeira dose." : "Setup salvo neste aparelho.");
+  };
+
   const enablePush = async () => {
     if (!pushSupported) { toast("Este navegador não suporta push web."); return; }
     if (!authenticated) { toast("Entre na conta para ativar push sincronizado."); return; }
@@ -621,6 +656,10 @@ export default function JourneyPage() {
   ] as const;
   const greetingName = st.nome.trim().toLowerCase() === "você" ? "Oi" : `Oi, ${st.nome}`;
   const syncLabel = authenticated ? "Dados sincronizados na conta." : "Dados salvos neste aparelho.";
+  const hasProfileBasics = st.nome.trim().toLowerCase() !== "você" && st.medicamento.trim() !== "Medicamento" && st.dose.trim() !== "Dose atual";
+  const hasDoseSchedule = st.lembretesOn && st.reminderWeekday >= 0 && /^\d{2}:\d{2}$/.test(st.reminderTime);
+  const launchSetupComplete = hasProfileBasics && hasDoseSchedule && st.pesos.length > 0;
+  const shouldShowLaunchSetup = ready && authChecked && authenticated && !launchSetupComplete && !anyDado;
 
   const IntensityScale = ({ size = 26 }: { size?: number }) => {
     const cur = st.draft.intensidade ?? -1;
@@ -641,6 +680,87 @@ export default function JourneyPage() {
   );
 
   const stage: CSSProperties = { position: "relative", height: "100%", minHeight: "calc(100vh - 56px)", display: "flex", flexDirection: "column", overflow: "hidden", background: "#F4F6F3", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" };
+
+  if (ready && authChecked && !authenticated) {
+    return (
+      <div style={{ ...stage, justifyContent: "center", padding: 24 }}>
+        <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 18 }}>
+          <MascotBadge size={52} />
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#16302B", lineHeight: 1.15 }}>Entre para usar o Canetta com segurança.</div>
+            <div style={{ fontSize: 13.5, color: "#4B5F59", lineHeight: 1.5, marginTop: 8 }}>Para o beta, os registros precisam ficar vinculados à sua conta. Assim eles não somem ao trocar de aparelho ou limpar o navegador.</div>
+          </div>
+          <button type="button" onClick={() => window.location.assign("/auth")} style={primaryBtn}>Entrar ou criar conta</button>
+          <button type="button" onClick={() => window.location.assign("/onboarding/flow")} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "none", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>Refazer onboarding</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (shouldShowLaunchSetup) {
+    const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    return (
+      <div style={{ ...stage, overflowY: "auto", padding: "22px 22px 28px" }}>
+        {st.toastMsg && <div style={{ position: "sticky", top: 0, zIndex: 4, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 14 }}>{st.toastMsg}</div>}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <MascotBadge size={46} />
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#16302B" }}>Finalize seu Canetta</div>
+              <div style={{ fontSize: 13, color: "#596E68" }}>Leva menos de um minuto.</div>
+            </div>
+          </div>
+
+          <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <div style={fieldLabel}>NOME</div>
+              <input className="j-in" value={st.nome === "você" ? "" : st.nome} onChange={(e) => set({ nome: e.target.value })} placeholder="Como quer aparecer no app?" style={inputSt} />
+            </div>
+            <div>
+              <div style={fieldLabel}>MEDICAMENTO</div>
+              <input className="j-in" value={st.medicamento === "Medicamento" ? "" : st.medicamento} onChange={(e) => set({ medicamento: e.target.value })} placeholder="Ex: Ozempic, Wegovy, Mounjaro" style={inputSt} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <div style={fieldLabel}>DOSE</div>
+                <input className="j-in" value={st.dose === "Dose atual" ? "" : st.dose} onChange={(e) => set({ dose: e.target.value })} placeholder="Ex: 0,5 mg" style={inputSt} />
+              </div>
+              <div>
+                <div style={fieldLabel}>FREQUÊNCIA</div>
+                <select className="j-in" value={st.freqLabel} onChange={(e) => set({ freqLabel: e.target.value })} style={inputSt}>
+                  <option>Diária</option>
+                  <option>Semanal</option>
+                  <option>Quinzenal</option>
+                  <option>Mensal</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#16302B" }}>Agenda da dose</div>
+              <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginTop: 3 }}>Sem agenda, o push não tem quando lembrar você.</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+              {weekdays.map((label, index) => (
+                <button key={label} type="button" aria-pressed={st.reminderWeekday === index} onClick={() => set({ reminderWeekday: index, lembretesOn: true })} style={{ ...chipStyle(st.reminderWeekday === index), padding: "10px 0", fontSize: 11.5 }}>{label}</button>
+              ))}
+            </div>
+            <input className="j-in" type="time" value={st.reminderTime} onChange={(e) => set({ reminderTime: e.target.value, lembretesOn: true })} style={inputSt} />
+          </div>
+
+          <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: "#16302B" }}>Peso inicial</div>
+            <input className="j-in" type="number" inputMode="decimal" min={20} max={400} step="0.1" value={st.draft.pesoKg ?? lastPeso()} onChange={(e) => setDraft({ pesoKg: Number(e.target.value) })} style={{ ...inputSt, fontSize: 20, fontWeight: 900 }} />
+            <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.45 }}>Usado apenas para mostrar sua própria evolução, sem meta ou interpretação médica.</div>
+          </div>
+
+          <button type="button" disabled={busyAction === "launch-setup"} onClick={saveLaunchSetup} style={{ ...primaryBtn, opacity: busyAction === "launch-setup" ? 0.65 : 1 }}>{busyAction === "launch-setup" ? "Salvando…" : "Salvar setup e começar"}</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={stage}>
@@ -864,6 +984,28 @@ export default function JourneyPage() {
                   <div><div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>{greetingName}</div><div style={{ fontSize: 12.5, color: "#596E68" }}>{st.mascotNome} está por aqui hoje.</div></div>
                 </div>
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: "#596E68", marginTop: -8 }}>{syncLabel}</div>
+                {!st.aplicacoes.length && (
+                  <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14, background: "#FFFDF8" }}>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: "#16302B" }}>Bem-vindo ao Canetta 👋</div>
+                      <div style={{ fontSize: 13, color: "#4B5F59", lineHeight: 1.45, marginTop: 4 }}>Comece pelo essencial: registre a primeira aplicação. Depois ative o push e acompanhe peso/sintomas quando fizer sentido.</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {[
+                        ["1", "Registrar primeira aplicação"],
+                        ["2", pushEnabled ? "Push já está ativo" : "Ativar lembrete de dose"],
+                        ["3", st.pesos.length ? "Peso inicial salvo" : "Salvar peso inicial"]
+                      ].map(([num, label]) => (
+                        <div key={num} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12.5, color: "#16302B", fontWeight: 700 }}>
+                          <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#EAF5F2", color: "#0E6B5C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900 }}>{num}</span>
+                          {label}
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => startFlow("aplicacao")} style={primaryBtn}>Registrar aplicação agora</button>
+                    {!pushEnabled && <button type="button" onClick={enablePush} disabled={busyAction === "push"} style={{ width: "100%", padding: 12, background: "#fff", color: "#0E6B5C", border: "1.5px solid #C7D6D1", borderRadius: 14, fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: busyAction === "push" ? 0.65 : 1 }}>{busyAction === "push" ? "Ativando…" : "Ativar push"}</button>}
+                  </div>
+                )}
                 <div style={{ background: "#0E6B5C", borderRadius: 18, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#BEE0D6", letterSpacing: "0.3px" }}>PRÓXIMA DOSE</div>
                   {st.aplicacoes.length ? (
