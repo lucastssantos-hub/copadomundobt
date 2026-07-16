@@ -89,6 +89,13 @@ const startOfWeek = (d: Date) => {
 };
 const ONBOARDING_STORAGE_KEY = "canetta:onboarding:v1";
 const JOURNEY_STORAGE_KEY = "canetta:journey:v1";
+const MEDICATION_OPTIONS = ["Tirzepatida", "Mounjaro", "Zepbound", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"];
+const TIRZEPATIDE_DOSES = ["2.5 mg", "5 mg", "7.5 mg", "10 mg", "12.5 mg", "15 mg"];
+
+function isTirzepatideMedication(value: string | null | undefined) {
+  const normalized = `${value ?? ""}`.toLowerCase();
+  return normalized.includes("tirzepatida") || normalized.includes("mounjaro") || normalized.includes("zepbound");
+}
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - base64String.length % 4) % 4);
@@ -718,12 +725,14 @@ export default function JourneyPage() {
             </div>
             <div>
               <div style={fieldLabel}>MEDICAMENTO</div>
-              <input className="j-in" value={st.medicamento === "Medicamento" ? "" : st.medicamento} onChange={(e) => set({ medicamento: e.target.value })} placeholder="Ex: Ozempic, Wegovy, Mounjaro" style={inputSt} />
+              <input className="j-in" list="canetta-medications" value={st.medicamento === "Medicamento" ? "" : st.medicamento} onChange={(e) => set({ medicamento: e.target.value, freqLabel: isTirzepatideMedication(e.target.value) ? "Semanal" : st.freqLabel })} placeholder="Ex: Tirzepatida, Mounjaro, Ozempic" style={inputSt} />
+              <datalist id="canetta-medications">{MEDICATION_OPTIONS.map((item) => <option key={item} value={item} />)}</datalist>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <div style={fieldLabel}>DOSE</div>
-                <input className="j-in" value={st.dose === "Dose atual" ? "" : st.dose} onChange={(e) => set({ dose: e.target.value })} placeholder="Ex: 0,5 mg" style={inputSt} />
+                <input className="j-in" list={isTirzepatideMedication(st.medicamento) ? "canetta-tirzepatide-doses" : undefined} value={st.dose === "Dose atual" ? "" : st.dose} onChange={(e) => set({ dose: e.target.value })} placeholder={isTirzepatideMedication(st.medicamento) ? "Ex: 2.5 mg" : "Ex: 0,5 mg"} style={inputSt} />
+                <datalist id="canetta-tirzepatide-doses">{TIRZEPATIDE_DOSES.map((item) => <option key={item} value={item} />)}</datalist>
               </div>
               <div>
                 <div style={fieldLabel}>FREQUÊNCIA</div>

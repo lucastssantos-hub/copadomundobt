@@ -50,6 +50,18 @@ const STEP_MAP: Record<number, number> = {
 };
 
 const LOADING_MSGS = ["Organizando seu diário", "Preparando seus registros", "Finalizando"];
+const MEDICATION_OPTIONS = ["Tirzepatida", "Mounjaro", "Zepbound", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"];
+const TIRZEPATIDE_DOSES = ["2.5 mg", "5 mg", "7.5 mg", "10 mg", "12.5 mg", "15 mg", "Ainda não sei"];
+const DEFAULT_DOSES = ["Dose 1", "Dose 2", "Dose 3", "Dose 4", "Dose 5", "Ainda não sei"];
+
+function isTirzepatideMedication(value: string | null | undefined) {
+  const normalized = `${value ?? ""}`.toLowerCase();
+  return normalized.includes("tirzepatida") || normalized.includes("mounjaro") || normalized.includes("zepbound");
+}
+
+function doseOptionsForMedication(value: string | null | undefined) {
+  return isTirzepatideMedication(value) ? TIRZEPATIDE_DOSES : DEFAULT_DOSES;
+}
 
 // ---------- estilos compartilhados ----------
 const primaryBtn: CSSProperties = {
@@ -363,8 +375,8 @@ export default function OnboardingFlowPage() {
           <Header />
           <div style={{ ...title, margin: "18px 0" }}>Qual medicamento você usa?</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, overflowY: "auto" }}>
-            {["Zepbound", "Mounjaro", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"].map((label) => (
-              <button key={label} type="button" aria-pressed={st.medicamento === label} onClick={() => set({ medicamento: label })} style={{ width: "100%", ...optRowStyle(st.medicamento === label, "15px 18px") }}>{label}</button>
+            {MEDICATION_OPTIONS.map((label) => (
+              <button key={label} type="button" aria-pressed={st.medicamento === label} onClick={() => set({ medicamento: label, dose: null, freq: isTirzepatideMedication(label) ? "Semanal" : st.freq })} style={{ width: "100%", ...optRowStyle(st.medicamento === label, "15px 18px") }}>{label}</button>
             ))}
           </div>
           <div style={spacer} />
@@ -393,8 +405,8 @@ export default function OnboardingFlowPage() {
         <div style={{ ...screenBase, padding: "8px 26px 26px" }}>
           <Header />
           <div style={{ ...title, margin: "18px 0 6px" }}>Qual sua dose atual?</div>
-          <div style={{ ...subLine, marginBottom: 16 }}>O Canetta não valida nem sugere dose.</div>
-          <ChoiceList options={["Dose 1", "Dose 2", "Dose 3", "Dose 4", "Dose 5", "Ainda não sei"]} current={st.dose} onPick={(v) => set({ dose: v })} />
+          <div style={{ ...subLine, marginBottom: 16 }}>{isTirzepatideMedication(st.medicamento) ? "Doses comuns de tirzepatida. O Canetta não valida nem sugere dose." : "O Canetta não valida nem sugere dose."}</div>
+          <ChoiceList options={doseOptionsForMedication(st.medicamento)} current={st.dose} onPick={(v) => set({ dose: v })} />
           <div style={spacer} />
           <button onClick={next} style={primaryBtn}>Continuar</button>
         </div>
