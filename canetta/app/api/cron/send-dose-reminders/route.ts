@@ -41,11 +41,6 @@ function currentSaoPauloTime() {
   return { weekday, hour: Number(hour), minute: Number(minute), date: `${year}-${month}-${day}` };
 }
 
-function isReminderDue(time: string, currentHour: number) {
-  const hour = Number(`${time}`.slice(0, 2));
-  return Number.isInteger(hour) && hour === currentHour;
-}
-
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
@@ -68,7 +63,7 @@ export async function GET(request: NextRequest) {
   }
 
   const rows = (data ?? []) as ReminderRow[];
-  const dueRows = rows.filter((row) => isReminderDue(row.time, now.hour));
+  const dueRows = rows;
   const userIds = Array.from(new Set(dueRows.map((row) => row.user_id)));
   const subscriptionsByUser = new Map<string, PushSubscriptionRow[]>();
 
@@ -109,7 +104,7 @@ export async function GET(request: NextRequest) {
           }
         }, JSON.stringify({
           title: "Canetta",
-          body: now.minute < 10 ? "Hora da sua dose. Registre quando aplicar." : "Lembrete da sua dose. Registre para manter o histórico em dia.",
+          body: `Sua dose está agendada hoje às ${String(row.time).slice(0, 5)}. Registre quando aplicar.`,
           url: "/journey",
           tag: `canetta-dose-${row.user_id}`
         }));
