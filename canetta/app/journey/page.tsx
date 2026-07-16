@@ -9,6 +9,7 @@ import {
   deleteMyAccountAction,
   disablePushSubscriptionAction,
   exportMyDataAction,
+  type ExerciseCatalogItem,
   getPushPublicKeyAction,
   loadJourneyAction,
   saveApplicationAction,
@@ -19,19 +20,22 @@ import {
   saveReminderAction,
   saveRoutineAction,
   saveSymptomAction,
+  saveWorkoutAction,
   sendTestPushAction,
   saveWeightAction
 } from "./actions";
 import { signOutAction } from "@/app/auth/actions";
 
-type Tab = "hoje" | "diario" | "consulta" | "mais";
-type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "pergunta" | null;
+type Tab = "hoje" | "diario" | "consulta" | "treino" | "mais";
+type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "pergunta" | "treino" | null;
 type RegisterStep = "form" | "missed" | "saved" | "missedSaved" | "checkin";
 
 interface Draft {
   dataHora?: string; obs?: string; nota?: string; contexto?: string; pergunta?: string;
   local?: string; tipo?: string; duracao?: string; movimento?: string; motivo?: string;
   sono?: string; fome?: string; intensidade?: number; pesoKg?: number; agua?: number;
+  exerciseExternalId?: string; exerciseName?: string; bodyPart?: string; equipment?: string;
+  series?: number; repeticoes?: string; dificuldadeSentida?: string;
   nausea?: boolean; vomitos?: boolean; diarreia?: boolean; constipacao?: boolean; dorAbdominal?: boolean;
   energia?: number; apetite?: string;
 }
@@ -41,22 +45,23 @@ interface Sintoma { id?: string; tipo: string; intensidade: number; duracao?: st
 interface Peso { id?: string; kg: number; data: string; raw: Date; }
 interface Rotina extends Draft { id?: string; data: Date; }
 interface Pergunta { id?: string; texto: string; data: Date; }
+interface Treino { id?: string; exerciseExternalId?: string; exerciseName: string; bodyPart?: string; equipment?: string; setsCompleted?: number; repsCompleted?: string; difficultyFelt?: string; note?: string; data: Date; }
 
 interface AppState {
   nome: string; mascotNome: string; medicamento: string; dose: string; freqLabel: string;
   objetivo: string; faseAtual: string; lembretesOn: boolean; reminderWeekday: number; reminderTime: string;
-  tab: Tab; diarioSub: string; consultaSub: string; maisSub: string; periodo: string;
+  tab: Tab; diarioSub: string; consultaSub: string; treinoSub: string; maisSub: string; periodo: string; exerciseSearch: string;
   sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; draft: Draft;
   aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[];
-  perguntas: Pergunta[]; toastMsg: string;
+  perguntas: Pergunta[]; treinos: Treino[]; exercises: ExerciseCatalogItem[]; toastMsg: string;
 }
 
 const INITIAL: AppState = {
   nome: "você", mascotNome: "Canetta", medicamento: "Medicamento", dose: "Dose atual", freqLabel: "Semanal",
   objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
-  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", maisSub: "menu", periodo: "Últimos 7 dias",
+  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "biblioteca", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "",
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
-  aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], toastMsg: "",
+  aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
 
 const REGION_COORDS = [
@@ -91,6 +96,14 @@ const ONBOARDING_STORAGE_KEY = "canetta:onboarding:v1";
 const JOURNEY_STORAGE_KEY = "canetta:journey:v1";
 const MEDICATION_OPTIONS = ["Tirzepatida", "Mounjaro", "Zepbound", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"];
 const TIRZEPATIDE_DOSES = ["2.5 mg", "5 mg", "7.5 mg", "10 mg", "12.5 mg", "15 mg"];
+const FALLBACK_EXERCISES: ExerciseCatalogItem[] = [
+  { external_id: "canetta-bodyweight-squat", name: "Agachamento livre", body_part: "upper legs", equipment: "body weight", target_muscle: "quadriceps", muscle_group: "legs", secondary_muscles: ["glutes"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" },
+  { external_id: "canetta-wall-push-up", name: "Flexão na parede", body_part: "chest", equipment: "body weight", target_muscle: "pectorals", muscle_group: "chest", secondary_muscles: ["triceps", "shoulders"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" },
+  { external_id: "canetta-glute-bridge", name: "Ponte de glúteos", body_part: "upper legs", equipment: "body weight", target_muscle: "glutes", muscle_group: "legs", secondary_muscles: ["hamstrings"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" },
+  { external_id: "canetta-bird-dog", name: "Bird dog", body_part: "waist", equipment: "body weight", target_muscle: "abs", muscle_group: "core", secondary_muscles: ["back"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" },
+  { external_id: "canetta-dead-bug", name: "Dead bug", body_part: "waist", equipment: "body weight", target_muscle: "abs", muscle_group: "core", secondary_muscles: ["hip flexors"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" },
+  { external_id: "canetta-dumbbell-row", name: "Remada com halter", body_part: "back", equipment: "dumbbell", target_muscle: "lats", muscle_group: "back", secondary_muscles: ["biceps"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" }
+];
 
 function isTirzepatideMedication(value: string | null | undefined) {
   const normalized = `${value ?? ""}`.toLowerCase();
@@ -119,7 +132,9 @@ function reviveState(value: Partial<AppState>): Partial<AppState> {
     sintomas: list(value.sintomas).map((item) => ({ ...item, data: date(item.data) })),
     pesos: list(value.pesos).map((item) => ({ ...item, raw: date(item.raw) })),
     rotinas: list(value.rotinas).map((item) => ({ ...item, data: date(item.data) })),
-    perguntas: list(value.perguntas).map((item) => ({ ...item, data: date(item.data) }))
+    perguntas: list(value.perguntas).map((item) => ({ ...item, data: date(item.data) })),
+    treinos: list(value.treinos).map((item) => ({ ...item, data: date(item.data) })),
+    exercises: list(value.exercises)
   };
 }
 
@@ -217,6 +232,8 @@ export default function JourneyPage() {
       const symptoms = Array.isArray(result.symptoms) ? result.symptoms : [];
       const routines = Array.isArray(result.routines) ? result.routines : [];
       const questions = Array.isArray(result.questions) ? result.questions : [];
+      const workouts = Array.isArray(result.workouts) ? result.workouts : [];
+      const exercises = Array.isArray(result.exercises) ? result.exercises : [];
       setStRaw((current) => ({
         ...current,
         nome: result.profile?.name || current.nome,
@@ -241,6 +258,8 @@ export default function JourneyPage() {
         sintomas: symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
         rotinas: routines.map((item) => ({ id: item.id, agua: item.water_cups ?? undefined, movimento: item.movement || undefined, sono: item.sleep || undefined, fome: item.hunger || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
         perguntas: questions.map((item) => ({ id: item.id, texto: item.question, data: new Date(item.recorded_at) })),
+        treinos: workouts.map((item) => ({ id: item.id, exerciseExternalId: item.exercise_external_id || undefined, exerciseName: item.exercise_name, bodyPart: item.body_part || undefined, equipment: item.equipment || undefined, setsCompleted: item.sets_completed ?? undefined, repsCompleted: item.reps_completed || undefined, difficultyFelt: item.difficulty_felt || undefined, note: item.note || undefined, data: new Date(item.completed_at) })),
+        exercises: exercises.length ? exercises : current.exercises,
         lembretesOn: result.reminder?.active ?? current.lembretesOn,
         reminderWeekday: result.reminder?.weekday ?? current.reminderWeekday,
         reminderTime: result.reminder?.time?.slice(0, 5) ?? current.reminderTime
@@ -357,6 +376,38 @@ export default function JourneyPage() {
     setBusyAction(null);
     toast("Pergunta salva na pauta."); finishToHoje();
   };
+  const saveTreino = async () => {
+    const exerciseName = st.draft.exerciseName?.trim();
+    if (!exerciseName) { toast("Escolha ou informe um exercício."); return; }
+    setBusyAction("treino");
+    const result = await saveWorkoutAction({
+      exerciseExternalId: st.draft.exerciseExternalId,
+      exerciseName,
+      bodyPart: st.draft.bodyPart,
+      equipment: st.draft.equipment,
+      setsCompleted: st.draft.series,
+      repsCompleted: st.draft.repeticoes,
+      difficultyFelt: st.draft.dificuldadeSentida,
+      note: st.draft.nota
+    });
+    const recordedAt = result.synced ? new Date(result.completedAt) : new Date();
+    set({
+      treinos: [...st.treinos, {
+        id: result.synced ? result.id : undefined,
+        exerciseExternalId: st.draft.exerciseExternalId,
+        exerciseName,
+        bodyPart: st.draft.bodyPart,
+        equipment: st.draft.equipment,
+        setsCompleted: st.draft.series,
+        repsCompleted: st.draft.repeticoes,
+        difficultyFelt: st.draft.dificuldadeSentida,
+        note: st.draft.nota,
+        data: recordedAt
+      }]
+    });
+    setBusyAction(null);
+    toast("Treino registrado."); finishToHoje();
+  };
 
   const periodStart = () => {
     if (st.periodo === "Tudo") return null;
@@ -374,6 +425,7 @@ export default function JourneyPage() {
     const symptoms = st.sintomas.filter((item) => inPeriod(item.data));
     const routines = st.rotinas.filter((item) => inPeriod(item.data));
     const questions = st.perguntas.filter((item) => inPeriod(item.data));
+    const workouts = st.treinos.filter((item) => inPeriod(item.data));
     const expected = applications.length + missedDoses.length;
     const adherence = expected ? Math.round((applications.length / expected) * 100) : null;
     const symptomSummary = symptoms.reduce<Record<string, number>>((acc, item) => {
@@ -404,6 +456,8 @@ export default function JourneyPage() {
       `Sintomas/check-ins: ${symptoms.length}`,
       ...(Object.keys(symptomSummary).length ? ["Sintomas por tipo:", ...Object.entries(symptomSummary).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       `Registros de rotina: ${routines.length}`,
+      `Treinos registrados: ${workouts.length}`,
+      ...(workouts.length ? ["Treinos no período:", ...workouts.map((item) => `• ${fmtDate(item.data)} — ${item.exerciseName}${item.setsCompleted ? ` · ${item.setsCompleted} séries` : ""}${item.repsCompleted ? ` · ${item.repsCompleted}` : ""}`)] : []),
       ...(Object.keys(routineSymptomMentions).length ? ["Sintomas citados nos check-ins diários:", ...Object.entries(routineSymptomMentions).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       ...(missedDoses.length ? ["", "Doses não aplicadas:", ...missedDoses.map((item) => `• ${item.dataHora} — ${item.motivo}${item.nota ? ` (${item.nota})` : ""}`)] : []),
       "",
@@ -599,12 +653,13 @@ export default function JourneyPage() {
       ...st.sintomas.map((a) => ({ icon: "📝", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data })),
       ...st.pesos.map((a) => ({ icon: "⚖️", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw })),
       ...st.rotinas.map((a) => ({ icon: "🗓️", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data })),
+      ...st.treinos.map((a) => ({ icon: "🏋️", label: "Treino · " + a.exerciseName, data: fmtDate(a.data), t: a.data })),
       ...st.perguntas.map((a) => ({ icon: "❓", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data })),
     ];
     return evs.sort((x, y) => y.t.getTime() - x.t.getTime());
-  }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.perguntas, st.medicamento]);
+  }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.treinos, st.perguntas, st.medicamento]);
 
-  const anyDado = st.aplicacoes.length || st.dosesNaoAplicadas.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.perguntas.length;
+  const anyDado = st.aplicacoes.length || st.dosesNaoAplicadas.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.treinos.length || st.perguntas.length;
   const conquista = anyDado > 0;
   const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
   const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
@@ -652,15 +707,25 @@ export default function JourneyPage() {
       { label: "Pesos", value: String(st.pesos.length), detail: pesoAtual ? `${pesoAtual} kg no último registro` : "sem registro" },
       { label: "Sintomas", value: String(st.sintomas.length), detail: st.sintomas.length ? "informados por você" : "sem registro" },
       { label: "Rotina", value: String(st.rotinas.length), detail: st.rotinas.length ? "hábitos salvos" : "sem registro" },
+      { label: "Treinos", value: String(st.treinos.length), detail: st.treinos.length ? "movimento salvo" : "sem registro" },
     ];
     return facts.filter((fact) => fact.value !== "0" && fact.value !== "—");
-  }, [adherencePct, expectedDoses, pesoAtual, siteSummary, st.aplicacoes.length, st.dosesNaoAplicadas.length, st.pesos.length, st.sintomas.length, st.rotinas.length]);
+  }, [adherencePct, expectedDoses, pesoAtual, siteSummary, st.aplicacoes.length, st.dosesNaoAplicadas.length, st.pesos.length, st.sintomas.length, st.rotinas.length, st.treinos.length]);
 
   const quickDefs = [
     { key: "aplicacao", icon: "💉", label: "Aplicação" }, { key: "peso", icon: "⚖️", label: "Peso" },
     { key: "sintoma", icon: "📝", label: "Sintoma" }, { key: "rotina", icon: "🗓️", label: "Rotina" },
+    { key: "treino", icon: "🏋️", label: "Treino" },
     { key: "pergunta", icon: "❓", label: "Pergunta" },
   ] as const;
+  const exerciseCatalog = st.exercises.length ? st.exercises : FALLBACK_EXERCISES;
+  const filteredExercises = useMemo(() => {
+    const query = st.exerciseSearch.trim().toLowerCase();
+    if (!query) return exerciseCatalog.slice(0, 12);
+    return exerciseCatalog.filter((item) => [item.name, item.body_part, item.equipment, item.target_muscle, item.muscle_group].filter(Boolean).join(" ").toLowerCase().includes(query)).slice(0, 12);
+  }, [exerciseCatalog, st.exerciseSearch]);
+  const workoutWeekStart = startOfWeek(new Date());
+  const weeklyWorkouts = st.treinos.filter((item) => item.data >= workoutWeekStart).length;
   const greetingName = st.nome.trim().toLowerCase() === "você" ? "Oi" : `Oi, ${st.nome}`;
   const syncLabel = authenticated ? "Dados sincronizados na conta." : "Dados salvos neste aparelho.";
   const hasProfileBasics = st.nome.trim().toLowerCase() !== "você" && st.medicamento.trim() !== "Medicamento" && st.dose.trim() !== "Dose atual";
@@ -969,6 +1034,39 @@ export default function JourneyPage() {
             </div>
           )}
 
+          {/* TREINO */}
+          {st.registerFlow === "treino" && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
+              {flowHeader("Registrar treino", cancelFlow)}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>Registre movimento feito. O Canetta não prescreve treino; use isso como histórico para conversar com seu médico, personal ou educador físico.</div>
+                <div>
+                  <div style={fieldLabel}>EXERCÍCIO</div>
+                  <input className="j-in" value={st.draft.exerciseName || ""} onChange={(e) => setDraft({ exerciseName: e.target.value, exerciseExternalId: undefined })} placeholder="Ex: agachamento livre" style={inputSt} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={fieldLabel}>SÉRIES</div>
+                    <input className="j-in" type="number" min={0} max={99} value={st.draft.series ?? ""} onChange={(e) => setDraft({ series: Number(e.target.value) })} placeholder="3" style={inputSt} />
+                  </div>
+                  <div>
+                    <div style={fieldLabel}>REPS / TEMPO</div>
+                    <input className="j-in" value={st.draft.repeticoes || ""} onChange={(e) => setDraft({ repeticoes: e.target.value })} placeholder="10–12 ou 20 min" style={inputSt} />
+                  </div>
+                </div>
+                <div>
+                  <div style={{ ...fieldLabel, marginBottom: 8 }}>COMO FOI?</div>
+                  <ChipRow options={["Fácil", "Normal", "Difícil"]} current={st.draft.dificuldadeSentida} onPick={(v) => setDraft({ dificuldadeSentida: v })} equal />
+                </div>
+                <div>
+                  <div style={fieldLabel}>NOTA (OPCIONAL)</div>
+                  <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Ex: senti boa energia; sem náusea durante o treino" style={textareaSt} />
+                </div>
+              </div>
+              <button type="button" disabled={busyAction === "treino"} onClick={saveTreino} style={{ ...primaryBtn, marginTop: 18, opacity: busyAction === "treino" ? 0.65 : 1 }}>{busyAction === "treino" ? "Salvando…" : "Salvar treino"}</button>
+            </div>
+          )}
+
           {/* PERGUNTA */}
           {st.registerFlow === "pergunta" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
@@ -1051,9 +1149,9 @@ export default function JourneyPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 700, color: "#596E68", marginBottom: 10 }}>REGISTRO RÁPIDO</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                     {quickDefs.map((q) => (
-                      <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, width: 58, minHeight: 68, padding: "10px 2px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
+                      <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minHeight: 68, padding: "10px 2px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
                         <span style={{ fontSize: 19 }}>{q.icon}</span><span style={{ fontSize: 10, fontWeight: 700, color: "#16302B", textAlign: "center" }}>{q.label}</span>
                       </button>
                     ))}
@@ -1236,6 +1334,70 @@ export default function JourneyPage() {
               </div>
             )}
 
+            {/* TREINO */}
+            {st.tab === "treino" && (
+              <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Meu treino</div>
+                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Biblioteca e histórico de movimento. Sem prescrição automática.</div>
+                </div>
+                <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
+                  {[["biblioteca", "Biblioteca"], ["historico", "Histórico"]].map(([k, label]) => (
+                    <button key={k} type="button" aria-pressed={st.treinoSub === k} onClick={() => set({ treinoSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.treinoSub === k ? "#fff" : "transparent", color: st.treinoSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
+                  ))}
+                </div>
+
+                <div style={{ ...cardWhite, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, background: weeklyWorkouts ? "#EAF5F2" : "#fff" }}>
+                  <div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Semana de movimento</div>
+                    <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 3 }}>{weeklyWorkouts} treino(s) registrado(s)</div>
+                  </div>
+                  <button type="button" onClick={() => startFlow("treino")} style={{ padding: "10px 12px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Registrar</button>
+                </div>
+
+                {st.treinoSub === "biblioteca" && (
+                  <>
+                    <input className="j-in" value={st.exerciseSearch} onChange={(e) => set({ exerciseSearch: e.target.value })} placeholder="Buscar por exercício, músculo ou equipamento" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} />
+                    <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>
+                      {st.exercises.length ? "Catálogo importado do dataset de exercícios." : "Catálogo inicial local. O seed completo importa os 1.324 exercícios para o Supabase."}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {filteredExercises.map((exercise) => (
+                        <button key={exercise.external_id} type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseExternalId: exercise.external_id, exerciseName: exercise.name, bodyPart: exercise.body_part || undefined, equipment: exercise.equipment || undefined } })} style={{ width: "100%", padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, cursor: "pointer", textAlign: "left" }}>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
+                            <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exercise.body_part, exercise.equipment, exercise.target_muscle].filter(Boolean).join(" · ") || "exercício"}</div>
+                          </div>
+                          <span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {st.treinoSub === "historico" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {st.treinos.length ? st.treinos.slice(-12).reverse().map((item) => (
+                      <div key={`${item.id || item.exerciseName}-${item.data.toISOString()}`} style={{ padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{item.exerciseName}</div>
+                          <div style={{ fontSize: 11.5, color: "#596E68", fontWeight: 700 }}>{fmtDate(item.data)}</div>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 5 }}>{[item.setsCompleted ? `${item.setsCompleted} séries` : "", item.repsCompleted, item.difficultyFelt].filter(Boolean).join(" · ") || "Treino registrado"}</div>
+                        {item.note && <div style={{ fontSize: 12, color: "#596E68", marginTop: 6, lineHeight: 1.45 }}>{item.note}</div>}
+                      </div>
+                    )) : (
+                      <div style={{ textAlign: "center", padding: "36px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                        <MascotBadge size={52} />
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>Seu histórico de treino começa no primeiro registro.</div>
+                        <button type="button" onClick={() => startFlow("treino")} style={{ ...primaryBtn, maxWidth: 240, padding: 13, fontSize: 14 }}>Registrar treino</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* MAIS */}
             {st.tab === "mais" && (
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1321,8 +1483,8 @@ export default function JourneyPage() {
 
           {/* TAB BAR */}
           <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
-            {([["hoje", "🏠", "Hoje"], ["diario", "📖", "Diário"], ["consulta", "📋", "Consulta"], ["mais", "⋯", "Mais"]] as const).map(([key, icon, label]) => (
-              <button key={key} type="button" aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 60, padding: 0, background: "none", border: "none" }}>
+            {([["hoje", "🏠", "Hoje"], ["diario", "📖", "Diário"], ["consulta", "📋", "Consulta"], ["treino", "🏋️", "Treino"], ["mais", "⋯", "Mais"]] as const).map(([key, icon, label]) => (
+              <button key={key} type="button" aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 56, padding: 0, background: "none", border: "none" }}>
                 <span style={{ fontSize: 19 }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 700, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
               </button>
             ))}

@@ -4,6 +4,19 @@ import { createSupabaseServerClient } from "@/lib/supabase";
 import { configureWebPush, getVapidPublicKey } from "@/lib/push";
 import type { OnboardingPayload } from "@/app/onboarding/flow/actions";
 
+export type ExerciseCatalogItem = {
+  external_id: string;
+  name: string;
+  body_part: string | null;
+  equipment: string | null;
+  target_muscle: string | null;
+  muscle_group: string | null;
+  secondary_muscles: string[] | null;
+  image_url: string | null;
+  gif_url: string | null;
+  attribution: string | null;
+};
+
 async function currentSession() {
   try {
     const supabase = await createSupabaseServerClient();
@@ -39,7 +52,7 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     }, { onConflict: "user_id" });
   }
 
-  const [profileResult, applicationsResult, missedDosesResult, weightsResult, symptomsResult, routinesResult, questionsResult, remindersResult] = await Promise.all([
+  const [profileResult, applicationsResult, missedDosesResult, weightsResult, symptomsResult, routinesResult, questionsResult, remindersResult, workoutsResult, exercisesResult] = await Promise.all([
     supabase.from("canetta_profiles").select("name, medication, current_dose, frequency, biggest_difficulty").eq("user_id", user.id).maybeSingle(),
     supabase.from("canetta_dose_applications").select("id, medication, dose, site, note, applied_at").eq("user_id", user.id).order("applied_at", { ascending: true }),
     supabase.from("canetta_missed_doses").select("id, medication, dose, reason, note, scheduled_for, recorded_at").eq("user_id", user.id).order("scheduled_for", { ascending: true }),
@@ -47,10 +60,12 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     supabase.from("canetta_side_effects").select("id, types, intensity, duration, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_routine_entries").select("id, water_cups, movement, sleep, hunger, note, photo, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_questions").select("id, question, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
-    supabase.from("canetta_reminders").select("id, weekday, time, active").eq("user_id", user.id).limit(1)
+    supabase.from("canetta_reminders").select("id, weekday, time, active").eq("user_id", user.id).limit(1),
+    supabase.from("canetta_workout_logs").select("id, exercise_external_id, exercise_name, body_part, equipment, sets_completed, reps_completed, difficulty_felt, note, completed_at").eq("user_id", user.id).order("completed_at", { ascending: true }),
+    supabase.from("canetta_exercises").select("external_id, name, body_part, equipment, target_muscle, muscle_group, secondary_muscles, image_url, gif_url, attribution").order("name", { ascending: true }).limit(36)
   ]);
 
-  const error = profileResult.error || applicationsResult.error || missedDosesResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error;
+  const error = profileResult.error || applicationsResult.error || missedDosesResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error || workoutsResult.error || exercisesResult.error;
   if (error) return { authenticated: true as const, error: "Não foi possível carregar os registros sincronizados." };
 
   return {
@@ -62,7 +77,9 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     symptoms: symptomsResult.data ?? [],
     routines: routinesResult.data ?? [],
     questions: questionsResult.data ?? [],
-    reminder: remindersResult.data?.[0] ?? null
+    reminder: remindersResult.data?.[0] ?? null,
+    workouts: workoutsResult.data ?? [],
+    exercises: (exercisesResult.data ?? []) as ExerciseCatalogItem[]
   };
 }
 
@@ -141,6 +158,35 @@ export async function saveQuestionAction(input: { question: string }) {
   if (!user || !supabase) return { synced: false as const };
   const { data, error } = await supabase.from("canetta_questions").insert({ user_id: user.id, question }).select("id, recorded_at").single();
   return error ? { synced: false as const } : { synced: true as const, id: data.id, recordedAt: data.recorded_at };
+}
+
+export async function saveWorkoutAction(input: {
+  exerciseExternalId?: string;
+  exerciseName: string;
+  bodyPart?: string;
+  equipment?: string;
+  setsCompleted?: number;
+  repsCompleted?: string;
+  difficultyFelt?: string;
+  note?: string;
+}) {
+  const exerciseName = input.exerciseName.trim();
+  if (!exerciseName) return { synced: false as const, validation: true as const };
+  const setsCompleted = Number.isFinite(input.setsCompleted) ? Math.max(0, Math.min(99, Math.round(input.setsCompleted ?? 0))) : null;
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { synced: false as const };
+  const { data, error } = await supabase.from("canetta_workout_logs").insert({
+    user_id: user.id,
+    exercise_external_id: input.exerciseExternalId || null,
+    exercise_name: exerciseName,
+    body_part: input.bodyPart || null,
+    equipment: input.equipment || null,
+    sets_completed: setsCompleted,
+    reps_completed: input.repsCompleted?.trim() || null,
+    difficulty_felt: input.difficultyFelt || null,
+    note: input.note?.trim() || null
+  }).select("id, completed_at").single();
+  return error ? { synced: false as const } : { synced: true as const, id: data.id, completedAt: data.completed_at };
 }
 
 export async function saveReminderAction(input: { active: boolean; weekday?: number; time?: string }) {
@@ -294,6 +340,7 @@ export async function exportMyDataAction() {
     "canetta_side_effects",
     "canetta_reminders",
     "canetta_push_subscriptions",
+    "canetta_workout_logs",
     "canetta_routine_entries",
     "canetta_questions"
   ] as const;
