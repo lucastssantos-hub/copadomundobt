@@ -7,7 +7,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "letzplay:sync": "node scripts/letzplay-sync.mjs"
+    "letzplay:sync": "node scripts/letzplay-sync.mjs",
+    "letzplay:discover": "node scripts/letzplay-discover.mjs",
+    "letzplay:verify": "bash scripts/letzplay-verify.sh",
+    "letzplay:deep": "node scripts/letzplay-deep-sync.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
