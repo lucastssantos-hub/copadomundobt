@@ -78,14 +78,20 @@ const JOURNEY_STORAGE_KEY = "canetta:journey:v1";
 
 function reviveState(value: Partial<AppState>): Partial<AppState> {
   const date = (input: Date | string) => new Date(input);
+  const list = <T,>(items: T[] | null | undefined) => Array.isArray(items) ? items : [];
   return {
     ...value,
-    aplicacoes: value.aplicacoes?.map((item) => ({ ...item, data: date(item.data) })),
-    dosesNaoAplicadas: value.dosesNaoAplicadas?.map((item) => ({ ...item, data: date(item.data) })),
-    sintomas: value.sintomas?.map((item) => ({ ...item, data: date(item.data) })),
-    pesos: value.pesos?.map((item) => ({ ...item, raw: date(item.raw) })),
-    rotinas: value.rotinas?.map((item) => ({ ...item, data: date(item.data) })),
-    perguntas: value.perguntas?.map((item) => ({ ...item, data: date(item.data) }))
+    sheetOpen: false,
+    registerFlow: null,
+    registerStep: "form",
+    draft: {},
+    toastMsg: "",
+    aplicacoes: list(value.aplicacoes).map((item) => ({ ...item, data: date(item.data) })),
+    dosesNaoAplicadas: list(value.dosesNaoAplicadas).map((item) => ({ ...item, data: date(item.data) })),
+    sintomas: list(value.sintomas).map((item) => ({ ...item, data: date(item.data) })),
+    pesos: list(value.pesos).map((item) => ({ ...item, raw: date(item.raw) })),
+    rotinas: list(value.rotinas).map((item) => ({ ...item, data: date(item.data) })),
+    perguntas: list(value.perguntas).map((item) => ({ ...item, data: date(item.data) }))
   };
 }
 
@@ -172,30 +178,36 @@ export default function JourneyPage() {
         toast(result.error || "Não foi possível sincronizar agora.");
         return;
       }
+      const applications = Array.isArray(result.applications) ? result.applications : [];
+      const missedDoses = Array.isArray(result.missedDoses) ? result.missedDoses : [];
+      const weights = Array.isArray(result.weights) ? result.weights : [];
+      const symptoms = Array.isArray(result.symptoms) ? result.symptoms : [];
+      const routines = Array.isArray(result.routines) ? result.routines : [];
+      const questions = Array.isArray(result.questions) ? result.questions : [];
       setStRaw((current) => ({
         ...current,
         nome: result.profile?.name || current.nome,
         medicamento: result.profile?.medication || current.medicamento,
         dose: result.profile?.current_dose || current.dose,
         freqLabel: result.profile?.frequency || current.freqLabel,
-        aplicacoes: result.applications.map((item) => ({
+        aplicacoes: applications.map((item) => ({
           id: item.id,
           dataHora: fmtDateTime(new Date(item.applied_at)),
           local: item.site || "Não informado",
           obs: item.note || "",
           data: new Date(item.applied_at)
         })),
-        dosesNaoAplicadas: result.missedDoses.map((item) => ({
+        dosesNaoAplicadas: missedDoses.map((item) => ({
           id: item.id,
           dataHora: fmtDateTime(new Date(item.scheduled_for)),
           motivo: item.reason || "Não informado",
           nota: item.note || undefined,
           data: new Date(item.scheduled_for)
         })),
-        pesos: result.weights.map((item) => ({ id: item.id, kg: Number(item.weight), data: fmtDate(new Date(item.recorded_at)), raw: new Date(item.recorded_at) })),
-        sintomas: result.symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
-        rotinas: result.routines.map((item) => ({ id: item.id, agua: item.water_cups ?? undefined, movimento: item.movement || undefined, sono: item.sleep || undefined, fome: item.hunger || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
-        perguntas: result.questions.map((item) => ({ id: item.id, texto: item.question, data: new Date(item.recorded_at) })),
+        pesos: weights.map((item) => ({ id: item.id, kg: Number(item.weight), data: fmtDate(new Date(item.recorded_at)), raw: new Date(item.recorded_at) })),
+        sintomas: symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
+        rotinas: routines.map((item) => ({ id: item.id, agua: item.water_cups ?? undefined, movimento: item.movement || undefined, sono: item.sleep || undefined, fome: item.hunger || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
+        perguntas: questions.map((item) => ({ id: item.id, texto: item.question, data: new Date(item.recorded_at) })),
         lembretesOn: result.reminder?.active ?? current.lembretesOn,
         reminderWeekday: result.reminder?.weekday ?? current.reminderWeekday,
         reminderTime: result.reminder?.time?.slice(0, 5) ?? current.reminderTime
