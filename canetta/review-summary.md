@@ -56,3 +56,13 @@ Lote revisado em 2026-07-17 (`review-next.json`), com imagens CDN conferidas vis
 - Os itens híbridos/unilaterais já rejeitados permanecem bloqueados.
 
 Cobertura elegível após a rodada: accessory 3, biceps 2, calf 2, hip_primary 2, hip_secondary 3, horizontal_pull 4, horizontal_push 3, knee_primary 2, knee_secondary 2, triceps 2, trunk 3, vertical_pull 2 e vertical_push 2. `knee_flexion` e `unilateral` continuam sem exercícios liberados para não introduzir candidatos de maior complexidade sem revisão específica.
+
+## Terceira rodada — joelho, panturrilha e puxada
+
+Lote revisado em 2026-07-17 (`review-round3.json`), novamente com conferência visual das imagens.
+
+- Aprovados e autorizados: `1000` (panturrilha reversa), `0585` (extensão de joelho na máquina), `3007` (extensão de joelho com faixa) e `0197` (puxada frontal com barra longa).
+- `needs_changes`: `0496`, `3235` (flexões nórdicas assistidas), `0987` e `1001` (agachamentos divididos com faixa).
+- Rejeitados: `1769` (variação incomum de bíceps) e `1417` (flexão unilateral na bola com complexidade excessiva).
+
+O catálogo agora tem 36 exercícios elegíveis. `knee_flexion` e `unilateral` seguem deliberadamente em zero até uma rodada específica de validação profissional desses movimentos.
