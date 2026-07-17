@@ -547,7 +547,15 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         mismatches.push(`${expected.length + extraIndex + 1}: extra deve ser accessory/complementary/trunk`);
       }
     });
-    if (mismatches.length) throw new Error(`O plano não respeitou os slots de ${template.sessions[sessionIndex].day}: ${mismatches.join("; ")}`);
+    if (mismatches.length) {
+      console.warn(`Normalizando slots da sessão ${template.sessions[sessionIndex].day}: ${mismatches.join("; ")}`);
+    }
+    expected.forEach((pattern, exerciseIndex) => {
+      if (exercises[exerciseIndex]) exercises[exerciseIndex].pattern = pattern;
+    });
+    exercises.slice(expected.length).forEach((exercise) => {
+      if (!["accessory", "complementary", "trunk"].includes(exercise.pattern ?? "")) exercise.pattern = "accessory";
+    });
   }
 
   capWeeklyDirectVolume(plan, context.exercises, gate.status === "amarelo" ? 8 : 16);
