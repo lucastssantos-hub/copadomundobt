@@ -35,6 +35,7 @@ import {
 } from "./actions";
 import { CONDITIONS, PAIN_REGIONS, RED_FLAGS, evaluateSessionCheckin, type AnamnesisData, type GateResult, type SessionCheckinData, type SessionCheckinResult } from "@/lib/ai/anamnesis";
 import { signOutAction } from "@/app/auth/actions";
+import WorkoutRedesign from "./WorkoutRedesign";
 
 type Tab = "hoje" | "diario" | "consulta" | "treino" | "mais";
 type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "pergunta" | "treino" | null;
@@ -681,6 +682,12 @@ export default function JourneyPage() {
     setFeedbackNote("");
     setFeedbackOpen(true);
     toast("Treino registrado. Como foi?");
+  };
+  const recordPlannedExercise = async (exercise: { name: string; name_pt?: string | null; sets: number; reps: string; why: string; gif_url?: string | null; image_url?: string | null }, completedSets: number) => {
+    const result = await saveWorkoutAction({ exerciseName: exercise.name, setsCompleted: completedSets, repsCompleted: exercise.reps });
+    const recordedAt = result.synced ? new Date(result.completedAt) : new Date();
+    set({ treinos: [...st.treinos, { id: result.synced ? result.id : undefined, exerciseName: exercise.name, setsCompleted: completedSets, repsCompleted: exercise.reps, data: recordedAt }] });
+    toast(`${exercise.name_pt || exercise.name}: série registrada.`);
   };
 
   const periodStart = () => {
@@ -1802,7 +1809,8 @@ export default function JourneyPage() {
                         <button type="button" onClick={openTriage} style={{ ...primaryBtn, padding: 13, fontSize: 14 }}>Atualizar triagem</button>
                       </div>
                     ) : aiPlan ? (
-                      <>
+                      aiGate && aiPlan.workouts.length < 0 ? (
+                        <>
                         {planNeedsRegeneration && (
                           <div style={{ ...cardWhite, background: "#FDF6E3", border: "1.5px solid #EAD9A8", display: "flex", flexDirection: "column", gap: 9 }}>
                             <div style={{ fontSize: 14, fontWeight: 800, color: "#7A6017" }}>Este plano está incompleto</div>
@@ -1856,7 +1864,22 @@ export default function JourneyPage() {
                         <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 13.5, fontWeight: 700, cursor: aiPlanBusy ? "wait" : "pointer", opacity: aiPlanBusy ? 0.6 : 1 }}>{aiPlanBusy ? "Gerando novo plano…" : "Gerar plano atualizado"}</button>
                         <button type="button" onClick={openAnamnese} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>✏️ Editar anamnese (nível, equipamento, dias)</button>
                         <button type="button" onClick={openTriage} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>🩺 Atualizar triagem de segurança</button>
-                      </>
+                        </>
+                      ) : (
+                        <WorkoutRedesign
+                          plan={aiPlan}
+                          training={aiTraining}
+                          onGenerate={generateAiPlan}
+                          generating={aiPlanBusy}
+                          onOpenAnamnese={openAnamnese}
+                          onOpenTriage={openTriage}
+                          onOpenReassessment={() => setReassessmentOpen(true)}
+                          onOpenMedia={setMediaPreview}
+                          onRecordExercise={recordPlannedExercise}
+                          checkinLabel={sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? `Check-in de hoje: ${sessionCheckinResult.status === "verde" ? "pronto para seguir" : "modo leve"}` : undefined}
+                          isYellow={aiGate?.status === "amarelo"}
+                        />
+                      )
                     ) : (
                       <div style={{ textAlign: "center", padding: "32px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                         <MascotBadge size={52} />
