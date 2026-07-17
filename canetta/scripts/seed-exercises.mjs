@@ -41,6 +41,7 @@ function normalizeExercise(exercise) {
     name,
     name_pt: namePt,
     name_pt_status: "automatic",
+    taxonomy_status: "automatic",
     difficulty_level: classifyDifficulty(exercise),
     category: exercise.category ?? exercise.body_part ?? null,
     body_part: exercise.body_part ?? null,

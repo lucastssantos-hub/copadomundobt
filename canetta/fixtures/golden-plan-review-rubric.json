@@ -1,0 +1,16 @@
+{
+  "minimum_score": 4,
+  "critical_failure_blocks": true,
+  "reviewers": 2,
+  "criteria": [
+    {"id":"coverage","label":"Cobertura dos padrões","scale":"1-5"},
+    {"id":"ordering","label":"Ordem dos exercícios","scale":"1-5"},
+    {"id":"level_fit","label":"Adequação ao nível","scale":"1-5"},
+    {"id":"redundancy","label":"Ausência de redundância","scale":"1-5"},
+    {"id":"names","label":"Clareza dos nomes","scale":"1-5"},
+    {"id":"execution","label":"Facilidade de execução","scale":"1-5"},
+    {"id":"progression","label":"Progressão mensurável","scale":"1-5"},
+    {"id":"duration","label":"Duração realista","scale":"1-5"},
+    {"id":"overall","label":"Nota geral","scale":"1-5"}
+  ]
+}

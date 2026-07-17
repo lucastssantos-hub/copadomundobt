@@ -11,10 +11,12 @@
     "seed:exercises": "node scripts/seed-exercises.mjs",
     "enrich:exercises": "node scripts/enrich-exercises.mjs",
     "seed:essential-exercises": "node scripts/seed-essential-exercises.mjs",
+    "authorize:essential-exercises": "node scripts/authorize-essential-exercises.mjs",
+    "export:essential-review": "node scripts/export-essential-review-queue.mjs",
     "audit:exercises": "node scripts/audit-exercise-catalog.mjs",
     "audit:exercise-coverage": "node scripts/audit-exercise-coverage.mjs",
     "audit:exercise-blocked": "node scripts/audit-exercise-blocked.mjs",
-    "test:exercise-taxonomy": "node scripts/test-exercise-taxonomy.mjs && node scripts/test-essential-manifest.mjs && node scripts/test-synthetic-scenarios.mjs"
+    "test:exercise-taxonomy": "node scripts/test-exercise-taxonomy.mjs && node scripts/test-essential-manifest.mjs && node scripts/test-synthetic-scenarios.mjs && node scripts/validate-golden-plans.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

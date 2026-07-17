@@ -47,6 +47,9 @@ export type TrainingProfile = {
 };
 
 type TrainingPhase = "adaptacao" | "base" | "consolidacao" | "retomada_cautelosa";
+const ESSENTIAL_CATALOG_VERSION = "1.0.0";
+const TAXONOMY_VERSION = "2026-07-17.v1";
+const VALIDATION_RULES_VERSION = "2026-07-17.v2";
 
 function deriveTrainingPhase(createdAt: string | null | undefined, reassessment: { anchor_strength?: string | null; pain_level?: string | null; adherence?: string | null } | null): TrainingPhase {
   const weeks = createdAt ? Math.max(1, Math.ceil((Date.now() - new Date(createdAt).getTime()) / (7 * 24 * 60 * 60 * 1000))) : 1;
@@ -573,6 +576,9 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       nutrition_advice: plan.nutritionAdvice,
       warning: plan.warning,
       workouts: plan.workouts,
+      essential_catalog_version: ESSENTIAL_CATALOG_VERSION,
+      taxonomy_version: TAXONOMY_VERSION,
+      validation_rules_version: VALIDATION_RULES_VERSION,
       context_snapshot: {
         gate,
         training: context.training,
@@ -582,7 +588,8 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         workout_count: context.workoutLogs.length,
         reassessment: context.reassessment ?? null,
         training_phase: context.phase,
-        catalog_policy: "enum filtrado por gate, nível, equipamento e taxonomia; sem fallback sem revalidação",
+        catalog_policy: "catálogo essencial filtrado por gate, nível, equipamento e taxonomia; sem fallback sem revalidação",
+        versions: { essential_catalog: ESSENTIAL_CATALOG_VERSION, taxonomy: TAXONOMY_VERSION, validation_rules: VALIDATION_RULES_VERSION },
         volume_ledger: validation.ledger,
         template: { key: template.key, label: template.label, sessions: template.sessions }
       },
