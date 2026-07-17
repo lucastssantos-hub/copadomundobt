@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { anamnesisPromptSummary, evaluateGate, type AnamnesisData, type GateResult } from "@/lib/ai/anamnesis";
 import { getSessionExerciseBudget, validateWorkoutPlan } from "@/lib/ai/workout-validation";
+import { classifyExercise, rankCatalog } from "@/lib/ai/exercise-taxonomy";
 
 export class GateBlockedError extends Error {
   gate: GateResult;
@@ -184,7 +185,7 @@ async function gatherUserContext(userId: string) {
     .from("canetta_exercises")
     .select("name, name_pt, difficulty_level, body_part, equipment, target_muscle, gif_url, image_url")
     .order("name")
-    .limit(280);
+    .limit(1000);
 
   const allowedDifficulty = training?.experience_level === "nunca_treinei"
     ? ["iniciante"]
@@ -200,6 +201,7 @@ async function gatherUserContext(userId: string) {
   }
 
   const exercises = await exerciseQuery;
+  const rankedCatalog = rankCatalog(exercises.data ?? [], training?.experience_level, training?.training_location).slice(0, 280).map(({ item }) => item);
 
   const anamnesis = (anamnesisRow.data?.data as AnamnesisData | undefined) ?? null;
   const consent = anamnesisRow.data?.consent === true;
@@ -216,7 +218,7 @@ async function gatherUserContext(userId: string) {
     missedDoses: missedDoses.data ?? [],
     workoutLogs: workoutLogs.data ?? [],
     reassessment: reassessment.data?.[0] ?? null,
-    exercises: exercises.data ?? []
+    exercises: rankedCatalog
   };
 }
 
@@ -244,7 +246,10 @@ function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gat
     ? `Última reavaliação (${new Date(reassessment.created_at).toISOString().slice(0, 10)}): força ${reassessment.anchor_strength}; função ${reassessment.function_level}; dor ${reassessment.pain_level}; aderência ${reassessment.adherence}; mudança de medicação ${reassessment.medication_change ? "sim" : "não"}. ${reassessment.note ?? ""}`
     : "Sem reavaliação periódica registrada.";
   const missedLines = missedDoses.map((m) => `${new Date(m.scheduled_for).toISOString().slice(0, 10)}: ${m.reason ?? "motivo não informado"}`).join("\n") || "Nenhuma dose perdida registrada.";
-  const catalogLines = exercises.map((e) => `- ${e.name} | nome em português: ${e.name_pt ?? "?"} | nível: ${e.difficulty_level ?? "?"} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`).join("\n");
+  const catalogLines = exercises.map((e) => {
+    const taxonomy = classifyExercise(e);
+    return `- ${e.name} | nome em português: ${e.name_pt ?? "?"} | nível: ${e.difficulty_level ?? "?"} | papel: ${taxonomy.sessionRole} | padrão primário: ${taxonomy.primaryPattern} | família: ${taxonomy.movementFamily} | tier: ${taxonomy.tier} | complexidade: ${taxonomy.complexity}/4 | progressão: ${taxonomy.progressionClarity}/4 | híbrido: ${taxonomy.isHybrid ? "sim" : "não"} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`;
+  }).join("\n");
 
   const treatmentWeeks = profile?.created_at
     ? Math.max(1, Math.ceil((Date.now() - new Date(profile.created_at).getTime()) / (7 * 24 * 60 * 60 * 1000)))
@@ -303,7 +308,10 @@ ${reassessmentLine}
 
 === CATÁLOGO DE EXERCÍCIOS PERMITIDOS ===
 Você SÓ pode prescrever exercícios desta lista, usando o nome EXATAMENTE como escrito.
-Leia a região/alvo/equipamento de cada um — escolha pelo que o exercício realmente trabalha, não pelo nome.
+Leia os metadados de papel, padrão, família, tier e complexidade — eles são a classificação determinística do sistema e têm prioridade sobre o nome.
+Para iniciante e retomando: não use tier specialized, complexidade 4 ou híbrido. Não use um exercício híbrido para preencher dois slots ao mesmo tempo.
+Cada sessão deve cobrir os padrões obrigatórios do template com exercícios de função clara; no máximo dois exercícios de tronco por sessão, e o tronco deve ficar depois dos movimentos principais.
+Ordene: prioridade da sessão → segundo multiarticular estável → padrão complementar → acessórios → tronco. Não coloque panturrilha, rosca, tríceps ou abdominal antes de um padrão principal sem justificativa explícita.
 ${catalogLines}
 
 === DIRETRIZES DE PROGRAMAÇÃO (padrões operacionais ajustáveis, informados pela literatura geral de treinamento resistido) ===
