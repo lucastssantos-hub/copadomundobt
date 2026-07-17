@@ -71,8 +71,9 @@ type WorkoutTemplate = {
 };
 
 const PATTERN_ENUM = ["knee_dominant", "hip_dominant", "horizontal_push", "vertical_push", "horizontal_pull", "vertical_pull", "unilateral", "trunk", "accessory", "mobility", "conditioning", "complementary"] as const;
+type Pattern = typeof PATTERN_ENUM[number];
 
-function slotPattern(label: string) {
+function slotPattern(label: string): Pattern {
   const value = label.toLowerCase();
   if (value.includes("joelho")) return "knee_dominant";
   if (value.includes("quadril") || value.includes("extensão de quadril")) return "hip_dominant";
@@ -145,7 +146,7 @@ function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplat
 function adaptTemplateToCatalog(template: WorkoutTemplate, exercises: Array<{ name: string; target_muscle?: string | null; body_part?: string | null; equipment?: string | null }>, training: TrainingProfile | null): WorkoutTemplate {
   const available = new Set(exercises.flatMap((exercise) => classifyExercise(exercise).validSlots));
   const minimum = Math.max(4, Math.min(6, getSessionExerciseBudget(training?.minutes_per_session ?? 30, false)[0]));
-  const fallbackBySession = (session: { day: string }) => /superior/i.test(session.day)
+  const fallbackBySession = (session: { day: string }): Pattern[] => /superior/i.test(session.day)
     ? ["horizontal_push", "horizontal_pull", "vertical_pull", "vertical_push"]
     : /inferior/i.test(session.day)
       ? ["knee_dominant", "hip_dominant"]
