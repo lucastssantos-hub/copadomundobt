@@ -45,7 +45,65 @@ export type TrainingProfile = {
 const HOME_NO_EQUIPMENT = ["body weight"];
 const HOME_WITH_EQUIPMENT = ["body weight", "band", "dumbbell", "kettlebell", "stability ball"];
 
-function buildPlanSchema(allowedExerciseNames: string[], daysPerWeek: number) {
+type WorkoutTemplate = {
+  key: string;
+  label: string;
+  sessions: Array<{ day: string; focus: string; patterns: string[] }>;
+  variability: "low" | "moderate";
+};
+
+function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplate {
+  const days = training?.days_per_week ?? 3;
+  const beginner = training?.experience_level === "nunca_treinei";
+  if (days === 2) return {
+    key: "FULL_BODY_AB",
+    label: "Full body A/B",
+    variability: beginner ? "low" : "moderate",
+    sessions: [
+      { day: "Treino A", focus: "Corpo inteiro · joelho e empurrar", patterns: ["dominante de joelho", "empurrar horizontal", "puxar horizontal", "dominante de quadril", "complementar", "tronco"] },
+      { day: "Treino B", focus: "Corpo inteiro · quadril e puxar", patterns: ["dominante de quadril", "puxar vertical", "empurrar vertical ou inclinado", "unilateral de membros inferiores", "complementar", "tronco"] }
+    ]
+  };
+  if (days === 3) return {
+    key: beginner ? "FULL_BODY_AB_ROTATING" : "FULL_BODY_ABC",
+    label: beginner ? "Full body A/B alternado" : "Full body A/B/C",
+    variability: beginner ? "low" : "moderate",
+    sessions: beginner ? [
+      { day: "Treino A", focus: "Corpo inteiro · joelho e empurrar", patterns: ["dominante de joelho", "empurrar horizontal", "puxar horizontal", "dominante de quadril leve", "complementar", "tronco"] },
+      { day: "Treino B", focus: "Corpo inteiro · quadril e puxar", patterns: ["dominante de quadril", "puxar vertical", "empurrar vertical ou inclinado", "unilateral de membros inferiores", "complementar", "tronco"] },
+      { day: "Treino A", focus: "Corpo inteiro · repetição técnica", patterns: ["dominante de joelho", "empurrar horizontal", "puxar horizontal", "dominante de quadril leve", "complementar", "tronco"] }
+    ] : [
+      { day: "Treino A", focus: "Corpo inteiro · joelho e empurrar", patterns: ["dominante de joelho", "empurrar horizontal", "puxar horizontal", "dominante de quadril leve", "complementar", "tronco"] },
+      { day: "Treino B", focus: "Corpo inteiro · quadril e puxar", patterns: ["dominante de quadril", "puxar vertical", "empurrar vertical ou inclinado", "unilateral de membros inferiores", "complementar", "tronco"] },
+      { day: "Treino C", focus: "Corpo inteiro · equilíbrio", patterns: ["dominante de joelho alternativo", "puxar horizontal alternativo", "empurrar horizontal alternativo", "extensão de quadril", "unilateral ou carregada", "tronco"] }
+    ]
+  };
+  if (days === 4) return {
+    key: "UPPER_LOWER_AB",
+    label: "Superior/inferior A/B",
+    variability: beginner ? "low" : "moderate",
+    sessions: [
+      { day: "Superior A", focus: "Superior · empurrar e puxar", patterns: ["empurrar horizontal", "puxar horizontal", "puxar vertical", "empurrar vertical", "deltoide", "braços"] },
+      { day: "Inferior A", focus: "Inferior · joelho e quadril", patterns: ["dominante de joelho", "dominante de quadril", "unilateral", "flexão de joelho", "panturrilha", "tronco"] },
+      { day: "Superior B", focus: "Superior · variações", patterns: ["puxar horizontal alternativo", "empurrar inclinado", "puxar vertical", "empurrar vertical alternativo", "deltoide posterior", "braços"] },
+      { day: "Inferior B", focus: "Inferior · variações", patterns: ["dominante de quadril", "dominante de joelho alternativo", "unilateral", "extensão de quadril", "panturrilha", "tronco"] }
+    ]
+  };
+  return {
+    key: "HYBRID_5D",
+    label: "Híbrido superior/inferior + full body",
+    variability: "moderate",
+    sessions: [
+      { day: "Superior A", focus: "Superior · base", patterns: ["empurrar horizontal", "puxar horizontal", "puxar vertical", "empurrar vertical", "deltoide", "braços"] },
+      { day: "Inferior A", focus: "Inferior · base", patterns: ["dominante de joelho", "dominante de quadril", "unilateral", "flexão de joelho", "panturrilha", "tronco"] },
+      { day: "Full body leve", focus: "Corpo inteiro · baixa demanda", patterns: ["dominante de joelho leve", "empurrar leve", "puxar leve", "extensão de quadril leve", "mobilidade", "tronco"] },
+      { day: "Superior B", focus: "Superior · volume moderado", patterns: ["puxar horizontal alternativo", "empurrar inclinado", "puxar vertical", "empurrar vertical alternativo", "deltoide posterior", "braços"] },
+      { day: "Inferior B", focus: "Inferior · volume moderado", patterns: ["dominante de quadril", "dominante de joelho alternativo", "unilateral", "extensão de quadril", "panturrilha", "tronco"] }
+    ]
+  };
+}
+
+function buildPlanSchema(allowedExerciseNames: string[], template: WorkoutTemplate) {
   return {
     type: "object",
     properties: {
@@ -54,12 +112,12 @@ function buildPlanSchema(allowedExerciseNames: string[], daysPerWeek: number) {
       rationale: { type: "string" },
       workouts: {
         type: "array",
-        minItems: daysPerWeek,
-        maxItems: daysPerWeek,
+        minItems: template.sessions.length,
+        maxItems: template.sessions.length,
         items: {
           type: "object",
           properties: {
-            day: { type: "string" },
+            day: { type: "string", enum: Array.from(new Set(template.sessions.map((session) => session.day))) },
             focus: { type: "string" },
             exercises: {
               type: "array",
@@ -164,6 +222,7 @@ const LOCATION_LABEL: Record<TrainingProfile["training_location"], string> = {
 
 function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gate: GateResult) {
   const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises, reassessment } = context;
+  const template = selectWorkoutTemplate(training);
 
   const weightLines = weights.map((w) => `${new Date(w.recorded_at).toISOString().slice(0, 10)}: ${w.weight} kg`).join("\n") || "Sem registros de peso.";
   const symptomLines = sideEffects.map((s) => `${new Date(s.recorded_at).toISOString().slice(0, 10)}: ${(s.types ?? []).join(", ")} (intensidade ${s.intensity ?? "?"}/10, duração ${s.duration ?? "?"})`).join("\n") || "Sem sintomas registrados nos últimos 7 dias.";
@@ -192,6 +251,13 @@ Sua função é montar um plano de treino SEMANAL seguro e realista, baseado na 
 
 === ANAMNESE DE TREINO ===
 ${anamnese}
+
+=== TEMPLATE SEMANAL FECHADO — NÃO ALTERAR ===
+Template: ${template.key} · ${template.label}
+Variabilidade de exercícios: ${template.variability} (iniciante mantém a maior parte dos movimentos por várias semanas)
+Você deve devolver exatamente estas sessões, nesta ordem:
+${template.sessions.map((session, index) => `${index + 1}. ${session.day} — ${session.focus}\n   Padrões obrigatórios: ${session.patterns.join("; ")}`).join("\n")}
+Não crie uma divisão por músculo, não troque o template e não concentre todos os exercícios de pernas, peito ou costas em um único dia.
 
 === TRIAGEM DE SEGURANÇA (gate determinístico já aplicado pelo sistema — respeite integralmente) ===
 ${anamnesis ? anamnesisPromptSummary(anamnesis, gate) : "Triagem não disponível — gere apenas sessões de baixa demanda."}
@@ -276,7 +342,7 @@ NUTRIÇÃO (educacional, sem prescrição):
 
 === TAREFA ===
 Monte o plano desta semana (dias da semana em português: Segunda, Quarta, Sexta etc.).
-OBRIGATÓRIO: entregue exatamente ${training?.days_per_week ?? 3} sessões diferentes, uma por dia disponível. Nunca entregue apenas uma sessão quando a anamnese indicar mais dias.
+OBRIGATÓRIO: entregue exatamente ${template.sessions.length} sessões, com os nomes e a ordem do template acima. A IA escolhe apenas exercícios compatíveis dentro dos padrões; ela não inventa a arquitetura semanal.
 - "why" de cada exercício: 1 frase curta em português coerente com o que o exercício REALMENTE trabalha e com os dados do usuário.
 - "rationale": 2-3 frases citando anamnese e dados (nível, peso, sintomas, energia, histórico). Trate as escolhas como padrões ajustáveis de organização de movimento — nunca como protocolo clínico comprovado.
 - "nutritionAdvice": 1-2 frases EDUCACIONAIS (sem prescrever gramas/dieta; pode citar que o alvo proteico individual deve ser definido com nutricionista/médico; incentivo à hidratação é ok).
@@ -308,7 +374,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
 
   const prompt = buildPrompt(context, gate);
   const allowedNames = context.exercises.map((exercise) => exercise.name);
-  const daysPerWeek = context.training?.days_per_week ?? 3;
+  const template = selectWorkoutTemplate(context.training);
 
   const openai = new OpenAI({ apiKey });
   const response = await openai.chat.completions.create({
@@ -319,7 +385,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       json_schema: {
         name: "weekly_workout_plan",
         strict: true,
-        schema: buildPlanSchema(allowedNames, daysPerWeek) as unknown as Record<string, unknown>
+        schema: buildPlanSchema(allowedNames, template) as unknown as Record<string, unknown>
       }
     },
     messages: [{ role: "user", content: prompt }]
@@ -331,8 +397,10 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   }
 
   const plan = JSON.parse(content) as AiWorkoutPlan;
-  if (!Array.isArray(plan.workouts) || plan.workouts.length !== daysPerWeek) {
-    throw new Error(`O plano retornou ${plan.workouts?.length ?? 0} sessões; eram necessárias ${daysPerWeek}. Gere novamente.`);
+  const expectedDays = template.sessions.map((session) => session.day);
+  const actualDays = Array.isArray(plan.workouts) ? plan.workouts.map((workout) => workout.day) : [];
+  if (actualDays.length !== expectedDays.length || actualDays.some((day, index) => day !== expectedDays[index])) {
+    throw new Error(`O plano não respeitou o template ${template.key}. Gere novamente.`);
   }
 
   // Anexa GIF/imagem do catálogo a cada exercício (match exato + fallback normalizado).
@@ -370,7 +438,8 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         side_effects: context.sideEffects.slice(0, 5),
         checkins: context.checkins.slice(0, 5),
         workout_count: context.workoutLogs.length,
-        reassessment: context.reassessment ?? null
+        reassessment: context.reassessment ?? null,
+        template: { key: template.key, label: template.label, sessions: template.sessions }
       },
       ai_model: "gpt-4o-mini"
     },
