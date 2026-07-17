@@ -14,6 +14,13 @@ for (const item of batch) {
   const review = item.review ?? item;
   const suggested = item.suggested_taxonomy ?? item;
   const externalId = item.external_id;
+  if (!["approved", "needs_changes", "rejected"].includes(review.review_decision)) {
+    throw new Error(`${externalId ?? "unknown"}: review_decision must be approved, needs_changes or rejected`);
+  }
+  if (review.review_decision !== "approved") {
+    console.log(`Skipped ${externalId}; review decision is ${review.review_decision}.`);
+    continue;
+  }
   const value = { ...suggested, ...review, external_id: externalId };
   for (const field of ["external_id", "name_pt", "reviewed_by", "media_verified", "taxonomy_status"]) if (value[field] === undefined || value[field] === null) throw new Error(`${externalId ?? "unknown"}: missing ${field}`);
   if (value.taxonomy_status !== "reviewed") throw new Error(`${externalId}: approval requires taxonomy_status=reviewed`);
