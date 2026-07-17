@@ -30,6 +30,7 @@ for (const entry of manifest.entries) {
   report.push({ slot: entry.slot, match: entry.match.join(" / "), counts });
 }
 console.table(report);
+for (const row of report) for (const [context, result] of Object.entries(row.counts)) console.log(`${row.slot} ${context}: eligible=${result.eligible} ${result.exercises.length ? `- ${result.exercises.join("; ")}` : "- nenhum"}`);
 const insufficient = report.filter((row) => Object.values(row.counts).some((result) => result.eligible < (row.slot.includes("primary") ? 3 : 2)));
 if (insufficient.length) {
   console.warn(`WARNING: ${insufficient.length} slots não atingem a meta operacional de candidatos.`);
