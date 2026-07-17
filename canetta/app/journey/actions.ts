@@ -480,7 +480,7 @@ export type AiWorkoutPlanRow = {
   workouts: Array<{
     day: string;
     focus: string;
-    exercises: Array<{ name: string; name_pt?: string | null; sets: number; reps: string; why: string; gif_url?: string | null; image_url?: string | null }>;
+    exercises: Array<{ name: string; name_pt?: string | null; pattern?: string; sets: number; reps: string; why: string; gif_url?: string | null; image_url?: string | null }>;
   }>;
   created_at: string;
 };

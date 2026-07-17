@@ -15,6 +15,7 @@ export class GateBlockedError extends Error {
 export type AiWorkoutExercise = {
   name: string;
   name_pt?: string | null;
+  pattern?: string;
   sets: number;
   reps: string;
   why: string;
@@ -65,6 +66,24 @@ type WorkoutTemplate = {
   sessions: Array<{ day: string; focus: string; patterns: string[] }>;
   variability: "low" | "moderate";
 };
+
+const PATTERN_ENUM = ["knee_dominant", "hip_dominant", "horizontal_push", "vertical_push", "horizontal_pull", "vertical_pull", "unilateral", "trunk", "accessory", "mobility", "conditioning", "complementary"] as const;
+
+function slotPattern(label: string) {
+  const value = label.toLowerCase();
+  if (value.includes("joelho")) return "knee_dominant";
+  if (value.includes("quadril") || value.includes("extensão de quadril")) return "hip_dominant";
+  if (value.includes("empurrar horizontal")) return "horizontal_push";
+  if (value.includes("empurrar vertical") || value.includes("empurrar inclinado")) return "vertical_push";
+  if (value.includes("puxar horizontal")) return "horizontal_pull";
+  if (value.includes("puxar vertical")) return "vertical_pull";
+  if (value.includes("unilateral")) return "unilateral";
+  if (value.includes("tronco")) return "trunk";
+  if (value.includes("mobilidade")) return "mobility";
+  if (value.includes("flexão de joelho") || value.includes("panturrilha") || value.includes("deltoide") || value.includes("braços")) return "accessory";
+  if (value.includes("leve")) return "complementary";
+  return "accessory";
+}
 
 function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplate {
   const days = training?.days_per_week ?? 3;
@@ -144,9 +163,10 @@ function buildPlanSchema(allowedExerciseNames: string[], template: WorkoutTempla
                   name: { type: "string", enum: allowedExerciseNames },
                   sets: { type: "integer" },
                   reps: { type: "string" },
-                  why: { type: "string" }
+                  why: { type: "string" },
+                  pattern: { type: "string", enum: PATTERN_ENUM }
                 },
-                required: ["name", "sets", "reps", "why"],
+                required: ["name", "sets", "reps", "why", "pattern"],
                 additionalProperties: false
               }
             }
@@ -325,6 +345,7 @@ Você SÓ pode prescrever exercícios desta lista, usando o nome EXATAMENTE como
 Leia os metadados de papel, padrão, família, tier e complexidade — eles são a classificação determinística do sistema e têm prioridade sobre o nome.
 Para iniciante e retomando: não use tier specialized, complexidade 4 ou híbrido. Não use um exercício híbrido para preencher dois slots ao mesmo tempo.
 Cada sessão deve cobrir os padrões obrigatórios do template com exercícios de função clara; no máximo dois exercícios de tronco por sessão, e o tronco deve ficar depois dos movimentos principais.
+No campo pattern, use exatamente o padrão determinístico de cada slot: knee_dominant (joelho), hip_dominant (quadril), horizontal_push (empurrar horizontal), vertical_push (empurrar vertical/inclinado), horizontal_pull (puxar horizontal), vertical_pull (puxar vertical), unilateral (unilateral), accessory (deltoide, braços, panturrilha ou flexão de joelho), mobility, complementary ou trunk. Os primeiros slots de cada sessão devem seguir a ordem dos padrões obrigatórios; exercícios adicionais só podem ser accessory, complementary ou trunk.
 Ordene: prioridade da sessão → segundo multiarticular estável → padrão complementar → acessórios → tronco. Não coloque panturrilha, rosca, tríceps ou abdominal antes de um padrão principal sem justificativa explícita.
 ${catalogLines}
 
@@ -457,6 +478,26 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   const actualDays = Array.isArray(plan.workouts) ? plan.workouts.map((workout) => workout.day) : [];
   if (actualDays.length !== expectedDays.length || actualDays.some((day, index) => day !== expectedDays[index])) {
     throw new Error(`O plano não respeitou o template ${template.key}. Gere novamente.`);
+  }
+
+  // Contrato semântico: o schema garante que pattern existe; aqui garantimos
+  // que ele corresponde ao slot planejado, evitando treinos genéricos.
+  for (let sessionIndex = 0; sessionIndex < template.sessions.length; sessionIndex += 1) {
+    const expected = template.sessions[sessionIndex].patterns.map(slotPattern);
+    const exercises = plan.workouts[sessionIndex]?.exercises ?? [];
+    const mismatches: string[] = [];
+    expected.forEach((pattern, exerciseIndex) => {
+      const actual = exercises[exerciseIndex]?.pattern;
+      if (actual !== pattern) mismatches.push(`${exerciseIndex + 1}: esperado ${pattern}, recebido ${actual ?? "ausente"}`);
+    });
+    exercises.slice(expected.length).forEach((exercise, extraIndex) => {
+      if (!(["accessory", "complementary", "trunk"] as string[]).includes(exercise.pattern ?? "")) {
+        mismatches.push(`${expected.length + extraIndex + 1}: extra deve ser accessory/complementary/trunk`);
+      }
+    });
+    if (mismatches.length) {
+      throw new Error(`A sessão ${template.sessions[sessionIndex].day} não respeitou os padrões do template: ${mismatches.join("; ")}`);
+    }
   }
 
   const validation = validateWorkoutPlan(plan, context.training, gate, context.exercises);
