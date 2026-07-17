@@ -22,6 +22,7 @@ import {
   saveQuestionAction,
   saveReminderAction,
   saveRoutineAction,
+  saveAnamnesisAction,
   saveSymptomAction,
   saveTrainingProfileAction,
   saveWorkoutAction,
@@ -29,6 +30,7 @@ import {
   saveWeightAction,
   type TrainingProfileRow
 } from "./actions";
+import { CONDITIONS, PAIN_REGIONS, RED_FLAGS, type AnamnesisData, type GateResult } from "@/lib/ai/anamnesis";
 import { signOutAction } from "@/app/auth/actions";
 
 type Tab = "hoje" | "diario" | "consulta" | "treino" | "mais";
@@ -184,6 +186,22 @@ export default function JourneyPage() {
   const [aiPlanBusy, setAiPlanBusy] = useState(false);
   const [aiPlanError, setAiPlanError] = useState("");
   const [aiTraining, setAiTraining] = useState<TrainingProfileRow | null>(null);
+  const [aiAnamnesis, setAiAnamnesis] = useState<AnamnesisData | null>(null);
+  const [aiGate, setAiGate] = useState<GateResult | null>(null);
+  const [triageOpen, setTriageOpen] = useState(false);
+  const [triageBusy, setTriageBusy] = useState(false);
+  const [triage, setTriage] = useState({
+    red_flags_today: [] as string[],
+    red_flags_recent: [] as string[],
+    conditions: [] as string[],
+    conditions_unsure: false,
+    diabetes: { usa_insulina: false, usa_secretagogo: false, protocolo_exercicio: false, hipoglicemia_exercicio: false },
+    gi: { impede_alimentacao: false, impede_hidratacao: false, impede_atividade: false, piora_com_movimento: false },
+    funcao: { caminhada_max: "" as string, sentar_levantar_sem_apoio: true, sobe_um_lance_escada: true, agacha_ate_cadeira: true },
+    dores: [] as string[],
+    dores_detalhe: "",
+    consent: false
+  });
   const [anamneseOpen, setAnamneseOpen] = useState(false);
   const [anamneseBusy, setAnamneseBusy] = useState(false);
   const [anamneseLevel, setAnamneseLevel] = useState("");
@@ -309,8 +327,69 @@ export default function JourneyPage() {
     loadAiWorkoutPlanAction().then((result) => {
       if ("plan" in result) setAiPlan(result.plan ?? null);
       if ("trainingProfile" in result) setAiTraining(result.trainingProfile ?? null);
+      if ("anamnesis" in result) setAiAnamnesis(result.anamnesis ?? null);
+      if ("gate" in result) setAiGate(result.gate ?? null);
     }).catch(() => {});
   }, [ready, authenticated, aiPlanLoaded, st.tab]);
+
+  const toggleInList = (list: string[], value: string) => (list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
+
+  const openTriage = () => {
+    if (aiAnamnesis) {
+      setTriage({
+        red_flags_today: aiAnamnesis.red_flags_today ?? [],
+        red_flags_recent: aiAnamnesis.red_flags_recent ?? [],
+        conditions: aiAnamnesis.conditions ?? [],
+        conditions_unsure: aiAnamnesis.conditions_unsure ?? false,
+        diabetes: aiAnamnesis.diabetes ?? { usa_insulina: false, usa_secretagogo: false, protocolo_exercicio: false, hipoglicemia_exercicio: false },
+        gi: aiAnamnesis.gi,
+        funcao: { ...aiAnamnesis.funcao },
+        dores: aiAnamnesis.dores ?? [],
+        dores_detalhe: aiAnamnesis.dores_detalhe ?? "",
+        consent: true
+      });
+    }
+    setTriageOpen(true);
+  };
+
+  const saveTriage = async () => {
+    if (!triage.funcao.caminhada_max) {
+      setAiPlanError("Informe quanto tempo de caminhada contínua você tolera hoje.");
+      return;
+    }
+    if (!triage.consent) {
+      setAiPlanError("É preciso aceitar os limites do sistema para continuar.");
+      return;
+    }
+    setTriageBusy(true);
+    setAiPlanError("");
+    const payload: AnamnesisData = {
+      red_flags_today: triage.red_flags_today,
+      red_flags_recent: triage.red_flags_recent,
+      conditions: triage.conditions,
+      conditions_unsure: triage.conditions_unsure,
+      diabetes: triage.conditions.some((c) => c.startsWith("Diabetes")) ? triage.diabetes : undefined,
+      gi: triage.gi,
+      funcao: triage.funcao as AnamnesisData["funcao"],
+      dores: triage.dores,
+      dores_detalhe: triage.dores_detalhe.trim() || null
+    };
+    try {
+      const result = await saveAnamnesisAction(payload, triage.consent);
+      if (result.saved) {
+        setAiAnamnesis(payload);
+        setAiGate(result.gate);
+        setTriageOpen(false);
+        toast("Triagem salva.");
+      } else if ("error" in result && result.error) {
+        setAiPlanError(result.error);
+      }
+    } catch {
+      setAiPlanError("Não foi possível salvar a triagem agora.");
+    } finally {
+      setTriageBusy(false);
+    }
+  };
 
   const ANAMNESE_LEVELS: Array<[string, TrainingProfileRow["experience_level"]]> = [
     ["Nunca treinei", "nunca_treinei"],
@@ -373,7 +452,10 @@ export default function JourneyPage() {
       const result = await generateAiWorkoutPlanAction();
       if ("plan" in result && result.plan) {
         setAiPlan(result.plan);
+        if ("gate" in result && result.gate) setAiGate(result.gate);
         toast("Plano da semana gerado.");
+      } else if ("blockedGate" in result && result.blockedGate) {
+        setAiGate(result.blockedGate);
       } else if ("error" in result && result.error) {
         setAiPlanError(result.error);
       }
@@ -1484,8 +1566,123 @@ export default function JourneyPage() {
                         <button type="button" disabled={anamneseBusy} onClick={saveAnamnese} style={{ ...primaryBtn, padding: 14, fontSize: 14.5, opacity: anamneseBusy ? 0.6 : 1, cursor: anamneseBusy ? "wait" : "pointer" }}>{anamneseBusy ? "Salvando…" : "Salvar anamnese"}</button>
                         {aiTraining && <button type="button" onClick={() => setAnamneseOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 6 }}>Cancelar</button>}
                       </div>
+                    ) : (!aiAnamnesis || triageOpen) ? (
+                      <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 16 }}>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Triagem de segurança</div>
+                          <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.5, marginTop: 4 }}>Antes do plano, precisamos saber se é seguro treinar agora. Leva 1 minuto.</div>
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>ALGUM DESTES ESTÁ ACONTECENDO HOJE?</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                            <button type="button" onClick={() => setTriage((t) => ({ ...t, red_flags_today: [] }))} style={{ ...chipStyle(triage.red_flags_today.length === 0, 20), padding: "8px 13px", fontSize: 12 }}>Nenhum</button>
+                            {RED_FLAGS.map((flag) => (
+                              <button key={flag} type="button" onClick={() => setTriage((t) => ({ ...t, red_flags_today: toggleInList(t.red_flags_today, flag) }))} style={{ ...chipStyle(triage.red_flags_today.includes(flag), 20), padding: "8px 13px", fontSize: 12 }}>{flag}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>E NOS ÚLTIMOS 30 DIAS, SEM TER SIDO AVALIADO POR MÉDICO?</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                            <button type="button" onClick={() => setTriage((t) => ({ ...t, red_flags_recent: [] }))} style={{ ...chipStyle(triage.red_flags_recent.length === 0, 20), padding: "8px 13px", fontSize: 12 }}>Nenhum</button>
+                            {RED_FLAGS.map((flag) => (
+                              <button key={flag} type="button" onClick={() => setTriage((t) => ({ ...t, red_flags_recent: toggleInList(t.red_flags_recent, flag) }))} style={{ ...chipStyle(triage.red_flags_recent.includes(flag), 20), padding: "8px 13px", fontSize: 12 }}>{flag}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>CONDIÇÕES DE SAÚDE DIAGNOSTICADAS</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                            <button type="button" onClick={() => setTriage((t) => ({ ...t, conditions: [], conditions_unsure: false }))} style={{ ...chipStyle(triage.conditions.length === 0 && !triage.conditions_unsure, 20), padding: "8px 13px", fontSize: 12 }}>Nenhuma</button>
+                            {CONDITIONS.map((condition) => (
+                              <button key={condition} type="button" onClick={() => setTriage((t) => ({ ...t, conditions: toggleInList(t.conditions, condition) }))} style={{ ...chipStyle(triage.conditions.includes(condition), 20), padding: "8px 13px", fontSize: 12 }}>{condition}</button>
+                            ))}
+                            <button type="button" onClick={() => setTriage((t) => ({ ...t, conditions_unsure: !t.conditions_unsure }))} style={{ ...chipStyle(triage.conditions_unsure, 20), padding: "8px 13px", fontSize: 12 }}>Não sei responder</button>
+                          </div>
+                        </div>
+                        {triage.conditions.some((c) => c.startsWith("Diabetes")) && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 14px", background: "#F4F6F4", borderRadius: 12 }}>
+                            <div style={{ ...fieldLabel }}>SOBRE O DIABETES</div>
+                            {([["Usa insulina?", "usa_insulina"], ["Usa glibenclamida/gliclazida (ou similar)?", "usa_secretagogo"], ["Seu médico definiu orientação para exercício?", "protocolo_exercicio"], ["Já teve hipoglicemia durante/após exercício?", "hipoglicemia_exercicio"]] as const).map(([label, key]) => (
+                              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                                <div style={{ fontSize: 12.5, color: "#16302B", fontWeight: 600, flex: 1 }}>{label}</div>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  <button type="button" onClick={() => setTriage((t) => ({ ...t, diabetes: { ...t.diabetes, [key]: true } }))} style={{ ...chipStyle(triage.diabetes[key], 12), padding: "6px 13px", fontSize: 12 }}>Sim</button>
+                                  <button type="button" onClick={() => setTriage((t) => ({ ...t, diabetes: { ...t.diabetes, [key]: false } }))} style={{ ...chipStyle(!triage.diabetes[key], 12), padding: "6px 13px", fontSize: 12 }}>Não</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>OS SINTOMAS (ENJOO, ETC.) ESTÃO…</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {([["Impedindo você de comer normalmente?", "impede_alimentacao"], ["Impedindo você de beber líquidos?", "impede_hidratacao"], ["Limitando suas atividades do dia a dia?", "impede_atividade"], ["Piorando quando você se movimenta?", "piora_com_movimento"]] as const).map(([label, key]) => (
+                              <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                                <div style={{ fontSize: 12.5, color: "#16302B", fontWeight: 600, flex: 1 }}>{label}</div>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  <button type="button" onClick={() => setTriage((t) => ({ ...t, gi: { ...t.gi, [key]: true } }))} style={{ ...chipStyle(triage.gi[key], 12), padding: "6px 13px", fontSize: 12 }}>Sim</button>
+                                  <button type="button" onClick={() => setTriage((t) => ({ ...t, gi: { ...t.gi, [key]: false } }))} style={{ ...chipStyle(!triage.gi[key], 12), padding: "6px 13px", fontSize: 12 }}>Não</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>QUANTO CONSEGUE CAMINHAR SEM PARAR, HOJE?</div>
+                          <ChipRow options={["<10 min", "10-20 min", "20-30 min", "30+ min"]} current={triage.funcao.caminhada_max} onPick={(v) => setTriage((t) => ({ ...t, funcao: { ...t.funcao, caminhada_max: v } }))} equal />
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {([["Senta e levanta da cadeira sem apoiar as mãos?", "sentar_levantar_sem_apoio"], ["Sobe um lance de escada sem parar?", "sobe_um_lance_escada"], ["Consegue agachar até a altura de uma cadeira?", "agacha_ate_cadeira"]] as const).map(([label, key]) => (
+                            <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                              <div style={{ fontSize: 12.5, color: "#16302B", fontWeight: 600, flex: 1 }}>{label}</div>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <button type="button" onClick={() => setTriage((t) => ({ ...t, funcao: { ...t.funcao, [key]: true } }))} style={{ ...chipStyle(triage.funcao[key] === true, 12), padding: "6px 13px", fontSize: 12 }}>Sim</button>
+                                <button type="button" onClick={() => setTriage((t) => ({ ...t, funcao: { ...t.funcao, [key]: false } }))} style={{ ...chipStyle(triage.funcao[key] === false, 12), padding: "6px 13px", fontSize: 12 }}>Não</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>DOR QUE LIMITA MOVIMENTO (REGIÕES)</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                            <button type="button" onClick={() => setTriage((t) => ({ ...t, dores: [] }))} style={{ ...chipStyle(triage.dores.length === 0, 20), padding: "8px 13px", fontSize: 12 }}>Nenhuma</button>
+                            {PAIN_REGIONS.map((region) => (
+                              <button key={region} type="button" onClick={() => setTriage((t) => ({ ...t, dores: toggleInList(t.dores, region) }))} style={{ ...chipStyle(triage.dores.includes(region), 20), padding: "8px 13px", fontSize: 12 }}>{region}</button>
+                            ))}
+                          </div>
+                          {triage.dores.length > 0 && (
+                            <input className="j-in" value={triage.dores_detalhe} onChange={(e) => setTriage((t) => ({ ...t, dores_detalhe: e.target.value }))} placeholder="Detalhe (ex.: piora ao agachar, diagnóstico…)" style={{ ...inputSt, padding: "12px 14px", fontSize: 13.5, marginTop: 8 }} />
+                          )}
+                        </div>
+                        <button type="button" onClick={() => setTriage((t) => ({ ...t, consent: !t.consent }))} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", background: triage.consent ? "#EAF5F2" : "#F4F6F4", border: `1.5px solid ${triage.consent ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: 12, cursor: "pointer", textAlign: "left" }}>
+                          <div style={{ fontSize: 16, lineHeight: 1 }}>{triage.consent ? "☑️" : "⬜"}</div>
+                          <div style={{ fontSize: 12, color: "#16302B", lineHeight: 1.5 }}>Entendo que esta é uma orientação educacional de movimento: não substitui médico, nutricionista ou fisioterapeuta; o sistema não altera medicamentos; devo comunicar sintomas relevantes; informações incorretas tornam a orientação insegura; o plano pode ser bloqueado por segurança.</div>
+                        </button>
+                        <button type="button" disabled={triageBusy} onClick={saveTriage} style={{ ...primaryBtn, padding: 14, fontSize: 14.5, opacity: triageBusy ? 0.6 : 1, cursor: triageBusy ? "wait" : "pointer" }}>{triageBusy ? "Salvando…" : "Salvar triagem"}</button>
+                        {aiAnamnesis && <button type="button" onClick={() => setTriageOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 6 }}>Cancelar</button>}
+                      </div>
+                    ) : aiGate?.status === "vermelho" ? (
+                      <div style={{ ...cardWhite, background: "#FBEDEA", border: "1.5px solid #E3B7AC", display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#8A3B2A" }}>⛔ Treino pausado por segurança</div>
+                        <div style={{ fontSize: 13, color: "#6E4437", lineHeight: 1.55 }}>Você relatou:</div>
+                        {aiGate.motivos.map((motivo) => (<div key={motivo} style={{ fontSize: 12.5, color: "#6E4437" }}>• {motivo}</div>))}
+                        <div style={{ fontSize: 13, color: "#6E4437", lineHeight: 1.55, fontWeight: 700 }}>Não vamos gerar treino agora. Procure avaliação médica antes de retomar. Quando estiver melhor e avaliado(a), atualize a triagem.</div>
+                        <button type="button" onClick={openTriage} style={{ ...primaryBtn, background: "#8A3B2A", padding: 13, fontSize: 14 }}>Atualizar triagem</button>
+                      </div>
+                    ) : aiGate?.status === "liberacao" ? (
+                      <div style={{ ...cardWhite, background: "#FDF6E3", border: "1.5px solid #EAD9A8", display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#7A6017" }}>🩺 Precisamos de liberação clínica</div>
+                        <div style={{ fontSize: 13, color: "#6B5A28", lineHeight: 1.55 }}>Pelo que você relatou, o plano personalizado fica pausado até uma liberação do seu médico:</div>
+                        {aiGate.motivos.map((motivo) => (<div key={motivo} style={{ fontSize: 12.5, color: "#6B5A28" }}>• {motivo}</div>))}
+                        <div style={{ fontSize: 12.5, color: "#6B5A28", lineHeight: 1.55 }}>Enquanto isso, caminhada leve conforme sua tolerância costuma ser segura para a maioria das pessoas — confirme com quem acompanha você. Depois da liberação, atualize a triagem.</div>
+                        <button type="button" onClick={openTriage} style={{ ...primaryBtn, padding: 13, fontSize: 14 }}>Atualizar triagem</button>
+                      </div>
                     ) : aiPlan ? (
                       <>
+                        {aiGate?.status === "amarelo" && (
+                          <div style={{ ...cardWhite, background: "#FDF6E3", border: "1.5px solid #EAD9A8", fontSize: 12.5, color: "#7A6017", lineHeight: 1.5 }}>⚠️ Semana em modo leve: {aiGate.motivos.join("; ")}. O plano foi ajustado para baixa demanda.</div>
+                        )}
                         <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 8, background: "#EAF5F2", border: "1.5px solid #CBE3DC" }}>
                           <div style={{ fontSize: 11, fontWeight: 800, color: "#0E6B5C", letterSpacing: 0.4 }}>SEMANA DE {new Date(`${aiPlan.week_start}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>{aiPlan.focus}</div>
@@ -1523,6 +1720,7 @@ export default function JourneyPage() {
                         )}
                         <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 13.5, fontWeight: 700, cursor: aiPlanBusy ? "wait" : "pointer", opacity: aiPlanBusy ? 0.6 : 1 }}>{aiPlanBusy ? "Gerando novo plano…" : "Gerar plano atualizado"}</button>
                         <button type="button" onClick={openAnamnese} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>✏️ Editar anamnese (nível, equipamento, dias)</button>
+                        <button type="button" onClick={openTriage} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>🩺 Atualizar triagem de segurança</button>
                       </>
                     ) : (
                       <div style={{ textAlign: "center", padding: "32px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>

@@ -1,5 +1,14 @@
 import OpenAI from "openai";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { anamnesisPromptSummary, evaluateGate, type AnamnesisData, type GateResult } from "@/lib/ai/anamnesis";
+
+export class GateBlockedError extends Error {
+  gate: GateResult;
+  constructor(gate: GateResult) {
+    super(`Plan generation blocked by safety gate: ${gate.status}`);
+    this.gate = gate;
+  }
+}
 
 export type AiWorkoutExercise = {
   name: string;
@@ -91,9 +100,10 @@ async function gatherUserContext(userId: string) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [profile, trainingProfile, weights, sideEffects, checkins, applications, missedDoses, workoutLogs] = await Promise.all([
+  const [profile, trainingProfile, anamnesisRow, weights, sideEffects, checkins, applications, missedDoses, workoutLogs] = await Promise.all([
     supabase.from("canetta_profiles").select("name, medication, current_dose, frequency, height_cm, goal_weight, biggest_difficulty, created_at").eq("user_id", userId).maybeSingle(),
     supabase.from("canetta_training_profiles").select("experience_level, training_location, days_per_week, minutes_per_session, limitations").eq("user_id", userId).maybeSingle(),
+    supabase.from("canetta_anamnesis").select("data, consent").eq("user_id", userId).maybeSingle(),
     supabase.from("canetta_weight_entries").select("weight, recorded_at").eq("user_id", userId).order("recorded_at", { ascending: false }).limit(8),
     supabase.from("canetta_side_effects").select("types, intensity, duration, recorded_at").eq("user_id", userId).gte("recorded_at", sevenDaysAgo).order("recorded_at", { ascending: false }).limit(10),
     supabase.from("canetta_daily_checkins").select("date, hunger_level, energy_level").eq("user_id", userId).order("date", { ascending: false }).limit(7),
@@ -118,9 +128,14 @@ async function gatherUserContext(userId: string) {
 
   const exercises = await exerciseQuery;
 
+  const anamnesis = (anamnesisRow.data?.data as AnamnesisData | undefined) ?? null;
+  const consent = anamnesisRow.data?.consent === true;
+
   return {
     profile: profile.data,
     training,
+    anamnesis,
+    consent,
     weights: weights.data ?? [],
     sideEffects: sideEffects.data ?? [],
     checkins: checkins.data ?? [],
@@ -143,8 +158,8 @@ const LOCATION_LABEL: Record<TrainingProfile["training_location"], string> = {
   academia: "Academia completa"
 };
 
-function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>) {
-  const { profile, training, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises } = context;
+function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gate: GateResult) {
+  const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises } = context;
 
   const weightLines = weights.map((w) => `${new Date(w.recorded_at).toISOString().slice(0, 10)}: ${w.weight} kg`).join("\n") || "Sem registros de peso.";
   const symptomLines = sideEffects.map((s) => `${new Date(s.recorded_at).toISOString().slice(0, 10)}: ${(s.types ?? []).join(", ")} (intensidade ${s.intensity ?? "?"}/10, duração ${s.duration ?? "?"})`).join("\n") || "Sem sintomas registrados nos últimos 7 dias.";
@@ -170,6 +185,9 @@ Sua função é montar um plano de treino SEMANAL seguro e realista, baseado na 
 
 === ANAMNESE DE TREINO ===
 ${anamnese}
+
+=== TRIAGEM DE SEGURANÇA (gate determinístico já aplicado pelo sistema — respeite integralmente) ===
+${anamnesis ? anamnesisPromptSummary(anamnesis, gate) : "Triagem não disponível — gere apenas sessões de baixa demanda."}
 
 === PERFIL ===
 Nome: ${profile?.name ?? "não informado"}
@@ -271,7 +289,13 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
     throw new Error("Exercise catalog is empty.");
   }
 
-  const prompt = buildPrompt(context);
+  // Gate de segurança determinístico: a IA só roda em status verde ou amarelo.
+  const gate = evaluateGate(context.anamnesis, context.consent);
+  if (gate.status === "vermelho" || gate.status === "liberacao" || gate.status === "insuficiente") {
+    throw new GateBlockedError(gate);
+  }
+
+  const prompt = buildPrompt(context, gate);
   const allowedNames = context.exercises.map((exercise) => exercise.name);
 
   const openai = new OpenAI({ apiKey });
@@ -325,6 +349,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       warning: plan.warning,
       workouts: plan.workouts,
       context_snapshot: {
+        gate,
         training: context.training,
         weights: context.weights.slice(0, 4),
         side_effects: context.sideEffects.slice(0, 5),

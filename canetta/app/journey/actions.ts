@@ -412,7 +412,7 @@ export async function loadAiWorkoutPlanAction() {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { authenticated: false as const };
 
-  const [planResult, trainingResult] = await Promise.all([
+  const [planResult, trainingResult, anamnesisResult] = await Promise.all([
     supabase
       .from("canetta_ai_workout_plans")
       .select("week_start, focus, rationale, risk_level, nutrition_advice, warning, workouts, created_at")
@@ -424,6 +424,11 @@ export async function loadAiWorkoutPlanAction() {
       .from("canetta_training_profiles")
       .select("experience_level, training_location, days_per_week, minutes_per_session, limitations")
       .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("canetta_anamnesis")
+      .select("data, consent")
+      .eq("user_id", user.id)
       .maybeSingle()
   ]);
 
@@ -431,11 +436,35 @@ export async function loadAiWorkoutPlanAction() {
     return { authenticated: true as const, error: "Não foi possível carregar o plano agora." };
   }
 
+  const { evaluateGate } = await import("@/lib/ai/anamnesis");
+  const anamnesisData = (anamnesisResult.data?.data as import("@/lib/ai/anamnesis").AnamnesisData | undefined) ?? null;
+  const consent = anamnesisResult.data?.consent === true;
+  const gate = evaluateGate(anamnesisData, consent);
+
   return {
     authenticated: true as const,
     plan: (planResult.data as AiWorkoutPlanRow | null) ?? null,
-    trainingProfile: (trainingResult.data as TrainingProfileRow | null) ?? null
+    trainingProfile: (trainingResult.data as TrainingProfileRow | null) ?? null,
+    anamnesis: anamnesisData,
+    gate
   };
+}
+
+export async function saveAnamnesisAction(data: import("@/lib/ai/anamnesis").AnamnesisData, consent: boolean) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { saved: false as const, authenticated: false as const };
+
+  const { error } = await supabase.from("canetta_anamnesis").upsert(
+    { user_id: user.id, data, consent, updated_at: new Date().toISOString() },
+    { onConflict: "user_id" }
+  );
+
+  if (error) {
+    return { saved: false as const, authenticated: true as const, error: "Não foi possível salvar a triagem agora." };
+  }
+
+  const { evaluateGate } = await import("@/lib/ai/anamnesis");
+  return { saved: true as const, authenticated: true as const, gate: evaluateGate(data, consent) };
 }
 
 export async function saveTrainingProfileAction(input: TrainingProfileRow) {
@@ -467,8 +496,15 @@ export async function generateAiWorkoutPlanAction() {
   if (!user || !supabase) return { authenticated: false as const };
 
   try {
-    const { prescribeWeeklyWorkout } = await import("@/lib/ai/prescribe-workout");
-    await prescribeWeeklyWorkout(user.id);
+    const { prescribeWeeklyWorkout, GateBlockedError } = await import("@/lib/ai/prescribe-workout");
+    try {
+      await prescribeWeeklyWorkout(user.id);
+    } catch (err) {
+      if (err instanceof GateBlockedError) {
+        return { authenticated: true as const, generated: false as const, blockedGate: err.gate };
+      }
+      throw err;
+    }
   } catch (err) {
     console.error("generateAiWorkoutPlanAction failed:", err);
     return {
