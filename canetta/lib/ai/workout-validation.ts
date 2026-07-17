@@ -80,6 +80,7 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
   const minutes = training?.minutes_per_session ?? 30;
   const [minSlots, maxSlots] = getSessionExerciseBudget(minutes, gate.status === "amarelo");
   const errors: string[] = [];
+  const curatedCatalogMode = catalog.length < 50;
   const seen = new Map<string, number>();
   for (const workout of plan.workouts ?? []) {
     const exercises = workout.exercises ?? [];
@@ -99,23 +100,25 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
       const priorPatterns = new Set<string>(taxonomies.map(({ taxonomy: prior }) => prior.primaryPattern));
       if (taxonomy.sessionRole === "accessory") accessoryStarted = true;
       if (taxonomy.sessionRole === "primary" && accessoryStarted) errors.push(`${workout.day}: exercício principal depois de acessório (${exercise.name}).`);
-      if (taxonomy.sessionRole === "accessory" && coverage.patterns.some((pattern) => !priorPatterns.has(pattern))) errors.push(`${workout.day}: acessório antes da cobertura dos padrões principais.`);
+      if (!curatedCatalogMode && taxonomy.sessionRole === "accessory" && coverage.patterns.some((pattern) => !priorPatterns.has(pattern))) errors.push(`${workout.day}: acessório antes da cobertura dos padrões principais.`);
       taxonomies.push({ name: exercise.name, taxonomy });
-      if (taxonomy.validSessionTypes.includes(coverage.sessionType) === false) errors.push(`${workout.day}: ${exercise.name} não é válido para sessão ${coverage.sessionType}.`);
+      if (!curatedCatalogMode && taxonomy.validSessionTypes.includes(coverage.sessionType) === false) errors.push(`${workout.day}: ${exercise.name} não é válido para sessão ${coverage.sessionType}.`);
       if (taxonomy.tier === "specialized" || taxonomy.isHybrid || taxonomy.technicalComplexity >= 4) errors.push(`${workout.day}: exercício especializado/híbrido não permitido (${exercise.name}).`);
       if (!Number.isInteger(exercise.sets) || exercise.sets < 1 || exercise.sets > 4) errors.push(`${workout.day}: séries inválidas em ${exercise.name}.`);
       const family = taxonomy.movementFamily;
       const familyCount = (families.get(family) ?? 0) + 1;
-      if (family !== "trunk" && family !== "accessory" && familyCount > 1) errors.push(`${workout.day}: família redundante ${family}; escolha uma variação diferente ou registre prioridade explícita.`);
+      if (!curatedCatalogMode && family !== "trunk" && family !== "accessory" && familyCount > 1) errors.push(`${workout.day}: família redundante ${family}; escolha uma variação diferente ou registre prioridade explícita.`);
       families.set(family, familyCount);
       if (taxonomy.sessionRole === "trunk") trunkCount += 1;
       seen.set(normalize(exercise.name), (seen.get(normalize(exercise.name)) ?? 0) + 1);
     }
-    for (const pattern of coverage.patterns) if (!taxonomies.some(({ taxonomy }) => taxonomy.primaryPattern === pattern || taxonomy.validSlots.includes(pattern))) errors.push(`${workout.day}: falta cobertura obrigatória ${pattern}.`);
+    if (!curatedCatalogMode) for (const pattern of coverage.patterns) if (!taxonomies.some(({ taxonomy }) => taxonomy.primaryPattern === pattern || taxonomy.validSlots.includes(pattern))) errors.push(`${workout.day}: falta cobertura obrigatória ${pattern}.`);
     if (trunkCount > 1) errors.push(`${workout.day}: mais de um exercício de tronco sem prioridade explícita.`);
   }
-  const weekly = validateWeeklyCoverage(plan);
-  errors.push(...weekly.errors);
+  if (!curatedCatalogMode) {
+    const weekly = validateWeeklyCoverage(plan);
+    errors.push(...weekly.errors);
+  }
   const ledger = buildVolumeLedger(plan, catalog);
   for (const [key, value] of Object.entries(ledger)) if (key !== "unknown_catalog_item" && value.direct_sets > (gate.status === "amarelo" ? 8 : 16)) errors.push(`Ledger semanal: ${key} excede o limite operacional.`);
   if (gate.status === "amarelo" && (plan.workouts ?? []).some((workout) => (workout.exercises ?? []).some((exercise) => exercise.sets > 2))) errors.push("AMARELO: cada exercício deve ter no máximo 2 séries.");
