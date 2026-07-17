@@ -1,0 +1,12 @@
+[
+  {"profile":"beginner-gym","location":"academia","experience":"nunca_treinei"},
+  {"profile":"beginner-home-empty","location":"casa_sem_equipamento","experience":"nunca_treinei"},
+  {"profile":"beginner-home-weights","location":"casa_com_equipamento","experience":"nunca_treinei"},
+  {"profile":"returning-gym","location":"academia","experience":"retomando"},
+  {"profile":"regular-gym","location":"academia","experience":"treino_regular"},
+  {"profile":"knee-limitation","location":"academia","experience":"retomando","limitation":"joelho"},
+  {"profile":"shoulder-limitation","location":"academia","experience":"retomando","limitation":"ombro"},
+  {"profile":"incomplete-equipment","location":"casa_com_equipamento","experience":"retomando","equipment_missing":["dumbbell"]},
+  {"profile":"refused-exercise","location":"academia","experience":"nunca_treinei","refused":["leg press"]},
+  {"profile":"empty-slot","location":"casa_sem_equipamento","experience":"nunca_treinei","expected_failure":"NO_ELIGIBLE_EXERCISE_FOR_SLOT"}
+]

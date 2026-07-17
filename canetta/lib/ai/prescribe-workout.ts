@@ -241,7 +241,7 @@ async function gatherUserContext(userId: string) {
   }
 
   const exercises = await exerciseQuery;
-  const rankedCatalog = rankCatalog(exercises.data ?? [], training?.experience_level, training?.training_location).slice(0, 280).map(({ item }) => item);
+  const rankedCatalog = rankCatalog(exercises.data ?? [], training?.experience_level, training?.training_location, { anchorNames: (workoutLogs.data ?? []).map((log) => log.exercise_name) }).slice(0, 280).map(({ item }) => item);
 
   const anamnesis = (anamnesisRow.data?.data as AnamnesisData | undefined) ?? null;
   const consent = anamnesisRow.data?.consent === true;
@@ -485,6 +485,12 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   const prompt = buildPrompt(context, gate);
   const allowedNames = context.exercises.map((exercise) => exercise.name);
   const template = selectWorkoutTemplate(context.training);
+  const requiredPatterns = new Set(template.sessions.flatMap((session) => session.patterns.map(slotPattern)));
+  const availablePatterns = new Set(context.exercises.flatMap((exercise) => classifyExercise(exercise).validSlots));
+  const missingPattern = [...requiredPatterns].find((pattern) => !availablePatterns.has(pattern));
+  if (missingPattern) {
+    throw new Error(JSON.stringify({ code: "NO_ELIGIBLE_EXERCISE_FOR_SLOT", slot: missingPattern, template: template.key, context: { experience: context.training?.experience_level, location: context.training?.training_location } }));
+  }
 
   const openai = new OpenAI({ apiKey });
   const response = await requestPlanWithRetry(openai, {

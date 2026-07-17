@@ -142,11 +142,12 @@ export function isProductionEligible(input: ExerciseInput): boolean {
   return Boolean(input.production_eligible) && input.name_pt_status === "reviewed" && Boolean(input.media_verified) && taxonomy.tier !== "specialized" && !taxonomy.isHybrid;
 }
 
-export function rankCatalog<T extends ExerciseInput>(items: T[], experience: "nunca_treinei" | "retomando" | "treino_regular" | undefined, location?: string | null) {
+export function rankCatalog<T extends ExerciseInput>(items: T[], experience: "nunca_treinei" | "retomando" | "treino_regular" | undefined, location?: string | null, options?: { anchorNames?: string[] }) {
+  const anchors = new Set((options?.anchorNames ?? []).map(n));
   const ranked = items
     .map((item) => ({ item, taxonomy: classifyExercise(item) }))
     .filter(({ item, taxonomy }) => isProductionEligible(item) && taxonomy.validSessionTypes.length > 0 && (experience === "nunca_treinei" ? taxonomy.tier === "base" && taxonomy.technicalComplexity <= 2 && !taxonomy.isHybrid : experience === "retomando" ? taxonomy.tier !== "specialized" && taxonomy.technicalComplexity <= 3 && !taxonomy.isHybrid : taxonomy.technicalComplexity <= 3 || taxonomy.tier === "base"))
-    .map(({ item, taxonomy }) => ({ item, taxonomy, score: taxonomy.qualityScore + (location === "academia" && taxonomy.tier === "base" ? 10 : 0) + (item.name_pt_status === "reviewed" ? 15 : 0) }))
+    .map(({ item, taxonomy }) => ({ item, taxonomy, score: taxonomy.qualityScore + (location === "academia" && taxonomy.tier === "base" ? 10 : 0) + (item.name_pt_status === "reviewed" ? 15 : 0) + (anchors.has(n(item.name)) ? 100 : 0) }))
     .sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name));
   return Array.from(new Map(ranked.map((entry) => [n(entry.item.name), entry])).values());
 }

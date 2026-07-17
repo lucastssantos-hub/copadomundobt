@@ -63,6 +63,19 @@ function findCatalogItem(name: string, catalog: CatalogExercise[]) {
   return catalog.find((candidate) => normalize(candidate.name) === normalize(name));
 }
 
+export function validateWeeklyCoverage(plan: AiWorkoutPlan) {
+  const errors: string[] = [];
+  const patterns = new Set<string>();
+  for (const workout of plan.workouts ?? []) {
+    const sessionPatterns = new Set((workout.exercises ?? []).map((exercise) => exercise.pattern).filter(Boolean));
+    for (const pattern of sessionPatterns) patterns.add(pattern as string);
+    if (normalize(workout.focus).includes("superior") || normalize(workout.focus).includes("inferior")) continue;
+    for (const pattern of ["knee_dominant", "hip_dominant", "horizontal_push", "horizontal_pull"]) if (!sessionPatterns.has(pattern)) errors.push(`${workout.day}: full body sem ${pattern}.`);
+  }
+  for (const pattern of ["knee_dominant", "hip_dominant", "horizontal_push", "horizontal_pull"]) if (!patterns.has(pattern)) errors.push(`Semana sem cobertura de ${pattern}.`);
+  return { ok: errors.length === 0, errors };
+}
+
 export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfile | null, gate: GateResult, catalog: CatalogExercise[]) {
   const minutes = training?.minutes_per_session ?? 30;
   const [minSlots, maxSlots] = getSessionExerciseBudget(minutes, gate.status === "amarelo");
@@ -77,11 +90,16 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
     const taxonomies: Array<{ name: string; taxonomy: ExerciseTaxonomy }> = [];
     const families = new Map<string, number>();
     let trunkCount = 0;
+    let accessoryStarted = false;
     for (const exercise of exercises) {
       const item = findCatalogItem(exercise.name, catalog);
       if (!item) { errors.push(`${workout.day}: exercício fora do catálogo permitido (${exercise.name}).`); continue; }
       if (!isProductionEligible(item)) errors.push(`${workout.day}: exercício não elegível para produção (${exercise.name}); requer nome/mídia/taxonomia revisados.`);
       const taxonomy = classifyExercise(item);
+      const priorPatterns = new Set<string>(taxonomies.map(({ taxonomy: prior }) => prior.primaryPattern));
+      if (taxonomy.sessionRole === "accessory") accessoryStarted = true;
+      if (taxonomy.sessionRole === "primary" && accessoryStarted) errors.push(`${workout.day}: exercício principal depois de acessório (${exercise.name}).`);
+      if (taxonomy.sessionRole === "accessory" && coverage.patterns.some((pattern) => !priorPatterns.has(pattern))) errors.push(`${workout.day}: acessório antes da cobertura dos padrões principais.`);
       taxonomies.push({ name: exercise.name, taxonomy });
       if (taxonomy.validSessionTypes.includes(coverage.sessionType) === false) errors.push(`${workout.day}: ${exercise.name} não é válido para sessão ${coverage.sessionType}.`);
       if (taxonomy.tier === "specialized" || taxonomy.isHybrid || taxonomy.technicalComplexity >= 4) errors.push(`${workout.day}: exercício especializado/híbrido não permitido (${exercise.name}).`);
@@ -91,15 +109,13 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
       if (family !== "trunk" && family !== "accessory" && familyCount > 1) errors.push(`${workout.day}: família redundante ${family}; escolha uma variação diferente ou registre prioridade explícita.`);
       families.set(family, familyCount);
       if (taxonomy.sessionRole === "trunk") trunkCount += 1;
-      if (taxonomy.sessionRole === "accessory" && taxonomies.some(({ taxonomy: prior }) => coverage.patterns.some((pattern) => prior.primaryPattern === pattern) === false)) errors.push(`${workout.day}: acessório antes da cobertura dos padrões principais.`);
       seen.set(normalize(exercise.name), (seen.get(normalize(exercise.name)) ?? 0) + 1);
     }
     for (const pattern of coverage.patterns) if (!taxonomies.some(({ taxonomy }) => taxonomy.primaryPattern === pattern || taxonomy.validSlots.includes(pattern))) errors.push(`${workout.day}: falta cobertura obrigatória ${pattern}.`);
     if (trunkCount > 1) errors.push(`${workout.day}: mais de um exercício de tronco sem prioridade explícita.`);
-    for (let index = 1; index < taxonomies.length; index += 1) {
-      if (taxonomies[index].taxonomy.sessionRole === "primary" && taxonomies[index - 1].taxonomy.sessionRole === "accessory") errors.push(`${workout.day}: exercício principal depois de acessório (${taxonomies[index].name}).`);
-    }
   }
+  const weekly = validateWeeklyCoverage(plan);
+  errors.push(...weekly.errors);
   const ledger = buildVolumeLedger(plan, catalog);
   for (const [key, value] of Object.entries(ledger)) if (key !== "unknown_catalog_item" && value.direct_sets > (gate.status === "amarelo" ? 8 : 16)) errors.push(`Ledger semanal: ${key} excede o limite operacional.`);
   if (gate.status === "amarelo" && (plan.workouts ?? []).some((workout) => (workout.exercises ?? []).some((exercise) => exercise.sets > 2))) errors.push("AMARELO: cada exercício deve ter no máximo 2 séries.");

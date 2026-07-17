@@ -12,7 +12,9 @@
     "enrich:exercises": "node scripts/enrich-exercises.mjs",
     "seed:essential-exercises": "node scripts/seed-essential-exercises.mjs",
     "audit:exercises": "node scripts/audit-exercise-catalog.mjs",
-    "test:exercise-taxonomy": "node scripts/test-exercise-taxonomy.mjs && node scripts/test-essential-manifest.mjs"
+    "audit:exercise-coverage": "node scripts/audit-exercise-coverage.mjs",
+    "audit:exercise-blocked": "node scripts/audit-exercise-blocked.mjs",
+    "test:exercise-taxonomy": "node scripts/test-exercise-taxonomy.mjs && node scripts/test-essential-manifest.mjs && node scripts/test-synthetic-scenarios.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
