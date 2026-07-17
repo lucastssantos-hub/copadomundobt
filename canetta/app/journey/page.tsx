@@ -23,9 +23,11 @@ import {
   saveReminderAction,
   saveRoutineAction,
   saveSymptomAction,
+  saveTrainingProfileAction,
   saveWorkoutAction,
   sendTestPushAction,
-  saveWeightAction
+  saveWeightAction,
+  type TrainingProfileRow
 } from "./actions";
 import { signOutAction } from "@/app/auth/actions";
 
@@ -181,6 +183,14 @@ export default function JourneyPage() {
   const [aiPlanLoaded, setAiPlanLoaded] = useState(false);
   const [aiPlanBusy, setAiPlanBusy] = useState(false);
   const [aiPlanError, setAiPlanError] = useState("");
+  const [aiTraining, setAiTraining] = useState<TrainingProfileRow | null>(null);
+  const [anamneseOpen, setAnamneseOpen] = useState(false);
+  const [anamneseBusy, setAnamneseBusy] = useState(false);
+  const [anamneseLevel, setAnamneseLevel] = useState("");
+  const [anamneseLocation, setAnamneseLocation] = useState("");
+  const [anamneseDays, setAnamneseDays] = useState("");
+  const [anamneseMinutes, setAnamneseMinutes] = useState("");
+  const [anamneseLimitations, setAnamneseLimitations] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -298,8 +308,63 @@ export default function JourneyPage() {
     setAiPlanLoaded(true);
     loadAiWorkoutPlanAction().then((result) => {
       if ("plan" in result) setAiPlan(result.plan ?? null);
+      if ("trainingProfile" in result) setAiTraining(result.trainingProfile ?? null);
     }).catch(() => {});
   }, [ready, authenticated, aiPlanLoaded, st.tab]);
+
+  const ANAMNESE_LEVELS: Array<[string, TrainingProfileRow["experience_level"]]> = [
+    ["Nunca treinei", "nunca_treinei"],
+    ["Já treinei, parei", "retomando"],
+    ["Treino regularmente", "treino_regular"]
+  ];
+  const ANAMNESE_LOCATIONS: Array<[string, TrainingProfileRow["training_location"]]> = [
+    ["Casa, sem equipamento", "casa_sem_equipamento"],
+    ["Casa, com equipamento", "casa_com_equipamento"],
+    ["Academia", "academia"]
+  ];
+
+  const openAnamnese = () => {
+    setAnamneseLevel(aiTraining ? ANAMNESE_LEVELS.find(([, code]) => code === aiTraining.experience_level)?.[0] ?? "" : "");
+    setAnamneseLocation(aiTraining ? ANAMNESE_LOCATIONS.find(([, code]) => code === aiTraining.training_location)?.[0] ?? "" : "");
+    setAnamneseDays(aiTraining ? String(aiTraining.days_per_week) : "");
+    setAnamneseMinutes(aiTraining ? `${aiTraining.minutes_per_session} min` : "");
+    setAnamneseLimitations(aiTraining?.limitations ?? "");
+    setAnamneseOpen(true);
+  };
+
+  const saveAnamnese = async () => {
+    const level = ANAMNESE_LEVELS.find(([label]) => label === anamneseLevel)?.[1];
+    const location = ANAMNESE_LOCATIONS.find(([label]) => label === anamneseLocation)?.[1];
+    const days = Number(anamneseDays);
+    const minutes = Number(anamneseMinutes.replace(/\D/g, ""));
+    if (!level || !location || !days || !minutes) {
+      setAiPlanError("Preencha nível, local, dias e tempo por sessão.");
+      return;
+    }
+    setAnamneseBusy(true);
+    setAiPlanError("");
+    const payload: TrainingProfileRow = {
+      experience_level: level,
+      training_location: location,
+      days_per_week: days,
+      minutes_per_session: minutes,
+      limitations: anamneseLimitations.trim() || null
+    };
+    try {
+      const result = await saveTrainingProfileAction(payload);
+      if (result.saved) {
+        setAiTraining(payload);
+        setAnamneseOpen(false);
+        toast("Anamnese salva.");
+      } else if ("error" in result && result.error) {
+        setAiPlanError(result.error);
+      }
+    } catch {
+      setAiPlanError("Não foi possível salvar a anamnese agora.");
+    } finally {
+      setAnamneseBusy(false);
+    }
+  };
 
   const generateAiPlan = async () => {
     setAiPlanBusy(true);
@@ -1390,7 +1455,36 @@ export default function JourneyPage() {
 
                 {st.treinoSub === "plano" && (
                   <>
-                    {aiPlan ? (
+                    {(!aiTraining || anamneseOpen) ? (
+                      <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14 }}>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Anamnese rápida</div>
+                          <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.5, marginTop: 4 }}>4 perguntas para o plano respeitar seu nível, seu equipamento e seu tempo.</div>
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>SEU NÍVEL</div>
+                          <ChipRow options={["Nunca treinei", "Já treinei, parei", "Treino regularmente"]} current={anamneseLevel} onPick={setAnamneseLevel} wrap />
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>ONDE VAI TREINAR</div>
+                          <ChipRow options={["Casa, sem equipamento", "Casa, com equipamento", "Academia"]} current={anamneseLocation} onPick={setAnamneseLocation} wrap />
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>DIAS POR SEMANA</div>
+                          <ChipRow options={["2", "3", "4"]} current={anamneseDays} onPick={setAnamneseDays} equal />
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>TEMPO POR SESSÃO</div>
+                          <ChipRow options={["30 min", "45 min", "60 min"]} current={anamneseMinutes} onPick={setAnamneseMinutes} equal />
+                        </div>
+                        <div>
+                          <div style={{ ...fieldLabel, marginBottom: 6 }}>DOR, LESÃO OU LIMITAÇÃO (OPCIONAL)</div>
+                          <input className="j-in" value={anamneseLimitations} onChange={(e) => setAnamneseLimitations(e.target.value)} placeholder="Ex.: dor no joelho direito, hérnia lombar…" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} />
+                        </div>
+                        <button type="button" disabled={anamneseBusy} onClick={saveAnamnese} style={{ ...primaryBtn, padding: 14, fontSize: 14.5, opacity: anamneseBusy ? 0.6 : 1, cursor: anamneseBusy ? "wait" : "pointer" }}>{anamneseBusy ? "Salvando…" : "Salvar anamnese"}</button>
+                        {aiTraining && <button type="button" onClick={() => setAnamneseOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 6 }}>Cancelar</button>}
+                      </div>
+                    ) : aiPlan ? (
                       <>
                         <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 8, background: "#EAF5F2", border: "1.5px solid #CBE3DC" }}>
                           <div style={{ fontSize: 11, fontWeight: 800, color: "#0E6B5C", letterSpacing: 0.4 }}>SEMANA DE {new Date(`${aiPlan.week_start}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</div>
@@ -1428,6 +1522,7 @@ export default function JourneyPage() {
                           <div style={{ ...cardWhite, fontSize: 12.5, color: "#4B5F59", lineHeight: 1.5 }}>🥗 {aiPlan.nutrition_advice}</div>
                         )}
                         <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 13.5, fontWeight: 700, cursor: aiPlanBusy ? "wait" : "pointer", opacity: aiPlanBusy ? 0.6 : 1 }}>{aiPlanBusy ? "Gerando novo plano…" : "Gerar plano atualizado"}</button>
+                        <button type="button" onClick={openAnamnese} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>✏️ Editar anamnese (nível, equipamento, dias)</button>
                       </>
                     ) : (
                       <div style={{ textAlign: "center", padding: "32px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>

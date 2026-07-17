@@ -25,44 +25,57 @@ export type AiWorkoutPlan = {
   warning: string | null;
 };
 
-const PLAN_SCHEMA = {
-  type: "object",
-  properties: {
-    weekFocus: { type: "string" },
-    riskLevel: { type: "string", enum: ["low", "medium", "high"] },
-    rationale: { type: "string" },
-    workouts: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          day: { type: "string" },
-          focus: { type: "string" },
-          exercises: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-                sets: { type: "integer" },
-                reps: { type: "string" },
-                why: { type: "string" }
-              },
-              required: ["name", "sets", "reps", "why"],
-              additionalProperties: false
+export type TrainingProfile = {
+  experience_level: "nunca_treinei" | "retomando" | "treino_regular";
+  training_location: "casa_sem_equipamento" | "casa_com_equipamento" | "academia";
+  days_per_week: number;
+  minutes_per_session: number;
+  limitations: string | null;
+};
+
+const HOME_NO_EQUIPMENT = ["body weight"];
+const HOME_WITH_EQUIPMENT = ["body weight", "band", "dumbbell", "kettlebell", "stability ball"];
+
+function buildPlanSchema(allowedExerciseNames: string[]) {
+  return {
+    type: "object",
+    properties: {
+      weekFocus: { type: "string" },
+      riskLevel: { type: "string", enum: ["low", "medium", "high"] },
+      rationale: { type: "string" },
+      workouts: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            day: { type: "string" },
+            focus: { type: "string" },
+            exercises: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string", enum: allowedExerciseNames },
+                  sets: { type: "integer" },
+                  reps: { type: "string" },
+                  why: { type: "string" }
+                },
+                required: ["name", "sets", "reps", "why"],
+                additionalProperties: false
+              }
             }
-          }
-        },
-        required: ["day", "focus", "exercises"],
-        additionalProperties: false
-      }
+          },
+          required: ["day", "focus", "exercises"],
+          additionalProperties: false
+        }
+      },
+      nutritionAdvice: { type: "string" },
+      warning: { type: ["string", "null"] }
     },
-    nutritionAdvice: { type: "string" },
-    warning: { type: ["string", "null"] }
-  },
-  required: ["weekFocus", "riskLevel", "rationale", "workouts", "nutritionAdvice", "warning"],
-  additionalProperties: false
-} as const;
+    required: ["weekFocus", "riskLevel", "rationale", "workouts", "nutritionAdvice", "warning"],
+    additionalProperties: false
+  };
+}
 
 function currentWeekStart() {
   const now = new Date();
@@ -78,19 +91,36 @@ async function gatherUserContext(userId: string) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [profile, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises] = await Promise.all([
+  const [profile, trainingProfile, weights, sideEffects, checkins, applications, missedDoses, workoutLogs] = await Promise.all([
     supabase.from("canetta_profiles").select("name, medication, current_dose, frequency, height_cm, goal_weight, biggest_difficulty, created_at").eq("user_id", userId).maybeSingle(),
+    supabase.from("canetta_training_profiles").select("experience_level, training_location, days_per_week, minutes_per_session, limitations").eq("user_id", userId).maybeSingle(),
     supabase.from("canetta_weight_entries").select("weight, recorded_at").eq("user_id", userId).order("recorded_at", { ascending: false }).limit(8),
     supabase.from("canetta_side_effects").select("types, intensity, duration, recorded_at").eq("user_id", userId).gte("recorded_at", sevenDaysAgo).order("recorded_at", { ascending: false }).limit(10),
     supabase.from("canetta_daily_checkins").select("date, hunger_level, energy_level").eq("user_id", userId).order("date", { ascending: false }).limit(7),
     supabase.from("canetta_dose_applications").select("applied_at").eq("user_id", userId).gte("applied_at", fourteenDaysAgo),
     supabase.from("canetta_missed_doses").select("reason, scheduled_for").eq("user_id", userId).gte("scheduled_for", fourteenDaysAgo),
-    supabase.from("canetta_workout_logs").select("exercise_name, body_part, sets_completed, reps_completed, difficulty_felt, completed_at").eq("user_id", userId).order("completed_at", { ascending: false }).limit(15),
-    supabase.from("canetta_exercises").select("name, body_part, equipment, target_muscle, gif_url, image_url").order("name").limit(400)
+    supabase.from("canetta_workout_logs").select("exercise_name, body_part, sets_completed, reps_completed, difficulty_felt, completed_at").eq("user_id", userId).order("completed_at", { ascending: false }).limit(15)
   ]);
+
+  const training = (trainingProfile.data as TrainingProfile | null) ?? null;
+
+  let exerciseQuery = supabase
+    .from("canetta_exercises")
+    .select("name, body_part, equipment, target_muscle, gif_url, image_url")
+    .order("name")
+    .limit(280);
+
+  if (training?.training_location === "casa_sem_equipamento") {
+    exerciseQuery = exerciseQuery.in("equipment", HOME_NO_EQUIPMENT);
+  } else if (training?.training_location === "casa_com_equipamento") {
+    exerciseQuery = exerciseQuery.in("equipment", HOME_WITH_EQUIPMENT);
+  }
+
+  const exercises = await exerciseQuery;
 
   return {
     profile: profile.data,
+    training,
     weights: weights.data ?? [],
     sideEffects: sideEffects.data ?? [],
     checkins: checkins.data ?? [],
@@ -101,22 +131,45 @@ async function gatherUserContext(userId: string) {
   };
 }
 
+const LEVEL_LABEL: Record<TrainingProfile["experience_level"], string> = {
+  nunca_treinei: "Nunca treinou com regularidade",
+  retomando: "Já treinou, mas está parado(a) — retomando agora",
+  treino_regular: "Treina regularmente há 6+ meses"
+};
+
+const LOCATION_LABEL: Record<TrainingProfile["training_location"], string> = {
+  casa_sem_equipamento: "Em casa, SEM equipamento (apenas peso corporal)",
+  casa_com_equipamento: "Em casa, com elásticos/halteres/kettlebell",
+  academia: "Academia completa"
+};
+
 function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>) {
-  const { profile, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises } = context;
+  const { profile, training, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises } = context;
 
   const weightLines = weights.map((w) => `${new Date(w.recorded_at).toISOString().slice(0, 10)}: ${w.weight} kg`).join("\n") || "Sem registros de peso.";
   const symptomLines = sideEffects.map((s) => `${new Date(s.recorded_at).toISOString().slice(0, 10)}: ${(s.types ?? []).join(", ")} (intensidade ${s.intensity ?? "?"}/10, duração ${s.duration ?? "?"})`).join("\n") || "Sem sintomas registrados nos últimos 7 dias.";
   const checkinLines = checkins.map((c) => `${c.date}: fome ${c.hunger_level ?? "?"}/10, energia ${c.energy_level ?? "?"}/10`).join("\n") || "Sem check-ins diários recentes.";
   const workoutLines = workoutLogs.map((w) => `${new Date(w.completed_at).toISOString().slice(0, 10)}: ${w.exercise_name}${w.sets_completed ? ` ${w.sets_completed}x${w.reps_completed ?? "?"}` : ""}${w.difficulty_felt ? ` (sentiu: ${w.difficulty_felt})` : ""}`).join("\n") || "Nenhum treino registrado ainda.";
   const missedLines = missedDoses.map((m) => `${new Date(m.scheduled_for).toISOString().slice(0, 10)}: ${m.reason ?? "motivo não informado"}`).join("\n") || "Nenhuma dose perdida registrada.";
-  const catalogNames = exercises.map((e) => `${e.name}${e.body_part ? ` [${e.body_part}]` : ""}${e.equipment ? ` (${e.equipment})` : ""}`).join("; ");
+  const catalogLines = exercises.map((e) => `- ${e.name} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`).join("\n");
 
   const treatmentWeeks = profile?.created_at
     ? Math.max(1, Math.ceil((Date.now() - new Date(profile.created_at).getTime()) / (7 * 24 * 60 * 60 * 1000)))
     : null;
 
+  const anamnese = training
+    ? `Nível de experiência: ${LEVEL_LABEL[training.experience_level]}
+Local e equipamento: ${LOCATION_LABEL[training.training_location]}
+Dias disponíveis por semana: ${training.days_per_week}
+Tempo por sessão: ~${training.minutes_per_session} minutos
+Limitações/dores relatadas: ${training.limitations?.trim() || "nenhuma relatada"}`
+    : "Anamnese não preenchida — assuma iniciante absoluto, treino em casa sem equipamento, 3 dias/semana, 30 min/sessão, e seja conservador.";
+
   return `Você é um educador físico especialista em pacientes em tratamento com agonistas GLP-1 (Ozempic, Mounjaro, Saxenda, Wegovy, tirzepatida).
-Sua função é montar um plano de treino SEMANAL seguro e realista, baseado nos dados registrados pelo próprio usuário no app Canetta.
+Sua função é montar um plano de treino SEMANAL seguro e realista, baseado na anamnese e nos dados registrados pelo próprio usuário no app Canetta.
+
+=== ANAMNESE DE TREINO ===
+${anamnese}
 
 === PERFIL ===
 Nome: ${profile?.name ?? "não informado"}
@@ -142,47 +195,60 @@ ${missedLines}
 === HISTÓRICO DE TREINO (mais recente primeiro) ===
 ${workoutLines}
 
-=== CATÁLOGO DE EXERCÍCIOS DISPONÍVEIS (use preferencialmente estes nomes) ===
-${catalogNames || "Catálogo vazio — use exercícios de peso corporal clássicos."}
+=== CATÁLOGO DE EXERCÍCIOS PERMITIDOS ===
+Você SÓ pode prescrever exercícios desta lista, usando o nome EXATAMENTE como escrito.
+Leia a região/alvo/equipamento de cada um — escolha pelo que o exercício realmente trabalha, não pelo nome.
+${catalogLines}
 
 === DIRETRIZES BASEADAS EM EVIDÊNCIA (obrigatórias) ===
 
 RISCO CENTRAL (literatura GLP-1):
-1. Estudos com semaglutida e tirzepatida mostram que 25-40% do peso perdido pode ser massa magra (análises de composição corporal dos ensaios STEP/SURMOUNT; estudo SEMALEAN). Treino resistido + proteína adequada reduz essa perda a quase zero (meta-análise 2022 de treino resistido durante emagrecimento; séries de casos em que pacientes que preservaram massa magra treinavam força 3-5x/semana).
+1. Estudos com semaglutida e tirzepatida mostram que 25-40% do peso perdido pode ser massa magra (análises de composição corporal dos ensaios STEP/SURMOUNT; estudo SEMALEAN). Treino resistido + proteína adequada reduz essa perda a quase zero (meta-análise 2022; séries de casos em que quem preservou massa magra treinava força 3-5x/semana).
 
-FREQUÊNCIA (ACSM 2026):
-2. Todos os grandes grupos musculares >= 2x/semana. Sem histórico de treino: 2-3 sessões full-body/semana em dias NÃO consecutivos (>=48h de recuperação por grupo muscular). Com histórico consistente: até 4 dias (divisão superior/inferior).
+NÍVEL DO ALUNO (anamnese):
+2. "Nunca treinou": full-body, exercícios simples e estáveis, 2 séries por exercício, 8-12 reps, RPE 5-6 (fáceis de propósito) nas 2 primeiras semanas. Progressão só depois de consolidar técnica.
+3. "Retomando": full-body, 2-3 séries, RPE 6-7. Voltar com ~60% do volume que fazia antes; não assumir a carga antiga.
+4. "Treina regularmente": pode usar divisão superior/inferior, 3 séries, RPE 7-8, exercícios mais complexos do catálogo.
+
+FREQUÊNCIA E DURAÇÃO (ACSM 2026 + anamnese):
+5. Monte EXATAMENTE o número de dias informado na anamnese (default 3), em dias não consecutivos (>=48h por grupo muscular). Grandes grupos >= 2x/semana.
+6. Quantidade de exercícios por sessão conforme o tempo disponível: ~30 min -> 4-5 exercícios; ~45 min -> 5-6; ~60 min -> 6-8.
 
 VOLUME (ACSM 2026):
-3. Mínimo 2 séries por exercício; padrão 2-3 séries. Iniciante: 4-8 séries semanais por grupo muscular, progredindo gradualmente. Consistência vale mais que complexidade.
+7. Mínimo 2 séries por exercício; padrão 2-3. Iniciante: 4-8 séries semanais por grupo muscular. Consistência vale mais que complexidade.
 
-INTENSIDADE E REPETIÇÕES:
-4. Iniciante: 8-12 repetições com esforço percebido RPE 6-7 (sobrando 2-3 repetições "no tanque"). NUNCA prescrever até a falha. Execução em velocidade lenta/moderada (ACSM para destreinados). Progredir carga somente quando completar todas as séries no topo da faixa de reps com RPE <= 7.
+INTENSIDADE E PROGRESSÃO:
+8. Nunca prescrever até a falha. Execução lenta/moderada para destreinados. Progredir carga OU volume no máximo 5-10% por semana, nunca os dois. "Difícil" na semana anterior -> manter/reduzir; "fácil" -> progredir dentro do limite.
+9. Descanso: 60-90s entre séries; até 120s em multiarticulares.
 
-PROGRESSÃO:
-5. Aumentar carga OU volume no máximo 5-10% por semana — nunca os dois na mesma semana (regra dos 10%). Se o usuário sentiu "difícil" na semana anterior: manter ou reduzir; "fácil": progredir dentro do limite.
+EQUIPAMENTO:
+10. Prescreva apenas exercícios compatíveis com o equipamento da anamnese (o catálogo já está filtrado — respeite-o).
 
-DESCANSO:
-6. 60-90s entre séries; até 120s em exercícios multiarticulares (agachamento, remada, supino).
+LIMITAÇÕES FÍSICAS:
+11. Se a anamnese relata dor/lesão em alguma região, NÃO prescreva exercícios que carreguem essa região; escolha alternativas e mencione isso no rationale. Oriente amplitude sem dor.
 
 AERÓBIO (OMS):
-7. Meta de 150 min/semana de atividade moderada acumulada (caminhada conta), distribuída na semana. Complementa a força, não substitui — exceto em semana de sintomas fortes.
+12. Meta de 150 min/semana de atividade moderada acumulada (caminhada conta), complementar à força.
 
-SINTOMAS GI (consenso multidisciplinar de manejo de eventos GI em GLP-1):
-8. Náusea >= 6/10 ou vômitos nos últimos 7 dias: sem alta intensidade, sem exercícios deitados/invertidos; priorizar caminhada leve (que auxilia digestão e constipação), mobilidade e força leve em pé/sentado. Nunca treinar imediatamente após refeição.
-9. Energia <= 3/10 nos check-ins: cortar volume pela metade (menos séries), MANTER a frequência semanal.
+SINTOMAS GI (consenso multidisciplinar GLP-1):
+13. Náusea >= 6/10 ou vômitos nos últimos 7 dias: sem alta intensidade, sem exercícios deitados/invertidos; priorizar caminhada leve, mobilidade e força leve em pé/sentado. Nunca treinar logo após refeição.
+14. Energia <= 3/10 nos check-ins: cortar volume pela metade, MANTER a frequência.
 
 PROTEÍNA (consenso GLP-1):
-10. 1,2-1,6 g/kg/dia durante perda ativa de peso, distribuída entre as refeições. Use o peso atual do usuário para calcular a faixa em gramas quando disponível.
+15. 1,2-1,6 g/kg/dia distribuída nas refeições; calcule a faixa em gramas com o peso atual quando disponível.
 
 === TAREFA ===
-Monte o plano desta semana com 2 a 4 dias de treino (dias da semana em português: Segunda, Quarta, Sexta etc.), 3 a 5 exercícios por dia.
-- "why" de cada exercício: 1 frase curta em português conectada aos dados do usuário.
-- "rationale": explique em 2-3 frases por que este foco, citando os dados (peso, sintomas, energia, histórico).
-- "nutritionAdvice": 1-2 frases práticas sobre proteína/hidratação para o caso específico.
-- "warning": null, OU uma frase de alerta se houver sintoma/sinal que peça cautela (ex.: vômitos frequentes -> "se vomitar durante o treino, pare").
+Monte o plano desta semana (dias da semana em português: Segunda, Quarta, Sexta etc.).
+- "why" de cada exercício: 1 frase curta em português coerente com o que o exercício REALMENTE trabalha e com os dados do usuário.
+- "rationale": 2-3 frases citando anamnese e dados (nível, peso, sintomas, energia, histórico).
+- "nutritionAdvice": 1-2 frases práticas de proteína/hidratação para o caso.
+- "warning": null, OU uma frase de alerta se houver sintoma/limitação que peça cautela.
 - NUNCA prometa resultados médicos. NUNCA ajuste dose de medicamento. O plano é organização de movimento, não prescrição médica.
 Responda somente com o JSON pedido.`;
+}
+
+function normalizeName(value: string) {
+  return value.trim().toLowerCase().replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: AiWorkoutPlan; weekStart: string }> {
@@ -192,7 +258,12 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   }
 
   const context = await gatherUserContext(userId);
+  if (!context.exercises.length) {
+    throw new Error("Exercise catalog is empty.");
+  }
+
   const prompt = buildPrompt(context);
+  const allowedNames = context.exercises.map((exercise) => exercise.name);
 
   const openai = new OpenAI({ apiKey });
   const response = await openai.chat.completions.create({
@@ -203,7 +274,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       json_schema: {
         name: "weekly_workout_plan",
         strict: true,
-        schema: PLAN_SCHEMA as unknown as Record<string, unknown>
+        schema: buildPlanSchema(allowedNames) as unknown as Record<string, unknown>
       }
     },
     messages: [{ role: "user", content: prompt }]
@@ -216,16 +287,16 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
 
   const plan = JSON.parse(content) as AiWorkoutPlan;
 
-  // Anexa GIF/imagem do catálogo a cada exercício do plano (match por nome, case-insensitive).
-  const mediaByName = new Map(
-    context.exercises.map((exercise) => [
-      exercise.name.trim().toLowerCase(),
-      { gif_url: exercise.gif_url ?? null, image_url: exercise.image_url ?? null }
-    ])
-  );
+  // Anexa GIF/imagem do catálogo a cada exercício (match exato + fallback normalizado).
+  const mediaByName = new Map<string, { gif_url: string | null; image_url: string | null }>();
+  for (const exercise of context.exercises) {
+    const media = { gif_url: exercise.gif_url ?? null, image_url: exercise.image_url ?? null };
+    mediaByName.set(exercise.name.trim().toLowerCase(), media);
+    mediaByName.set(normalizeName(exercise.name), media);
+  }
   for (const day of plan.workouts ?? []) {
     for (const exercise of day.exercises ?? []) {
-      const media = mediaByName.get(exercise.name.trim().toLowerCase());
+      const media = mediaByName.get(exercise.name.trim().toLowerCase()) ?? mediaByName.get(normalizeName(exercise.name));
       exercise.gif_url = media?.gif_url ?? null;
       exercise.image_url = media?.image_url ?? null;
     }
@@ -245,6 +316,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       warning: plan.warning,
       workouts: plan.workouts,
       context_snapshot: {
+        training: context.training,
         weights: context.weights.slice(0, 4),
         side_effects: context.sideEffects.slice(0, 5),
         checkins: context.checkins.slice(0, 5),

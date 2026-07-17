@@ -400,23 +400,66 @@ export type AiWorkoutPlanRow = {
   created_at: string;
 };
 
+export type TrainingProfileRow = {
+  experience_level: "nunca_treinei" | "retomando" | "treino_regular";
+  training_location: "casa_sem_equipamento" | "casa_com_equipamento" | "academia";
+  days_per_week: number;
+  minutes_per_session: number;
+  limitations: string | null;
+};
+
 export async function loadAiWorkoutPlanAction() {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { authenticated: false as const };
 
-  const { data, error } = await supabase
-    .from("canetta_ai_workout_plans")
-    .select("week_start, focus, rationale, risk_level, nutrition_advice, warning, workouts, created_at")
-    .eq("user_id", user.id)
-    .order("week_start", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [planResult, trainingResult] = await Promise.all([
+    supabase
+      .from("canetta_ai_workout_plans")
+      .select("week_start, focus, rationale, risk_level, nutrition_advice, warning, workouts, created_at")
+      .eq("user_id", user.id)
+      .order("week_start", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("canetta_training_profiles")
+      .select("experience_level, training_location, days_per_week, minutes_per_session, limitations")
+      .eq("user_id", user.id)
+      .maybeSingle()
+  ]);
 
-  if (error) {
+  if (planResult.error) {
     return { authenticated: true as const, error: "Não foi possível carregar o plano agora." };
   }
 
-  return { authenticated: true as const, plan: (data as AiWorkoutPlanRow | null) ?? null };
+  return {
+    authenticated: true as const,
+    plan: (planResult.data as AiWorkoutPlanRow | null) ?? null,
+    trainingProfile: (trainingResult.data as TrainingProfileRow | null) ?? null
+  };
+}
+
+export async function saveTrainingProfileAction(input: TrainingProfileRow) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { saved: false as const, authenticated: false as const };
+
+  const { error } = await supabase.from("canetta_training_profiles").upsert(
+    {
+      user_id: user.id,
+      experience_level: input.experience_level,
+      training_location: input.training_location,
+      days_per_week: input.days_per_week,
+      minutes_per_session: input.minutes_per_session,
+      limitations: input.limitations?.trim() || null,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) {
+    return { saved: false as const, authenticated: true as const, error: "Não foi possível salvar a anamnese agora." };
+  }
+
+  return { saved: true as const, authenticated: true as const };
 }
 
 export async function generateAiWorkoutPlanAction() {
