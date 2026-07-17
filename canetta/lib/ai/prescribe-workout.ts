@@ -200,50 +200,59 @@ Você SÓ pode prescrever exercícios desta lista, usando o nome EXATAMENTE como
 Leia a região/alvo/equipamento de cada um — escolha pelo que o exercício realmente trabalha, não pelo nome.
 ${catalogLines}
 
-=== DIRETRIZES BASEADAS EM EVIDÊNCIA (obrigatórias) ===
+=== DIRETRIZES DE PROGRAMAÇÃO (padrões operacionais ajustáveis, informados pela literatura geral de treinamento resistido) ===
+IMPORTANTE SOBRE EVIDÊNCIA: a evidência direta específica para exercício durante uso de GLP-1 ainda é limitada (ensaios dedicados estão em andamento). As regras abaixo são padrões iniciais de programação derivados de literatura geral (ACSM 2026, OMS) e consensos de especialistas — não protocolos clínicos comprovados para GLP-1. Nunca apresente o plano como "cientificamente comprovado".
 
-RISCO CENTRAL (literatura GLP-1):
-1. Estudos com semaglutida e tirzepatida mostram que 25-40% do peso perdido pode ser massa magra (análises de composição corporal dos ensaios STEP/SURMOUNT; estudo SEMALEAN). Treino resistido + proteína adequada reduz essa perda a quase zero (meta-análise 2022; séries de casos em que quem preservou massa magra treinava força 3-5x/semana).
+CONTEXTO (literatura GLP-1 — comunicar sem exagerar):
+1. Análises de composição corporal observam que uma fração VARIÁVEL do peso perdido com GLP-1 corresponde a massa magra. Massa magra não é sinônimo de músculo (inclui água, glicogênio, órgãos), e a magnitude varia por medicamento, método e população. Há plausibilidade e evidência indireta favorável de que treino resistido + ingestão proteica adequada ajudem a preservar massa magra — mas ainda faltam ensaios concluídos quantificando isso especificamente durante semaglutida/tirzepatida. Nunca afirme percentuais fixos de perda muscular nem prometa preservação.
 
-NÍVEL DO ALUNO (anamnese):
-2. "Nunca treinou": full-body, exercícios simples e estáveis, 2 séries por exercício, 8-12 reps, RPE 5-6 (fáceis de propósito) nas 2 primeiras semanas. Progressão só depois de consolidar técnica.
-3. "Retomando": full-body, 2-3 séries, RPE 6-7. Voltar com ~60% do volume que fazia antes; não assumir a carga antiga.
-4. "Treina regularmente": pode usar divisão superior/inferior, 3 séries, RPE 7-8, exercícios mais complexos do catálogo.
+NÍVEL DO ALUNO (padrões iniciais ajustáveis, não regras rígidas):
+2. "Nunca treinou": preferir full-body, exercícios simples e estáveis, ~2 séries por exercício, faixa de ensino 8-12 reps (outras faixas são válidas), esforço confortável (percepção leve-moderada, ex.: RPE ~5-6) nas primeiras semanas como escolha conservadora inicial — não como teto permanente. Prioridade: consolidar técnica.
+3. "Retomando": full-body, 2-3 séries, esforço moderado. Retomar com volume reduzido em relação ao que fazia antes; não assumir a carga antiga.
+4. "Treina regularmente": pode usar divisão superior/inferior, ~3 séries, esforço moderado-alto, exercícios mais complexos do catálogo.
 
-FREQUÊNCIA E DURAÇÃO (ACSM 2026 + anamnese):
-5. Monte EXATAMENTE o número de dias informado na anamnese (default 3), em dias não consecutivos (>=48h por grupo muscular). Grandes grupos >= 2x/semana.
-6. Quantidade de exercícios por sessão conforme o tempo disponível: ~30 min -> 4-5 exercícios; ~45 min -> 5-6; ~60 min -> 6-8.
+TREINO ATÉ A FALHA:
+5. Não é necessário para progredir e não é o padrão para iniciantes; evite quando houver técnica instável, sintomas relevantes, má recuperação ou exercício de maior risco. Para usuário experiente, estável e em exercício seguro, aproximar-se da falha ocasionalmente é aceitável — nunca obrigatório.
 
-VOLUME (ACSM 2026):
-7. Mínimo 2 séries por exercício; padrão 2-3. Iniciante: 4-8 séries semanais por grupo muscular. Consistência vale mais que complexidade.
+FREQUÊNCIA E DURAÇÃO (anamnese):
+6. Monte o número de dias informado na anamnese (default 3; faixa razoável 2-4), preferindo dias não consecutivos para o mesmo grupo muscular como padrão de recuperação — ajustável por agenda, recuperação e sintomas.
+7. Exercícios por sessão conforme o tempo: ~30 min -> 4-5; ~45 min -> 5-6; ~60 min -> 6-8.
 
-INTENSIDADE E PROGRESSÃO:
-8. Nunca prescrever até a falha. Execução lenta/moderada para destreinados. Progredir carga OU volume no máximo 5-10% por semana, nunca os dois. "Difícil" na semana anterior -> manter/reduzir; "fácil" -> progredir dentro do limite.
-9. Descanso: 60-90s entre séries; até 120s em multiarticulares.
+VOLUME (padrão operacional, não dose comprovada para GLP-1):
+8. Faixa inicial sugerida: 4-8 séries semanais por grupo muscular, 2-3 séries por exercício. Uma série já produz adaptação em iniciantes; mais séries podem ajudar em alguns contextos. Consistência importa mais que complexidade (ACSM 2026).
+
+PROGRESSÃO (por gatilho, NUNCA automática por semana):
+9. Só progrida quando TODOS os critérios se cumprirem: completou todas as séries prescritas + técnica aceitável + esforço-alvo não excedido + sem sintomas limitantes. Opções de progressão: aumentar repetições dentro da faixa, OU aumentar a carga no menor incremento disponível, OU adicionar 1 série. PROIBIDO: progressão percentual automática semanal. "Difícil" na semana anterior -> manter ou reduzir.
+
+DESCANSO (orientação funcional, não regra fixa):
+10. Padrão 90-180s; encerre o descanso quando a respiração estiver controlada e a técnica pronta. Pode ser menor em exercícios de isolamento com carga leve; maior em compostos pesados.
 
 EQUIPAMENTO:
-10. Prescreva apenas exercícios compatíveis com o equipamento da anamnese (o catálogo já está filtrado — respeite-o).
+11. Prescreva apenas exercícios compatíveis com o equipamento da anamnese (o catálogo já está filtrado — respeite-o).
 
 LIMITAÇÕES FÍSICAS:
-11. Se a anamnese relata dor/lesão em alguma região, NÃO prescreva exercícios que carreguem essa região; escolha alternativas e mencione isso no rationale. Oriente amplitude sem dor.
+12. Se a anamnese relata dor/lesão em alguma região, NÃO prescreva exercícios que carreguem essa região; escolha alternativas e mencione isso no rationale. Oriente amplitude sem dor.
 
-AERÓBIO (OMS):
-12. Meta de 150 min/semana de atividade moderada acumulada (caminhada conta), complementar à força.
+AERÓBIO:
+13. A meta de ~150-300 min/semana de atividade moderada (OMS) é um alvo de LONGO PRAZO de saúde pública, não dose de entrada. A dose inicial parte da capacidade atual do usuário e progride gradualmente conforme tolerância. Caminhada conta.
 
-SINTOMAS GI (consenso multidisciplinar GLP-1):
-13. Náusea >= 6/10 ou vômitos nos últimos 7 dias: sem alta intensidade, sem exercícios deitados/invertidos; priorizar caminhada leve, mobilidade e força leve em pé/sentado. Nunca treinar logo após refeição.
-14. Energia <= 3/10 nos check-ins: cortar volume pela metade, MANTER a frequência.
+SINTOMAS GI (sinais funcionais — sem cortes numéricos):
+14. SUSPENDA o treino da sessão e recomende avaliação médica se os registros sugerirem: vômitos persistentes, incapacidade de manter líquidos, dor abdominal intensa ou persistente, sinais de desidratação, tontura importante/quase desmaio.
+15. MODIFIQUE (sessão de menor demanda, sem percentual fixo) se os sintomas limitarem as atividades normais, piorarem com movimento ou a alimentação estiver muito reduzida. Sintomas persistentes ou progressivos -> orientar procurar o médico.
 
-PROTEÍNA (consenso GLP-1):
-15. 1,2-1,6 g/kg/dia distribuída nas refeições; calcule a faixa em gramas com o peso atual quando disponível.
+ENERGIA/DISPOSIÇÃO (sinal de prontidão, não fórmula):
+16. Energia baixa nos check-ins é um sinal de prontidão reduzida — pode justificar uma sessão mais leve nesta semana, escolhida qualitativamente. NUNCA aplique cortes percentuais fixos por nota de energia; o dado subjetivo isolado não determina volume exato.
+
+NUTRIÇÃO (educacional, sem prescrição):
+17. NÃO prescreva dieta nem calcule gramas de proteína para o usuário. Pode informar, em tom educacional, que consensos de especialistas discutem faixas de proteína durante o tratamento e que a definição do alvo individual (incluindo qual peso usar no cálculo e restrições clínicas como doença renal) cabe a nutricionista/médico. Hidratação: incentivo geral é aceitável.
 
 === TAREFA ===
 Monte o plano desta semana (dias da semana em português: Segunda, Quarta, Sexta etc.).
 - "why" de cada exercício: 1 frase curta em português coerente com o que o exercício REALMENTE trabalha e com os dados do usuário.
-- "rationale": 2-3 frases citando anamnese e dados (nível, peso, sintomas, energia, histórico).
-- "nutritionAdvice": 1-2 frases práticas de proteína/hidratação para o caso.
-- "warning": null, OU uma frase de alerta se houver sintoma/limitação que peça cautela.
-- NUNCA prometa resultados médicos. NUNCA ajuste dose de medicamento. O plano é organização de movimento, não prescrição médica.
+- "rationale": 2-3 frases citando anamnese e dados (nível, peso, sintomas, energia, histórico). Trate as escolhas como padrões ajustáveis de organização de movimento — nunca como protocolo clínico comprovado.
+- "nutritionAdvice": 1-2 frases EDUCACIONAIS (sem prescrever gramas/dieta; pode citar que o alvo proteico individual deve ser definido com nutricionista/médico; incentivo à hidratação é ok).
+- "warning": null, OU uma frase de alerta. OBRIGATÓRIO alertar e recomendar avaliação médica se houver sinais funcionais de alarme (regra 14).
+- NUNCA prometa resultados médicos. NUNCA ajuste dose de medicamento. O plano é orientação educacional de movimento, não prescrição médica ou de treinamento individualizado supervisionado.
 Responda somente com o JSON pedido.`;
 }
 

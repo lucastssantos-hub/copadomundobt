@@ -1533,7 +1533,7 @@ export default function JourneyPage() {
                       </div>
                     )}
                     {aiPlanError && <div style={{ fontSize: 12.5, color: "#A3552B", textAlign: "center" }}>{aiPlanError}</div>}
-                    <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.5, padding: "0 4px" }}>Sugestão gerada por IA com base nos seus registros. Não é prescrição médica nem substitui a orientação do seu médico ou educador físico.</div>
+                    <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.5, padding: "0 4px" }}>Orientação educacional de movimento gerada por IA a partir dos seus registros — não é prescrição médica nem treinamento individualizado supervisionado, e não substitui avaliação do seu médico, nutricionista ou educador físico. Em caso de vômitos persistentes, dor intensa, tontura ou desidratação, pause o treino e procure atendimento.</div>
                   </>
                 )}
 
