@@ -100,7 +100,7 @@ async function gatherUserContext(userId: string) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [profile, trainingProfile, anamnesisRow, weights, sideEffects, checkins, applications, missedDoses, workoutLogs] = await Promise.all([
+  const [profile, trainingProfile, anamnesisRow, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, reassessment] = await Promise.all([
     supabase.from("canetta_profiles").select("name, medication, current_dose, frequency, height_cm, goal_weight, biggest_difficulty, created_at").eq("user_id", userId).maybeSingle(),
     supabase.from("canetta_training_profiles").select("experience_level, training_location, days_per_week, minutes_per_session, limitations").eq("user_id", userId).maybeSingle(),
     supabase.from("canetta_anamnesis").select("data, consent").eq("user_id", userId).maybeSingle(),
@@ -109,7 +109,8 @@ async function gatherUserContext(userId: string) {
     supabase.from("canetta_daily_checkins").select("date, hunger_level, energy_level").eq("user_id", userId).order("date", { ascending: false }).limit(7),
     supabase.from("canetta_dose_applications").select("applied_at").eq("user_id", userId).gte("applied_at", fourteenDaysAgo),
     supabase.from("canetta_missed_doses").select("reason, scheduled_for").eq("user_id", userId).gte("scheduled_for", fourteenDaysAgo),
-    supabase.from("canetta_workout_logs").select("exercise_name, body_part, sets_completed, reps_completed, difficulty_felt, completed_at").eq("user_id", userId).order("completed_at", { ascending: false }).limit(15)
+    supabase.from("canetta_workout_logs").select("exercise_name, body_part, sets_completed, reps_completed, difficulty_felt, completed_at").eq("user_id", userId).order("completed_at", { ascending: false }).limit(15),
+    supabase.from("canetta_training_reassessments").select("anchor_strength, function_level, pain_level, adherence, medication_change, note, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(1)
   ]);
 
   const training = (trainingProfile.data as TrainingProfile | null) ?? null;
@@ -142,6 +143,7 @@ async function gatherUserContext(userId: string) {
     applications: applications.data ?? [],
     missedDoses: missedDoses.data ?? [],
     workoutLogs: workoutLogs.data ?? [],
+    reassessment: reassessment.data?.[0] ?? null,
     exercises: exercises.data ?? []
   };
 }
@@ -159,12 +161,15 @@ const LOCATION_LABEL: Record<TrainingProfile["training_location"], string> = {
 };
 
 function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gate: GateResult) {
-  const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises } = context;
+  const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises, reassessment } = context;
 
   const weightLines = weights.map((w) => `${new Date(w.recorded_at).toISOString().slice(0, 10)}: ${w.weight} kg`).join("\n") || "Sem registros de peso.";
   const symptomLines = sideEffects.map((s) => `${new Date(s.recorded_at).toISOString().slice(0, 10)}: ${(s.types ?? []).join(", ")} (intensidade ${s.intensity ?? "?"}/10, duração ${s.duration ?? "?"})`).join("\n") || "Sem sintomas registrados nos últimos 7 dias.";
   const checkinLines = checkins.map((c) => `${c.date}: fome ${c.hunger_level ?? "?"}/10, energia ${c.energy_level ?? "?"}/10`).join("\n") || "Sem check-ins diários recentes.";
   const workoutLines = workoutLogs.map((w) => `${new Date(w.completed_at).toISOString().slice(0, 10)}: ${w.exercise_name}${w.sets_completed ? ` ${w.sets_completed}x${w.reps_completed ?? "?"}` : ""}${w.difficulty_felt ? ` (sentiu: ${w.difficulty_felt})` : ""}`).join("\n") || "Nenhum treino registrado ainda.";
+  const reassessmentLine = reassessment
+    ? `Última reavaliação (${new Date(reassessment.created_at).toISOString().slice(0, 10)}): força ${reassessment.anchor_strength}; função ${reassessment.function_level}; dor ${reassessment.pain_level}; aderência ${reassessment.adherence}; mudança de medicação ${reassessment.medication_change ? "sim" : "não"}. ${reassessment.note ?? ""}`
+    : "Sem reavaliação periódica registrada.";
   const missedLines = missedDoses.map((m) => `${new Date(m.scheduled_for).toISOString().slice(0, 10)}: ${m.reason ?? "motivo não informado"}`).join("\n") || "Nenhuma dose perdida registrada.";
   const catalogLines = exercises.map((e) => `- ${e.name} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`).join("\n");
 
@@ -212,6 +217,9 @@ ${missedLines}
 
 === HISTÓRICO DE TREINO (mais recente primeiro) ===
 ${workoutLines}
+
+=== REAVALIAÇÃO PERIÓDICA ===
+${reassessmentLine}
 
 === CATÁLOGO DE EXERCÍCIOS PERMITIDOS ===
 Você SÓ pode prescrever exercícios desta lista, usando o nome EXATAMENTE como escrito.
@@ -354,7 +362,8 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         weights: context.weights.slice(0, 4),
         side_effects: context.sideEffects.slice(0, 5),
         checkins: context.checkins.slice(0, 5),
-        workout_count: context.workoutLogs.length
+        workout_count: context.workoutLogs.length,
+        reassessment: context.reassessment ?? null
       },
       ai_model: "gpt-4o-mini"
     },

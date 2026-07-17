@@ -71,6 +71,19 @@ export type GateResult = {
   motivos: string[];
 };
 
+export type SessionCheckinData = {
+  feels_well: boolean;
+  new_symptoms: string[];
+  can_hydrate: boolean;
+  pain_changed: boolean;
+  confidence: "sim" | "com_cuidado" | "nao";
+};
+
+export type SessionCheckinResult = {
+  status: "verde" | "amarelo" | "vermelho";
+  motivos: string[];
+};
+
 const CLEARANCE_CONDITIONS = [
   "Doença cardíaca (infarto, angina, arritmia, insuficiência)",
   "AVC ou AIT",
@@ -124,6 +137,20 @@ export function evaluateGate(data: AnamnesisData | null, consent: boolean): Gate
   }
 
   return { status: "verde", motivos: [] };
+}
+
+export function evaluateSessionCheckin(data: SessionCheckinData, gate: GateResult | null): SessionCheckinResult {
+  if (gate?.status === "vermelho") return { status: "vermelho", motivos: ["A triagem de segurança atual já bloqueia treino."] };
+  if (gate?.status === "liberacao" || gate?.status === "insuficiente") return { status: "amarelo", motivos: ["Finalize a triagem e confirme liberação antes de treinar."] };
+  if (!data.can_hydrate || data.new_symptoms.length > 0) {
+    return { status: "vermelho", motivos: [!data.can_hydrate ? "Não consegue manter líquidos hoje." : "Há sintoma novo para avaliar antes do treino."] };
+  }
+  const caution: string[] = [];
+  if (!data.feels_well) caution.push("Hoje você não está se sentindo bem.");
+  if (data.pain_changed) caution.push("A dor mudou desde a última sessão.");
+  if (data.confidence === "com_cuidado") caution.push("Você pediu uma sessão mais leve.");
+  if (data.confidence === "nao") caution.push("Você não se sente seguro(a) para treinar agora.");
+  return caution.length ? { status: "amarelo", motivos: caution } : { status: "verde", motivos: [] };
 }
 
 export function anamnesisPromptSummary(data: AnamnesisData, gate: GateResult): string {

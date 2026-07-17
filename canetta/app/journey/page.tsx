@@ -23,14 +23,17 @@ import {
   saveReminderAction,
   saveRoutineAction,
   saveAnamnesisAction,
+  saveSessionCheckinAction,
   saveSymptomAction,
   saveTrainingProfileAction,
+  saveTrainingReassessmentAction,
   saveWorkoutAction,
+  saveWorkoutFeedbackAction,
   sendTestPushAction,
   saveWeightAction,
   type TrainingProfileRow
 } from "./actions";
-import { CONDITIONS, PAIN_REGIONS, RED_FLAGS, type AnamnesisData, type GateResult } from "@/lib/ai/anamnesis";
+import { CONDITIONS, PAIN_REGIONS, RED_FLAGS, evaluateSessionCheckin, type AnamnesisData, type GateResult, type SessionCheckinData, type SessionCheckinResult } from "@/lib/ai/anamnesis";
 import { signOutAction } from "@/app/auth/actions";
 
 type Tab = "hoje" | "diario" | "consulta" | "treino" | "mais";
@@ -209,6 +212,24 @@ export default function JourneyPage() {
   const [anamneseDays, setAnamneseDays] = useState("");
   const [anamneseMinutes, setAnamneseMinutes] = useState("");
   const [anamneseLimitations, setAnamneseLimitations] = useState("");
+  const [sessionCheckinOpen, setSessionCheckinOpen] = useState(false);
+  const [sessionCheckinBusy, setSessionCheckinBusy] = useState(false);
+  const [sessionCheckin, setSessionCheckin] = useState<SessionCheckinData>({ feels_well: true, new_symptoms: [], can_hydrate: true, pain_changed: false, confidence: "sim" });
+  const [sessionCheckinResult, setSessionCheckinResult] = useState<SessionCheckinResult | null>(null);
+  const [sessionCheckinDate, setSessionCheckinDate] = useState("");
+  const [pendingExercise, setPendingExercise] = useState<{ name: string; sets?: number; reps?: string } | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
+  const [pendingWorkoutId, setPendingWorkoutId] = useState<string | undefined>();
+  const [feedbackCompleted, setFeedbackCompleted] = useState(true);
+  const [feedbackRpe, setFeedbackRpe] = useState("");
+  const [feedbackDuring, setFeedbackDuring] = useState<string[]>([]);
+  const [feedbackAfter, setFeedbackAfter] = useState<string[]>([]);
+  const [feedbackNote, setFeedbackNote] = useState("");
+  const [reassessment, setReassessment] = useState<{ created_at: string; anchor_strength: string; function_level: string; pain_level: string; adherence: string; medication_change: boolean; note?: string | null } | null>(null);
+  const [reassessmentOpen, setReassessmentOpen] = useState(false);
+  const [reassessmentBusy, setReassessmentBusy] = useState(false);
+  const [reassessmentDraft, setReassessmentDraft] = useState({ anchorStrength: "", functionLevel: "", painLevel: "", adherence: "", medicationChange: false, note: "" });
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -299,6 +320,12 @@ export default function JourneyPage() {
         reminderWeekday: result.reminder?.weekday ?? current.reminderWeekday,
         reminderTime: result.reminder?.time?.slice(0, 5) ?? current.reminderTime
       }));
+      if ("sessionCheckins" in result && result.sessionCheckins?.[0]) {
+        const latest = result.sessionCheckins[0];
+        setSessionCheckinResult({ status: latest.status as SessionCheckinResult["status"], motivos: [] });
+        setSessionCheckinDate(latest.session_date);
+      }
+      if ("reassessment" in result) setReassessment(result.reassessment ?? null);
     }).catch(() => toast("Não foi possível sincronizar agora."))
       .finally(() => setAuthChecked(true));
   }, [ready, toast]);
@@ -466,6 +493,59 @@ export default function JourneyPage() {
     }
   };
 
+  const beginPlannedWorkout = (exercise: { name: string; sets?: number; reps?: string }) => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (sessionCheckinDate !== today || !sessionCheckinResult) {
+      setPendingExercise(exercise);
+      setSessionCheckinOpen(true);
+      return;
+    }
+    if (sessionCheckinResult.status === "vermelho") {
+      setAiPlanError("O check-in de hoje bloqueou o treino. Pause e procure avaliação se necessário.");
+      return;
+    }
+    set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseName: exercise.name, series: exercise.sets, repeticoes: exercise.reps } });
+  };
+
+  const saveSessionCheckin = async () => {
+    setSessionCheckinBusy(true);
+    setAiPlanError("");
+    const result = evaluateSessionCheckin(sessionCheckin, aiGate);
+    try {
+      const saved = await saveSessionCheckinAction({ sessionLabel: pendingExercise?.name || "sessao", data: sessionCheckin, gate: aiGate });
+      if (saved.saved) {
+        setSessionCheckinResult(result);
+        setSessionCheckinDate(new Date().toISOString().slice(0, 10));
+        setSessionCheckinOpen(false);
+        toast(result.status === "verde" ? "Check-in liberado." : result.status === "amarelo" ? "Hoje fica em modo leve." : "Treino pausado por segurança.");
+        if (pendingExercise && result.status !== "vermelho") set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseName: pendingExercise.name, series: pendingExercise.sets, repeticoes: pendingExercise.reps } });
+        setPendingExercise(null);
+      } else if ("error" in saved && saved.error) setAiPlanError(saved.error);
+    } catch { setAiPlanError("Não foi possível salvar o check-in agora."); }
+    finally { setSessionCheckinBusy(false); }
+  };
+
+  const saveFeedback = async () => {
+    setFeedbackBusy(true);
+    try {
+      const result = await saveWorkoutFeedbackAction({ workoutLogId: pendingWorkoutId, completed: feedbackCompleted, rpe: feedbackRpe ? Number(feedbackRpe) : undefined, symptomsDuring: feedbackDuring, symptomsAfter: feedbackAfter, note: feedbackNote });
+      if (result.saved) { setFeedbackOpen(false); toast("Feedback salvo para o próximo plano."); }
+      else if ("error" in result && result.error) setAiPlanError(result.error);
+    } catch { setAiPlanError("Não foi possível salvar o feedback agora."); }
+    finally { setFeedbackBusy(false); }
+  };
+
+  const saveReassessment = async () => {
+    setReassessmentBusy(true);
+    try {
+      const result = await saveTrainingReassessmentAction(reassessmentDraft);
+      if (result.saved) { setReassessment(result.reassessment); setReassessmentOpen(false); toast("Reavaliação salva."); }
+      else if ("validation" in result && result.validation) setAiPlanError("Responda os quatro itens para salvar a reavaliação.");
+      else if ("error" in result && result.error) setAiPlanError(result.error);
+    } catch { setAiPlanError("Não foi possível salvar a reavaliação agora."); }
+    finally { setReassessmentBusy(false); }
+  };
+
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
   const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", draft: type === "aplicacao" ? { dataHora: toDatetimeLocal(new Date()) } : {} });
@@ -583,10 +663,21 @@ export default function JourneyPage() {
         difficultyFelt: st.draft.dificuldadeSentida,
         note: st.draft.nota,
         data: recordedAt
-      }]
+      }],
+      tab: "treino",
+      treinoSub: "historico",
+      sheetOpen: false,
+      registerFlow: null
     });
     setBusyAction(null);
-    toast("Treino registrado."); finishToHoje();
+    setPendingWorkoutId(result.synced ? result.id : undefined);
+    setFeedbackCompleted(true);
+    setFeedbackRpe("");
+    setFeedbackDuring([]);
+    setFeedbackAfter([]);
+    setFeedbackNote("");
+    setFeedbackOpen(true);
+    toast("Treino registrado. Como foi?");
   };
 
   const periodStart = () => {
@@ -1375,6 +1466,19 @@ export default function JourneyPage() {
                     <button key={k} type="button" aria-pressed={st.diarioSub === k} onClick={() => set({ diarioSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.diarioSub === k ? "#fff" : "transparent", color: st.diarioSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
                   ))}
                 </div>
+                {reassessmentOpen && (
+                  <div style={{ ...cardWhite, background: "#F4F6F4", display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div><div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Reavaliação do ciclo</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Responda com base nas últimas 4–8 semanas. O resultado orienta o próximo ciclo; não substitui avaliação profissional.</div></div>
+                    <div><div style={{ ...fieldLabel, marginBottom: 6 }}>FORÇA NOS EXERCÍCIOS-ÂNCORA</div><ChipRow options={["Piorou", "Igual", "Melhorou"]} current={reassessmentDraft.anchorStrength} onPick={(v) => setReassessmentDraft((d) => ({ ...d, anchorStrength: v }))} wrap /></div>
+                    <div><div style={{ ...fieldLabel, marginBottom: 6 }}>FUNÇÃO NO DIA A DIA</div><ChipRow options={["Mais difícil", "Igual", "Mais fácil"]} current={reassessmentDraft.functionLevel} onPick={(v) => setReassessmentDraft((d) => ({ ...d, functionLevel: v }))} wrap /></div>
+                    <div><div style={{ ...fieldLabel, marginBottom: 6 }}>DOR</div><ChipRow options={["Piorou", "Igual", "Melhorou", "Sem dor"]} current={reassessmentDraft.painLevel} onPick={(v) => setReassessmentDraft((d) => ({ ...d, painLevel: v }))} wrap /></div>
+                    <div><div style={{ ...fieldLabel, marginBottom: 6 }}>ADERÊNCIA AO MOVIMENTO</div><ChipRow options={["Baixa", "Parcial", "Boa"]} current={reassessmentDraft.adherence} onPick={(v) => setReassessmentDraft((d) => ({ ...d, adherence: v }))} wrap /></div>
+                    <button type="button" onClick={() => setReassessmentDraft((d) => ({ ...d, medicationChange: !d.medicationChange }))} style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", background: reassessmentDraft.medicationChange ? "#EAF5F2" : "#fff", border: `1.5px solid ${reassessmentDraft.medicationChange ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: 12, cursor: "pointer", textAlign: "left" }}><span style={{ fontSize: 16 }}>{reassessmentDraft.medicationChange ? "☑️" : "⬜"}</span><span style={{ fontSize: 12.5, color: "#16302B", fontWeight: 700 }}>Minha dose ou medicamento mudou neste ciclo</span></button>
+                    <label style={{ ...fieldLabel, display: "flex", flexDirection: "column", gap: 6 }}>NOTA (OPCIONAL)<input className="j-in" value={reassessmentDraft.note} onChange={(e) => setReassessmentDraft((d) => ({ ...d, note: e.target.value }))} placeholder="Algo importante para o próximo ciclo?" style={{ ...inputSt, padding: "12px 14px", fontSize: 13.5, fontWeight: 500, textTransform: "none" }} /></label>
+                    <button type="button" disabled={reassessmentBusy} onClick={saveReassessment} style={{ ...primaryBtn, padding: 13, fontSize: 14, opacity: reassessmentBusy ? 0.6 : 1 }}>{reassessmentBusy ? "Salvando…" : "Salvar reavaliação"}</button>
+                    <button type="button" onClick={() => setReassessmentOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+                  </div>
+                )}
 
                 {st.diarioSub === "registros" && (events.length ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1537,6 +1641,31 @@ export default function JourneyPage() {
 
                 {st.treinoSub === "plano" && (
                   <>
+                    {aiPlan && aiGate && !["vermelho", "liberacao", "insuficiente"].includes(aiGate.status) && (
+                      <div style={{ ...cardWhite, background: sessionCheckinResult?.status === "verde" && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? "#EAF5F2" : "#fff", display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                          <div>
+                            <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>Antes de começar</div>
+                            <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.45, marginTop: 3 }}>Um check-in rápido decide se hoje é dia normal, leve ou de pausa.</div>
+                          </div>
+                          {sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) && <div style={{ fontSize: 12, fontWeight: 800, color: sessionCheckinResult.status === "verde" ? "#0E6B5C" : sessionCheckinResult.status === "amarelo" ? "#7A6017" : "#8A3B2A" }}>{sessionCheckinResult.status === "verde" ? "VERDE" : sessionCheckinResult.status === "amarelo" ? "LEVE" : "PAUSA"}</div>}
+                        </div>
+                        {sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) && <div style={{ fontSize: 12, color: "#4B5F59", lineHeight: 1.45 }}>{sessionCheckinResult.motivos.length ? sessionCheckinResult.motivos.join(" ") : "Tudo certo para seguir com a sessão planejada."}</div>}
+                        <button type="button" onClick={() => { setPendingExercise(null); setSessionCheckinOpen(true); }} style={{ ...primaryBtn, padding: 12, fontSize: 13.5 }}>{sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? "Refazer check-in" : "Fazer check-in de hoje"}</button>
+                      </div>
+                    )}
+                    {sessionCheckinOpen && (
+                      <div style={{ ...cardWhite, background: "#F4F6F4", display: "flex", flexDirection: "column", gap: 14 }}>
+                        <div><div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Check-in pré-sessão</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Responda pensando em agora. Se algo parecer fora do seu padrão, pare e procure orientação.</div></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>COMO VOCÊ ESTÁ?</div><ChipRow options={["Estou bem", "Mais limitado(a) hoje"]} current={sessionCheckin.feels_well ? "Estou bem" : "Mais limitado(a) hoje"} onPick={(v) => setSessionCheckin((s) => ({ ...s, feels_well: v === "Estou bem" }))} wrap /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>CONSEGUE MANTER LÍQUIDOS?</div><ChipRow options={["Sim", "Não"]} current={sessionCheckin.can_hydrate ? "Sim" : "Não"} onPick={(v) => setSessionCheckin((s) => ({ ...s, can_hydrate: v === "Sim" }))} equal /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>A DOR MUDOU DESDE A ÚLTIMA SESSÃO?</div><ChipRow options={["Não", "Sim"]} current={sessionCheckin.pain_changed ? "Sim" : "Não"} onPick={(v) => setSessionCheckin((s) => ({ ...s, pain_changed: v === "Sim" }))} equal /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>ALGUM SINTOMA NOVO AGORA?</div><ChipRow options={["Nenhum", "Tenho um sintoma novo"]} current={sessionCheckin.new_symptoms.length ? "Tenho um sintoma novo" : "Nenhum"} onPick={(v) => setSessionCheckin((s) => ({ ...s, new_symptoms: v === "Nenhum" ? [] : ["Sintoma novo informado"] }))} wrap /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>VOCÊ SE SENTE SEGURO(A) PARA TREINAR?</div><ChipRow options={["Sim", "Com cuidado", "Não"]} current={sessionCheckin.confidence === "sim" ? "Sim" : sessionCheckin.confidence === "com_cuidado" ? "Com cuidado" : "Não"} onPick={(v) => setSessionCheckin((s) => ({ ...s, confidence: v === "Sim" ? "sim" : v === "Com cuidado" ? "com_cuidado" : "nao" }))} wrap /></div>
+                        <button type="button" disabled={sessionCheckinBusy} onClick={saveSessionCheckin} style={{ ...primaryBtn, padding: 13, fontSize: 14, opacity: sessionCheckinBusy ? 0.6 : 1 }}>{sessionCheckinBusy ? "Salvando…" : "Salvar check-in"}</button>
+                        <button type="button" onClick={() => { setSessionCheckinOpen(false); setPendingExercise(null); }} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Agora não</button>
+                      </div>
+                    )}
                     {(!aiTraining || anamneseOpen) ? (
                       <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14 }}>
                         <div>
@@ -1709,7 +1838,7 @@ export default function JourneyPage() {
                                     <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", whiteSpace: "nowrap" }}>{exercise.sets} × {exercise.reps}</div>
                                   </div>
                                   <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.45 }}>{exercise.why}</div>
-                                  <button type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseName: exercise.name, series: exercise.sets, repeticoes: exercise.reps } })} style={{ alignSelf: "flex-start", marginTop: 3, padding: "6px 10px", background: "transparent", color: "#0E6B5C", border: "1.5px solid #CBE3DC", borderRadius: 10, fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Registrar este</button>
+                                    <button type="button" onClick={() => beginPlannedWorkout({ name: exercise.name, sets: exercise.sets, reps: exercise.reps })} style={{ alignSelf: "flex-start", marginTop: 3, padding: "6px 10px", background: "transparent", color: "#0E6B5C", border: "1.5px solid #CBE3DC", borderRadius: 10, fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Registrar este</button>
                                 </div>
                               </div>
                             ))}
@@ -1718,6 +1847,11 @@ export default function JourneyPage() {
                         {aiPlan.nutrition_advice && (
                           <div style={{ ...cardWhite, fontSize: 12.5, color: "#4B5F59", lineHeight: 1.5 }}>🥗 {aiPlan.nutrition_advice}</div>
                         )}
+                        <div style={{ ...cardWhite, background: "#F4F6F4", display: "flex", flexDirection: "column", gap: 10 }}>
+                          <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>Reavaliação periódica</div>
+                          <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.45 }}>{reassessment ? `Última resposta em ${new Date(reassessment.created_at).toLocaleDateString("pt-BR")}. Ela entra na próxima geração do plano.` : "Depois de algumas semanas, registre força, função, dor e aderência para ajustar o próximo ciclo."}</div>
+                          <button type="button" onClick={() => setReassessmentOpen(true)} style={{ ...primaryBtn, padding: 12, fontSize: 13.5 }}>{reassessment ? "Atualizar reavaliação" : "Fazer reavaliação"}</button>
+                        </div>
                         <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ width: "100%", padding: 13, background: "transparent", color: "#0E6B5C", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 13.5, fontWeight: 700, cursor: aiPlanBusy ? "wait" : "pointer", opacity: aiPlanBusy ? 0.6 : 1 }}>{aiPlanBusy ? "Gerando novo plano…" : "Gerar plano atualizado"}</button>
                         <button type="button" onClick={openAnamnese} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>✏️ Editar anamnese (nível, equipamento, dias)</button>
                         <button type="button" onClick={openTriage} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>🩺 Atualizar triagem de segurança</button>
@@ -1761,6 +1895,18 @@ export default function JourneyPage() {
 
                 {st.treinoSub === "historico" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {feedbackOpen && (
+                      <div style={{ ...cardWhite, background: "#EAF5F2", display: "flex", flexDirection: "column", gap: 13 }}>
+                        <div><div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Como foi a sessão?</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Esse retorno ajuda a deixar o próximo plano mais ajustado. Não é uma avaliação médica.</div></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>VOCÊ CONCLUIU?</div><ChipRow options={["Sim", "Não"]} current={feedbackCompleted ? "Sim" : "Não"} onPick={(v) => setFeedbackCompleted(v === "Sim")} equal /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>ESFORÇO SENTIDO (1–10)</div><ChipRow options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]} current={feedbackRpe} onPick={setFeedbackRpe} wrap /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>SINTOMAS DURANTE</div><ChipRow options={["Nenhum", "Tontura", "Náusea", "Dor", "Falta de ar"]} current={feedbackDuring.length ? feedbackDuring[0] : "Nenhum"} onPick={(v) => setFeedbackDuring(v === "Nenhum" ? [] : [v])} wrap /></div>
+                        <div><div style={{ ...fieldLabel, marginBottom: 6 }}>SINTOMAS DEPOIS</div><ChipRow options={["Nenhum", "Náusea", "Dor", "Cansaço fora do esperado"]} current={feedbackAfter.length ? feedbackAfter[0] : "Nenhum"} onPick={(v) => setFeedbackAfter(v === "Nenhum" ? [] : [v])} wrap /></div>
+                        <label style={{ ...fieldLabel, display: "flex", flexDirection: "column", gap: 6 }}>OBSERVAÇÃO<input className="j-in" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Como seu corpo respondeu?" style={{ ...inputSt, padding: "12px 14px", fontSize: 13.5, fontWeight: 500, textTransform: "none" }} /></label>
+                        <button type="button" disabled={feedbackBusy} onClick={saveFeedback} style={{ ...primaryBtn, padding: 13, fontSize: 14, opacity: feedbackBusy ? 0.6 : 1 }}>{feedbackBusy ? "Salvando…" : "Salvar feedback"}</button>
+                        <button type="button" onClick={() => setFeedbackOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Responder depois</button>
+                      </div>
+                    )}
                     {st.treinos.length ? st.treinos.slice(-12).reverse().map((item) => (
                       <div key={`${item.id || item.exerciseName}-${item.data.toISOString()}`} style={{ padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
