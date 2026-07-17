@@ -10,7 +10,6 @@ import { Header } from '../components/common/Header';
 import { Button } from '../components/common/Button';
 import { AnalysisType, Athlete, TeamSide } from '../types';
 import { colors, spacing, borderRadius, typography } from '../theme';
-import { v4 as uuidv4 } from 'uuid';
 import { generateId } from '../utils/uuid';
 
 const TYPES: { label: string; value: AnalysisType; icon: string }[] = [
