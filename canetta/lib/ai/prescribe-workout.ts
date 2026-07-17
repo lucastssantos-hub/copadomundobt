@@ -45,6 +45,17 @@ export type TrainingProfile = {
   limitations: string | null;
 };
 
+type TrainingPhase = "adaptacao" | "base" | "consolidacao" | "retomada_cautelosa";
+
+function deriveTrainingPhase(createdAt: string | null | undefined, reassessment: { anchor_strength?: string | null; pain_level?: string | null; adherence?: string | null } | null): TrainingPhase {
+  const weeks = createdAt ? Math.max(1, Math.ceil((Date.now() - new Date(createdAt).getTime()) / (7 * 24 * 60 * 60 * 1000))) : 1;
+  const needsCaution = [reassessment?.anchor_strength, reassessment?.pain_level, reassessment?.adherence].some((value) => /pior|baixa|mais difícil/i.test(value ?? ""));
+  if (needsCaution) return "retomada_cautelosa";
+  if (weeks <= 4) return "adaptacao";
+  if (weeks <= 8) return "base";
+  return "consolidacao";
+}
+
 const HOME_NO_EQUIPMENT = ["body weight"];
 const HOME_WITH_EQUIPMENT = ["body weight", "band", "dumbbell", "kettlebell", "stability ball"];
 
@@ -205,6 +216,7 @@ async function gatherUserContext(userId: string) {
 
   const anamnesis = (anamnesisRow.data?.data as AnamnesisData | undefined) ?? null;
   const consent = anamnesisRow.data?.consent === true;
+  const phase = deriveTrainingPhase(profile.data?.created_at, reassessment.data?.[0] ?? null);
 
   return {
     profile: profile.data,
@@ -218,7 +230,8 @@ async function gatherUserContext(userId: string) {
     missedDoses: missedDoses.data ?? [],
     workoutLogs: workoutLogs.data ?? [],
     reassessment: reassessment.data?.[0] ?? null,
-    exercises: rankedCatalog
+    exercises: rankedCatalog,
+    phase
   };
 }
 
@@ -235,7 +248,7 @@ const LOCATION_LABEL: Record<TrainingProfile["training_location"], string> = {
 };
 
 function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gate: GateResult) {
-  const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises, reassessment } = context;
+  const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises, reassessment, phase } = context;
   const template = selectWorkoutTemplate(training);
 
   const weightLines = weights.map((w) => `${new Date(w.recorded_at).toISOString().slice(0, 10)}: ${w.weight} kg`).join("\n") || "Sem registros de peso.";
@@ -285,6 +298,7 @@ Medicamento: ${profile?.medication ?? "não informado"} · Dose: ${profile?.curr
 Altura: ${profile?.height_cm ? `${profile.height_cm} cm` : "não informada"} · Meta de peso: ${profile?.goal_weight ? `${profile.goal_weight} kg` : "não informada"}
 Maior dificuldade relatada: ${profile?.biggest_difficulty ?? "não informada"}
 Semanas desde o cadastro no app: ${treatmentWeeks ?? "desconhecido"}
+Fase operacional do ciclo: ${phase} (organização inicial do bloco; não é prescrição clínica)
 
 === PESO (mais recente primeiro) ===
 ${weightLines}
@@ -380,6 +394,23 @@ function normalizeName(value: string) {
   return value.trim().toLowerCase().replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function isTransientOpenAiError(error: unknown) {
+  const candidate = error as { status?: number; code?: string } | null;
+  return candidate?.status === 408 || candidate?.status === 409 || candidate?.status === 429 || (candidate?.status ?? 0) >= 500 || ["ETIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(candidate?.code ?? "");
+}
+
+async function requestPlanWithRetry(openai: OpenAI, request: Parameters<OpenAI["chat"]["completions"]["create"]>[0]) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await openai.chat.completions.create(request);
+    } catch (error) {
+      if (!isTransientOpenAiError(error) || attempt === 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+  }
+  throw new Error("OpenAI request failed after retry.");
+}
+
 export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: AiWorkoutPlan; weekStart: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -402,7 +433,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   const template = selectWorkoutTemplate(context.training);
 
   const openai = new OpenAI({ apiKey });
-  const response = await openai.chat.completions.create({
+  const response = await requestPlanWithRetry(openai, {
     model: "gpt-4o-mini",
     max_completion_tokens: 4000,
     response_format: {
@@ -414,7 +445,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       }
     },
     messages: [{ role: "user", content: prompt }]
-  });
+  }) as OpenAI.Chat.Completions.ChatCompletion;
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
@@ -470,6 +501,8 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         checkins: context.checkins.slice(0, 5),
         workout_count: context.workoutLogs.length,
         reassessment: context.reassessment ?? null,
+        training_phase: context.phase,
+        catalog_policy: "enum filtrado por gate, nível, equipamento e taxonomia; sem fallback sem revalidação",
         volume_ledger: validation.ledger,
         template: { key: template.key, label: template.label, sessions: template.sessions }
       },
