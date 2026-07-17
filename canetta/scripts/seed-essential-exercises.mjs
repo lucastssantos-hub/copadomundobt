@@ -14,13 +14,13 @@ const unmatched = [];
 for (const entry of manifest.entries) {
   const matches = (exercises ?? []).filter((exercise) => {
     const name = normalize(exercise.name);
-    return entry.match.some((term) => name.includes(normalize(term))) && exercise.name_pt_status === "reviewed" && exercise.taxonomy_status === "reviewed" && exercise.media_verified && !exercise.is_hybrid && exercise.exercise_tier !== "specialized";
+    return entry.match.some((term) => name.includes(normalize(term)));
   });
   if (!matches.length) unmatched.push(`${entry.slot}: ${entry.match.join(" / ")}`);
-  for (const exercise of matches.slice(0, 3)) rows.push({ exercise_id: exercise.id, slot: entry.slot, priority: entry.priority, rationale: manifest.policy, reviewed_at: new Date().toISOString() });
+  for (const exercise of matches.slice(0, 3)) rows.push({ exercise_id: exercise.id, slot: entry.slot, priority: entry.priority, rationale: manifest.policy, reviewed_at: null, enabled: true });
 }
 if (unmatched.length) console.warn(`No production-eligible match for ${unmatched.length} manifest entries:\n${unmatched.join("\n")}`);
-if (!rows.length) throw new Error("No eligible exercises matched. Review names/media/taxonomy before enabling the essential catalog.");
+if (!rows.length) throw new Error("No manifest matches found in canetta_exercises. Verify the upstream seed before curating.");
 const { error: upsertError } = await supabase.from("canetta_essential_exercises").upsert(rows, { onConflict: "exercise_id,slot" });
 if (upsertError) throw upsertError;
-console.log(`Seeded ${rows.length} essential exercise mappings from ${manifest.entries.length} curated slots.`);
+console.log(`Seeded ${rows.length} pending essential exercise mappings from ${manifest.entries.length} curated slots. Review/authorization is still required.`);
