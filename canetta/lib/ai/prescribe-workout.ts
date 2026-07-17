@@ -244,6 +244,11 @@ async function gatherUserContext(userId: string) {
   }
 
   const exercises = await exerciseQuery;
+  console.info("Canetta exercise catalog", {
+    query_count: exercises.data?.length ?? 0,
+    query_error: exercises.error?.message ?? null,
+    sample: (exercises.data ?? []).slice(0, 5).map((exercise) => exercise.name)
+  });
   const rankedCatalog = rankCatalog(exercises.data ?? [], training?.experience_level, training?.training_location, { anchorNames: (workoutLogs.data ?? []).map((log) => log.exercise_name) }).slice(0, 280).map(({ item }) => item);
 
   const anamnesis = (anamnesisRow.data?.data as AnamnesisData | undefined) ?? null;
