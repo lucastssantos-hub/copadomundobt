@@ -45,7 +45,7 @@ export type TrainingProfile = {
 const HOME_NO_EQUIPMENT = ["body weight"];
 const HOME_WITH_EQUIPMENT = ["body weight", "band", "dumbbell", "kettlebell", "stability ball"];
 
-function buildPlanSchema(allowedExerciseNames: string[]) {
+function buildPlanSchema(allowedExerciseNames: string[], daysPerWeek: number) {
   return {
     type: "object",
     properties: {
@@ -54,6 +54,8 @@ function buildPlanSchema(allowedExerciseNames: string[]) {
       rationale: { type: "string" },
       workouts: {
         type: "array",
+        minItems: daysPerWeek,
+        maxItems: daysPerWeek,
         items: {
           type: "object",
           properties: {
@@ -274,6 +276,7 @@ NUTRIÇÃO (educacional, sem prescrição):
 
 === TAREFA ===
 Monte o plano desta semana (dias da semana em português: Segunda, Quarta, Sexta etc.).
+OBRIGATÓRIO: entregue exatamente ${training?.days_per_week ?? 3} sessões diferentes, uma por dia disponível. Nunca entregue apenas uma sessão quando a anamnese indicar mais dias.
 - "why" de cada exercício: 1 frase curta em português coerente com o que o exercício REALMENTE trabalha e com os dados do usuário.
 - "rationale": 2-3 frases citando anamnese e dados (nível, peso, sintomas, energia, histórico). Trate as escolhas como padrões ajustáveis de organização de movimento — nunca como protocolo clínico comprovado.
 - "nutritionAdvice": 1-2 frases EDUCACIONAIS (sem prescrever gramas/dieta; pode citar que o alvo proteico individual deve ser definido com nutricionista/médico; incentivo à hidratação é ok).
@@ -305,6 +308,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
 
   const prompt = buildPrompt(context, gate);
   const allowedNames = context.exercises.map((exercise) => exercise.name);
+  const daysPerWeek = context.training?.days_per_week ?? 3;
 
   const openai = new OpenAI({ apiKey });
   const response = await openai.chat.completions.create({
@@ -315,7 +319,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       json_schema: {
         name: "weekly_workout_plan",
         strict: true,
-        schema: buildPlanSchema(allowedNames) as unknown as Record<string, unknown>
+        schema: buildPlanSchema(allowedNames, daysPerWeek) as unknown as Record<string, unknown>
       }
     },
     messages: [{ role: "user", content: prompt }]
@@ -327,6 +331,9 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   }
 
   const plan = JSON.parse(content) as AiWorkoutPlan;
+  if (!Array.isArray(plan.workouts) || plan.workouts.length !== daysPerWeek) {
+    throw new Error(`O plano retornou ${plan.workouts?.length ?? 0} sessões; eram necessárias ${daysPerWeek}. Gere novamente.`);
+  }
 
   // Anexa GIF/imagem do catálogo a cada exercício (match exato + fallback normalizado).
   const mediaByName = new Map<string, { gif_url: string | null; image_url: string | null }>();

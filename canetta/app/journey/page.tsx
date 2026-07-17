@@ -212,6 +212,7 @@ export default function JourneyPage() {
   const [anamneseDays, setAnamneseDays] = useState("");
   const [anamneseMinutes, setAnamneseMinutes] = useState("");
   const [anamneseLimitations, setAnamneseLimitations] = useState("");
+  const [anamneseStep, setAnamneseStep] = useState(0);
   const [sessionCheckinOpen, setSessionCheckinOpen] = useState(false);
   const [sessionCheckinBusy, setSessionCheckinBusy] = useState(false);
   const [sessionCheckin, setSessionCheckin] = useState<SessionCheckinData>({ feels_well: true, new_symptoms: [], can_hydrate: true, pain_changed: false, confidence: "sim" });
@@ -230,6 +231,7 @@ export default function JourneyPage() {
   const [reassessmentOpen, setReassessmentOpen] = useState(false);
   const [reassessmentBusy, setReassessmentBusy] = useState(false);
   const [reassessmentDraft, setReassessmentDraft] = useState({ anchorStrength: "", functionLevel: "", painLevel: "", adherence: "", medicationChange: false, note: "" });
+  const [mediaPreview, setMediaPreview] = useState<{ url: string; name: string } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -435,6 +437,7 @@ export default function JourneyPage() {
     setAnamneseDays(aiTraining ? String(aiTraining.days_per_week) : "");
     setAnamneseMinutes(aiTraining ? `${aiTraining.minutes_per_session} min` : "");
     setAnamneseLimitations(aiTraining?.limitations ?? "");
+    setAnamneseStep(0);
     setAnamneseOpen(true);
   };
 
@@ -911,6 +914,8 @@ export default function JourneyPage() {
 
   // derivados
   const freqDays = ({ "Diária": 1, "Semanal": 7, "Quinzenal": 14, "Mensal": 30 } as Record<string, number>)[st.freqLabel] || 7;
+  const expectedWorkoutCount = aiTraining?.days_per_week ?? 3;
+  const planNeedsRegeneration = !!aiPlan && (aiPlan.workouts?.length ?? 0) !== expectedWorkoutCount;
   const nextReminderLabel = useMemo(() => {
     if (!st.aplicacoes.length) return "";
     const n = new Date(st.aplicacoes[st.aplicacoes.length - 1].data); n.setDate(n.getDate() + freqDays);
@@ -1670,29 +1675,18 @@ export default function JourneyPage() {
                       <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14 }}>
                         <div>
                           <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Anamnese rápida</div>
-                          <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.5, marginTop: 4 }}>4 perguntas para o plano respeitar seu nível, seu equipamento e seu tempo.</div>
+                          <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.5, marginTop: 4 }}>Vamos por partes. Leva menos de 1 minuto.</div>
+                          <div style={{ display: "flex", gap: 5, marginTop: 12 }}>{[0, 1, 2, 3, 4].map((step) => <div key={step} style={{ height: 4, flex: 1, borderRadius: 4, background: step <= anamneseStep ? "#0E6B5C" : "#DDE6E2" }} />)}</div>
                         </div>
-                        <div>
-                          <div style={{ ...fieldLabel, marginBottom: 6 }}>SEU NÍVEL</div>
-                          <ChipRow options={["Nunca treinei", "Já treinei, parei", "Treino regularmente"]} current={anamneseLevel} onPick={setAnamneseLevel} wrap />
+                        {anamneseStep === 0 && <div><div style={{ fontSize: 18, fontWeight: 800, color: "#16302B", marginBottom: 10 }}>Qual é sua experiência?</div><ChipRow options={["Nunca treinei", "Já treinei, parei", "Treino regularmente"]} current={anamneseLevel} onPick={setAnamneseLevel} wrap /></div>}
+                        {anamneseStep === 1 && <div><div style={{ fontSize: 18, fontWeight: 800, color: "#16302B", marginBottom: 10 }}>Onde você vai treinar?</div><ChipRow options={["Casa, sem equipamento", "Casa, com equipamento", "Academia"]} current={anamneseLocation} onPick={setAnamneseLocation} wrap /></div>}
+                        {anamneseStep === 2 && <div><div style={{ fontSize: 18, fontWeight: 800, color: "#16302B", marginBottom: 10 }}>Quantos dias por semana?</div><ChipRow options={["2", "3", "4"]} current={anamneseDays} onPick={setAnamneseDays} equal /></div>}
+                        {anamneseStep === 3 && <div><div style={{ fontSize: 18, fontWeight: 800, color: "#16302B", marginBottom: 10 }}>Quanto tempo por sessão?</div><ChipRow options={["30 min", "45 min", "60 min"]} current={anamneseMinutes} onPick={setAnamneseMinutes} equal /></div>}
+                        {anamneseStep === 4 && <div><div style={{ fontSize: 18, fontWeight: 800, color: "#16302B", marginBottom: 10 }}>Existe dor ou limitação?</div><div style={{ fontSize: 12.5, color: "#596E68", marginBottom: 8 }}>Opcional — você pode pular.</div><input aria-label="Dor, lesão ou limitação" className="j-in" value={anamneseLimitations} onChange={(e) => setAnamneseLimitations(e.target.value)} placeholder="Ex.: dor no joelho direito" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} /></div>}
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {anamneseStep > 0 && <button type="button" onClick={() => setAnamneseStep((step) => step - 1)} style={{ flex: 1, padding: 13, background: "transparent", color: "#596E68", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Voltar</button>}
+                          {anamneseStep < 4 ? <button type="button" onClick={() => setAnamneseStep((step) => step + 1)} style={{ ...primaryBtn, flex: 1, padding: 13, fontSize: 14 }}>Continuar</button> : <button type="button" disabled={anamneseBusy} onClick={saveAnamnese} style={{ ...primaryBtn, flex: 1, padding: 13, fontSize: 14, opacity: anamneseBusy ? 0.6 : 1 }}>{anamneseBusy ? "Salvando…" : "Salvar anamnese"}</button>}
                         </div>
-                        <div>
-                          <div style={{ ...fieldLabel, marginBottom: 6 }}>ONDE VAI TREINAR</div>
-                          <ChipRow options={["Casa, sem equipamento", "Casa, com equipamento", "Academia"]} current={anamneseLocation} onPick={setAnamneseLocation} wrap />
-                        </div>
-                        <div>
-                          <div style={{ ...fieldLabel, marginBottom: 6 }}>DIAS POR SEMANA</div>
-                          <ChipRow options={["2", "3", "4"]} current={anamneseDays} onPick={setAnamneseDays} equal />
-                        </div>
-                        <div>
-                          <div style={{ ...fieldLabel, marginBottom: 6 }}>TEMPO POR SESSÃO</div>
-                          <ChipRow options={["30 min", "45 min", "60 min"]} current={anamneseMinutes} onPick={setAnamneseMinutes} equal />
-                        </div>
-                        <div>
-                          <div style={{ ...fieldLabel, marginBottom: 6 }}>DOR, LESÃO OU LIMITAÇÃO (OPCIONAL)</div>
-                          <input className="j-in" value={anamneseLimitations} onChange={(e) => setAnamneseLimitations(e.target.value)} placeholder="Ex.: dor no joelho direito, hérnia lombar…" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} />
-                        </div>
-                        <button type="button" disabled={anamneseBusy} onClick={saveAnamnese} style={{ ...primaryBtn, padding: 14, fontSize: 14.5, opacity: anamneseBusy ? 0.6 : 1, cursor: anamneseBusy ? "wait" : "pointer" }}>{anamneseBusy ? "Salvando…" : "Salvar anamnese"}</button>
                         {aiTraining && <button type="button" onClick={() => setAnamneseOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 6 }}>Cancelar</button>}
                       </div>
                     ) : (!aiAnamnesis || triageOpen) ? (
@@ -1809,6 +1803,13 @@ export default function JourneyPage() {
                       </div>
                     ) : aiPlan ? (
                       <>
+                        {planNeedsRegeneration && (
+                          <div style={{ ...cardWhite, background: "#FDF6E3", border: "1.5px solid #EAD9A8", display: "flex", flexDirection: "column", gap: 9 }}>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#7A6017" }}>Este plano está incompleto</div>
+                            <div style={{ fontSize: 12.5, color: "#6B5A28", lineHeight: 1.45 }}>Sua anamnese indica {expectedWorkoutCount} dias por semana, mas este plano tem {aiPlan.workouts?.length ?? 0}. Gere novamente para criar a semana completa.</div>
+                            <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ ...primaryBtn, padding: 12, fontSize: 13.5, opacity: aiPlanBusy ? 0.6 : 1 }}>{aiPlanBusy ? "Gerando…" : `Gerar ${expectedWorkoutCount} sessões`}</button>
+                          </div>
+                        )}
                         {aiGate?.status === "amarelo" && (
                           <div style={{ ...cardWhite, background: "#FDF6E3", border: "1.5px solid #EAD9A8", fontSize: 12.5, color: "#7A6017", lineHeight: 1.5 }}>⚠️ Semana em modo leve: {aiGate.motivos.join("; ")}. O plano foi ajustado para baixa demanda.</div>
                         )}
@@ -1830,7 +1831,7 @@ export default function JourneyPage() {
                               <div key={`${day.day}-${exercise.name}`} style={{ borderLeft: "3px solid #0E6B5C", paddingLeft: 12, display: "flex", gap: 10 }}>
                                 {(exercise.gif_url || exercise.image_url) && (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={exercise.gif_url || exercise.image_url || ""} alt={exercise.name} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 12, border: "1.5px solid #E2E7E2", background: "#fff", flexShrink: 0 }} />
+                                  <button type="button" aria-label={`Abrir demonstração de ${exercise.name}`} onClick={() => setMediaPreview({ url: exercise.gif_url || exercise.image_url || "", name: exercise.name })} style={{ padding: 0, border: "none", background: "transparent", cursor: "zoom-in", flexShrink: 0 }}><img src={exercise.gif_url || exercise.image_url || ""} alt={`Ver demonstração de ${exercise.name}`} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 12, border: "1.5px solid #E2E7E2", background: "#fff", display: "block" }} /></button>
                                 )}
                                 <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -1877,17 +1878,17 @@ export default function JourneyPage() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {filteredExercises.map((exercise) => (
-                        <button key={exercise.external_id} type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseExternalId: exercise.external_id, exerciseName: exercise.name, bodyPart: exercise.body_part || undefined, equipment: exercise.equipment || undefined } })} style={{ width: "100%", padding: "12px 14px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
+                        <div key={exercise.external_id} role="button" tabIndex={0} onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseExternalId: exercise.external_id, exerciseName: exercise.name, bodyPart: exercise.body_part || undefined, equipment: exercise.equipment || undefined } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseExternalId: exercise.external_id, exerciseName: exercise.name, bodyPart: exercise.body_part || undefined, equipment: exercise.equipment || undefined } }); } }} style={{ width: "100%", padding: "12px 14px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
                           {(exercise.gif_url || exercise.image_url) && (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={exercise.gif_url || exercise.image_url || ""} alt={exercise.name} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, border: "1px solid #E2E7E2", background: "#F4F6F4", flexShrink: 0 }} />
+                            <button type="button" aria-label={`Abrir demonstração de ${exercise.name}`} onClick={(event) => { event.stopPropagation(); setMediaPreview({ url: exercise.gif_url || exercise.image_url || "", name: exercise.name }); }} style={{ padding: 0, border: "none", background: "transparent", cursor: "zoom-in", flexShrink: 0 }}><img src={exercise.gif_url || exercise.image_url || ""} alt={`Ver demonstração de ${exercise.name}`} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, border: "1px solid #E2E7E2", background: "#F4F6F4", display: "block" }} /></button>
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
                             <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exercise.body_part, exercise.equipment, exercise.target_muscle].filter(Boolean).join(" · ") || "exercício"}</div>
                           </div>
                           <span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   </>
@@ -2039,6 +2040,17 @@ export default function JourneyPage() {
             </div>
           </div>
         </>
+      )}
+      {mediaPreview && (
+        <div role="dialog" aria-modal="true" aria-label={`Demonstração de ${mediaPreview.name}`} style={{ position: "absolute", inset: 0, zIndex: 60, background: "rgba(8,28,24,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setMediaPreview(null)}>
+          <div style={{ width: "min(92vw, 420px)", background: "#fff", borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", gap: 10 }} onClick={(event) => event.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>{mediaPreview.name}</div><button type="button" aria-label="Fechar demonstração" onClick={() => setMediaPreview(null)} style={{ border: "none", background: "#F4F6F4", color: "#16302B", width: 34, height: 34, borderRadius: 10, fontSize: 20, cursor: "pointer" }}>×</button></div>
+            {/* GIFs stay animated in the enlarged preview. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mediaPreview.url} alt={`Demonstração de ${mediaPreview.name}`} style={{ width: "100%", maxHeight: "65vh", objectFit: "contain", borderRadius: 12, background: "#F4F6F4" }} />
+            <div style={{ fontSize: 11.5, color: "#596E68", textAlign: "center" }}>Toque fora para fechar</div>
+          </div>
+        </div>
       )}
     </div>
   );
