@@ -1407,13 +1407,19 @@ export default function JourneyPage() {
                               <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0E6B5C" }}>{day.focus}</div>
                             </div>
                             {(day.exercises ?? []).map((exercise) => (
-                              <div key={`${day.day}-${exercise.name}`} style={{ borderLeft: "3px solid #0E6B5C", paddingLeft: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
-                                  <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", whiteSpace: "nowrap" }}>{exercise.sets} × {exercise.reps}</div>
+                              <div key={`${day.day}-${exercise.name}`} style={{ borderLeft: "3px solid #0E6B5C", paddingLeft: 12, display: "flex", gap: 10 }}>
+                                {(exercise.gif_url || exercise.image_url) && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={exercise.gif_url || exercise.image_url || ""} alt={exercise.name} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 12, border: "1.5px solid #E2E7E2", background: "#fff", flexShrink: 0 }} />
+                                )}
+                                <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", whiteSpace: "nowrap" }}>{exercise.sets} × {exercise.reps}</div>
+                                  </div>
+                                  <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.45 }}>{exercise.why}</div>
+                                  <button type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseName: exercise.name, series: exercise.sets, repeticoes: exercise.reps } })} style={{ alignSelf: "flex-start", marginTop: 3, padding: "6px 10px", background: "transparent", color: "#0E6B5C", border: "1.5px solid #CBE3DC", borderRadius: 10, fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Registrar este</button>
                                 </div>
-                                <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.45 }}>{exercise.why}</div>
-                                <button type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseName: exercise.name, series: exercise.sets, repeticoes: exercise.reps } })} style={{ alignSelf: "flex-start", marginTop: 3, padding: "6px 10px", background: "transparent", color: "#0E6B5C", border: "1.5px solid #CBE3DC", borderRadius: 10, fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Registrar este</button>
                               </div>
                             ))}
                           </div>
@@ -1444,8 +1450,12 @@ export default function JourneyPage() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {filteredExercises.map((exercise) => (
-                        <button key={exercise.external_id} type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseExternalId: exercise.external_id, exerciseName: exercise.name, bodyPart: exercise.body_part || undefined, equipment: exercise.equipment || undefined } })} style={{ width: "100%", padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, cursor: "pointer", textAlign: "left" }}>
-                          <div>
+                        <button key={exercise.external_id} type="button" onClick={() => set({ registerFlow: "treino", sheetOpen: false, draft: { exerciseExternalId: exercise.external_id, exerciseName: exercise.name, bodyPart: exercise.body_part || undefined, equipment: exercise.equipment || undefined } })} style={{ width: "100%", padding: "12px 14px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
+                          {(exercise.gif_url || exercise.image_url) && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={exercise.gif_url || exercise.image_url || ""} alt={exercise.name} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, border: "1px solid #E2E7E2", background: "#F4F6F4", flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
                             <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exercise.body_part, exercise.equipment, exercise.target_muscle].filter(Boolean).join(" · ") || "exercício"}</div>
                           </div>

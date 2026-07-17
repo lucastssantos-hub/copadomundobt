@@ -6,6 +6,8 @@ export type AiWorkoutExercise = {
   sets: number;
   reps: string;
   why: string;
+  gif_url?: string | null;
+  image_url?: string | null;
 };
 
 export type AiWorkoutDay = {
@@ -84,7 +86,7 @@ async function gatherUserContext(userId: string) {
     supabase.from("canetta_dose_applications").select("applied_at").eq("user_id", userId).gte("applied_at", fourteenDaysAgo),
     supabase.from("canetta_missed_doses").select("reason, scheduled_for").eq("user_id", userId).gte("scheduled_for", fourteenDaysAgo),
     supabase.from("canetta_workout_logs").select("exercise_name, body_part, sets_completed, reps_completed, difficulty_felt, completed_at").eq("user_id", userId).order("completed_at", { ascending: false }).limit(15),
-    supabase.from("canetta_exercises").select("name, body_part, equipment, target_muscle").order("name").limit(120)
+    supabase.from("canetta_exercises").select("name, body_part, equipment, target_muscle, gif_url, image_url").order("name").limit(400)
   ]);
 
   return {
@@ -143,13 +145,35 @@ ${workoutLines}
 === CATÁLOGO DE EXERCÍCIOS DISPONÍVEIS (use preferencialmente estes nomes) ===
 ${catalogNames || "Catálogo vazio — use exercícios de peso corporal clássicos."}
 
-=== DIRETRIZES CIENTÍFICAS ===
-1. Perda de peso rápida (>1 kg/semana) em GLP-1 = risco alto de perda de massa magra (até 40% do peso perdido pode ser músculo). Prioridade: treino de força/resistência 3x/semana.
-2. Náusea/vômito intensos (>=6/10) recentes = evitar treino de alta intensidade e exercícios deitados/invertidos; preferir caminhada, mobilidade e força leve.
-3. Energia baixa (<=3/10) nos check-ins = reduzir volume, manter frequência.
-4. Sem histórico de treino = começar com intensidade baixa, 2-3 dias, exercícios simples de peso corporal.
-5. Se o usuário sentiu "difícil" nos últimos treinos, reduza; se sentiu "fácil", progrida levemente.
-6. Progressão gradual: nunca aumente volume e intensidade ao mesmo tempo.
+=== DIRETRIZES BASEADAS EM EVIDÊNCIA (obrigatórias) ===
+
+RISCO CENTRAL (literatura GLP-1):
+1. Estudos com semaglutida e tirzepatida mostram que 25-40% do peso perdido pode ser massa magra (análises de composição corporal dos ensaios STEP/SURMOUNT; estudo SEMALEAN). Treino resistido + proteína adequada reduz essa perda a quase zero (meta-análise 2022 de treino resistido durante emagrecimento; séries de casos em que pacientes que preservaram massa magra treinavam força 3-5x/semana).
+
+FREQUÊNCIA (ACSM 2026):
+2. Todos os grandes grupos musculares >= 2x/semana. Sem histórico de treino: 2-3 sessões full-body/semana em dias NÃO consecutivos (>=48h de recuperação por grupo muscular). Com histórico consistente: até 4 dias (divisão superior/inferior).
+
+VOLUME (ACSM 2026):
+3. Mínimo 2 séries por exercício; padrão 2-3 séries. Iniciante: 4-8 séries semanais por grupo muscular, progredindo gradualmente. Consistência vale mais que complexidade.
+
+INTENSIDADE E REPETIÇÕES:
+4. Iniciante: 8-12 repetições com esforço percebido RPE 6-7 (sobrando 2-3 repetições "no tanque"). NUNCA prescrever até a falha. Execução em velocidade lenta/moderada (ACSM para destreinados). Progredir carga somente quando completar todas as séries no topo da faixa de reps com RPE <= 7.
+
+PROGRESSÃO:
+5. Aumentar carga OU volume no máximo 5-10% por semana — nunca os dois na mesma semana (regra dos 10%). Se o usuário sentiu "difícil" na semana anterior: manter ou reduzir; "fácil": progredir dentro do limite.
+
+DESCANSO:
+6. 60-90s entre séries; até 120s em exercícios multiarticulares (agachamento, remada, supino).
+
+AERÓBIO (OMS):
+7. Meta de 150 min/semana de atividade moderada acumulada (caminhada conta), distribuída na semana. Complementa a força, não substitui — exceto em semana de sintomas fortes.
+
+SINTOMAS GI (consenso multidisciplinar de manejo de eventos GI em GLP-1):
+8. Náusea >= 6/10 ou vômitos nos últimos 7 dias: sem alta intensidade, sem exercícios deitados/invertidos; priorizar caminhada leve (que auxilia digestão e constipação), mobilidade e força leve em pé/sentado. Nunca treinar imediatamente após refeição.
+9. Energia <= 3/10 nos check-ins: cortar volume pela metade (menos séries), MANTER a frequência semanal.
+
+PROTEÍNA (consenso GLP-1):
+10. 1,2-1,6 g/kg/dia durante perda ativa de peso, distribuída entre as refeições. Use o peso atual do usuário para calcular a faixa em gramas quando disponível.
 
 === TAREFA ===
 Monte o plano desta semana com 2 a 4 dias de treino (dias da semana em português: Segunda, Quarta, Sexta etc.), 3 a 5 exercícios por dia.
@@ -191,6 +215,22 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   }
 
   const plan = JSON.parse(content) as AiWorkoutPlan;
+
+  // Anexa GIF/imagem do catálogo a cada exercício do plano (match por nome, case-insensitive).
+  const mediaByName = new Map(
+    context.exercises.map((exercise) => [
+      exercise.name.trim().toLowerCase(),
+      { gif_url: exercise.gif_url ?? null, image_url: exercise.image_url ?? null }
+    ])
+  );
+  for (const day of plan.workouts ?? []) {
+    for (const exercise of day.exercises ?? []) {
+      const media = mediaByName.get(exercise.name.trim().toLowerCase());
+      exercise.gif_url = media?.gif_url ?? null;
+      exercise.image_url = media?.image_url ?? null;
+    }
+  }
+
   const weekStart = currentWeekStart();
 
   const supabase = createSupabaseAdminClient();

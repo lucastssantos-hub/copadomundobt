@@ -395,7 +395,7 @@ export type AiWorkoutPlanRow = {
   workouts: Array<{
     day: string;
     focus: string;
-    exercises: Array<{ name: string; sets: number; reps: string; why: string }>;
+    exercises: Array<{ name: string; sets: number; reps: string; why: string; gif_url?: string | null; image_url?: string | null }>;
   }>;
   created_at: string;
 };
