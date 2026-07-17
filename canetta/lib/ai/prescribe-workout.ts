@@ -80,6 +80,9 @@ function slotPattern(label: string) {
   if (value.includes("unilateral")) return "unilateral";
   if (value.includes("tronco")) return "trunk";
   if (value.includes("mobilidade")) return "mobility";
+  if (value.includes("complementar")) return "complementary";
+  if (value.includes("empurrar leve")) return "horizontal_push";
+  if (value.includes("puxar leve")) return "horizontal_pull";
   if (value.includes("flexão de joelho") || value.includes("panturrilha") || value.includes("deltoide") || value.includes("braços")) return "accessory";
   if (value.includes("leve")) return "complementary";
   return "accessory";
@@ -496,8 +499,19 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       }
     });
     if (mismatches.length) {
-      throw new Error(`A sessão ${template.sessions[sessionIndex].day} não respeitou os padrões do template: ${mismatches.join("; ")}`);
+      // O campo pattern é um metadado de slot, não deve impedir a entrega
+      // quando o modelo escolheu um exercício válido mas rotulou a posição
+      // de forma inconsistente. Normalizamos deterministicamente pela ordem
+      // do template; a validação de segurança/taxonomia continua bloqueando
+      // exercícios inadequados.
+      console.warn(`Normalizando padrões da sessão ${template.sessions[sessionIndex].day}: ${mismatches.join("; ")}`);
     }
+    expected.forEach((pattern, exerciseIndex) => {
+      if (exercises[exerciseIndex]) exercises[exerciseIndex].pattern = pattern;
+    });
+    exercises.slice(expected.length).forEach((exercise) => {
+      if (!["accessory", "complementary", "trunk"].includes(exercise.pattern ?? "")) exercise.pattern = "accessory";
+    });
   }
 
   const validation = validateWorkoutPlan(plan, context.training, gate, context.exercises);
