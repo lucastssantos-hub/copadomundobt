@@ -3,8 +3,10 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) throw new Error("Missing Supabase URL or service role key.");
 const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-const { data, error } = await supabase.from("canetta_exercises").select("external_id,name,name_pt,name_pt_status,taxonomy_status,media_verified,production_eligible,primary_pattern,movement_family,valid_slots,exercise_tier,is_hybrid,technical_complexity").limit(2000);
-if (error) throw error;
+const select = "external_id,name,name_pt,name_pt_status,taxonomy_status,media_verified,production_eligible,primary_pattern,movement_family,valid_slots,exercise_tier,is_hybrid,technical_complexity";
+const pages = await Promise.all([0, 1000].map((from) => supabase.from("canetta_exercises").select(select).range(from, from + 999)));
+for (const page of pages) if (page.error) throw page.error;
+const data = pages.flatMap((page) => page.data ?? []);
 const groups = new Map();
 for (const row of data ?? []) {
   const reasons = [];
@@ -19,8 +21,11 @@ for (const row of data ?? []) {
   if (row.technical_complexity >= 4) reasons.push("complexity_too_high");
   for (const reason of reasons) groups.set(reason, (groups.get(reason) ?? 0) + 1);
 }
+const { data: essential, error: essentialError } = await supabase.from("canetta_essential_exercises").select("canetta_exercises!inner(movement_family)").eq("enabled", true);
+if (essentialError) throw essentialError;
 const familyCounts = new Map();
-for (const row of data ?? []) if (row.movement_family) familyCounts.set(row.movement_family, (familyCounts.get(row.movement_family) ?? 0) + 1);
-for (const row of data ?? []) if (row.movement_family && (familyCounts.get(row.movement_family) ?? 0) > 8) groups.set("duplicate_family", (groups.get("duplicate_family") ?? 0) + 1);
+for (const row of essential ?? []) if (row.canetta_exercises?.movement_family) familyCounts.set(row.canetta_exercises.movement_family, (familyCounts.get(row.canetta_exercises.movement_family) ?? 0) + 1);
+const duplicateFamilyCount = Array.from(familyCounts.values()).filter((count) => count > 3).reduce((sum, count) => sum + count, 0);
+if (duplicateFamilyCount) groups.set("duplicate_family_in_essential", duplicateFamilyCount);
 console.table(Array.from(groups, ([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count));
 console.log(`Total: ${(data ?? []).length}; production eligible: ${(data ?? []).filter((row) => row.production_eligible).length}`);
