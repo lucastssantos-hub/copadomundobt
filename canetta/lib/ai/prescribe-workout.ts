@@ -142,6 +142,27 @@ function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplat
   };
 }
 
+function adaptTemplateToCatalog(template: WorkoutTemplate, exercises: Array<{ name: string; target_muscle?: string | null; body_part?: string | null; equipment?: string | null }>, training: TrainingProfile | null): WorkoutTemplate {
+  const available = new Set(exercises.flatMap((exercise) => classifyExercise(exercise).validSlots));
+  const minimum = Math.max(4, Math.min(6, getSessionExerciseBudget(training?.minutes_per_session ?? 30, false)[0]));
+  const fallbackBySession = (session: { day: string }) => /superior/i.test(session.day)
+    ? ["horizontal_push", "horizontal_pull", "vertical_pull", "vertical_push"]
+    : /inferior/i.test(session.day)
+      ? ["knee_dominant", "hip_dominant"]
+      : ["knee_dominant", "hip_dominant", "horizontal_push", "horizontal_pull"];
+
+  return {
+    ...template,
+    sessions: template.sessions.map((session) => {
+      const patterns = session.patterns.map(slotPattern).filter((pattern) => available.has(pattern));
+      const fallbacks = fallbackBySession(session).filter((pattern) => available.has(pattern));
+      for (const pattern of fallbacks) if (patterns.length < minimum) patterns.push(pattern);
+      while (patterns.length < minimum && fallbacks.length) patterns.push(fallbacks[patterns.length % fallbacks.length]);
+      return { ...session, patterns: patterns.length ? patterns : fallbacks };
+    })
+  };
+}
+
 function buildPlanSchema(allowedExerciseNames: string[], template: WorkoutTemplate, training: TrainingProfile | null, yellow: boolean) {
   const [minExercises, maxExercises] = getSessionExerciseBudget(training?.minutes_per_session ?? 30, yellow);
   return {
@@ -284,9 +305,9 @@ const LOCATION_LABEL: Record<TrainingProfile["training_location"], string> = {
   academia: "Academia completa"
 };
 
-function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gate: GateResult) {
+function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gate: GateResult, templateOverride?: WorkoutTemplate) {
   const { profile, training, anamnesis, weights, sideEffects, checkins, applications, missedDoses, workoutLogs, exercises, reassessment, phase } = context;
-  const template = selectWorkoutTemplate(training);
+  const template = templateOverride ?? selectWorkoutTemplate(training);
 
   const weightLines = weights.map((w) => `${new Date(w.recorded_at).toISOString().slice(0, 10)}: ${w.weight} kg`).join("\n") || "Sem registros de peso.";
   const symptomLines = sideEffects.map((s) => `${new Date(s.recorded_at).toISOString().slice(0, 10)}: ${(s.types ?? []).join(", ")} (intensidade ${s.intensity ?? "?"}/10, duração ${s.duration ?? "?"})`).join("\n") || "Sem sintomas registrados nos últimos 7 dias.";
@@ -491,9 +512,10 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
     throw new GateBlockedError(gate);
   }
 
-  const prompt = buildPrompt(context, gate);
+  const baseTemplate = selectWorkoutTemplate(context.training);
+  const template = adaptTemplateToCatalog(baseTemplate, context.exercises, context.training);
+  const prompt = buildPrompt(context, gate, template);
   const allowedNames = context.exercises.map((exercise) => exercise.name);
-  const template = selectWorkoutTemplate(context.training);
   const requiredPatterns = new Set(template.sessions.flatMap((session) => session.patterns.map(slotPattern)));
   const availablePatterns = new Set(context.exercises.flatMap((exercise) => classifyExercise(exercise).validSlots));
   const missingPatterns = [...requiredPatterns].filter((pattern) => !availablePatterns.has(pattern));
