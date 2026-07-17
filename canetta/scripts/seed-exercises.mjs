@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { classifyOperational } from "./exercise-taxonomy.mjs";
 
 async function loadLocalEnv() {
   try {
@@ -33,10 +34,13 @@ if (!supabaseUrl || !serviceRoleKey) {
 
 function normalizeExercise(exercise) {
   const name = String(exercise.name || "").trim();
+  const namePt = translateExerciseName(name);
+  const taxonomy = classifyOperational(exercise, { namePtStatus: "automatic", productionEligible: false, mediaVerified: Boolean(exercise.image && exercise.gif_url) });
   return {
     external_id: String(exercise.id),
     name,
-    name_pt: translateExerciseName(name),
+    name_pt: namePt,
+    name_pt_status: "automatic",
     difficulty_level: classifyDifficulty(exercise),
     category: exercise.category ?? exercise.body_part ?? null,
     body_part: exercise.body_part ?? null,
@@ -48,6 +52,7 @@ function normalizeExercise(exercise) {
     instruction_steps: exercise.instruction_steps ?? {},
     image_url: exercise.image ? `${mediaBaseUrl}/${exercise.image}` : null,
     gif_url: exercise.gif_url ? `${mediaBaseUrl}/${exercise.gif_url}` : null,
+    ...taxonomy,
     attribution: exercise.attribution ?? "Media © Gym visual. See dataset license/notice.",
     source: "hasaneyldrm/exercises-dataset",
     updated_at: new Date().toISOString()

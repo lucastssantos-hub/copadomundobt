@@ -1,0 +1,26 @@
+import { readFile } from "node:fs/promises";
+import { createClient } from "@supabase/supabase-js";
+
+const manifest = JSON.parse(await readFile(new URL("../config/essential-exercises.json", import.meta.url), "utf8"));
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !key) throw new Error("Missing Supabase URL or service role key.");
+const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+const { data: exercises, error } = await supabase.from("canetta_exercises").select("id,name,production_eligible,name_pt_status,media_verified,primary_pattern,exercise_tier,is_hybrid").limit(2000);
+if (error) throw error;
+const normalize = (value) => String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const rows = [];
+const unmatched = [];
+for (const entry of manifest.entries) {
+  const matches = (exercises ?? []).filter((exercise) => {
+    const name = normalize(exercise.name);
+    return entry.match.some((term) => name.includes(normalize(term))) && exercise.production_eligible && exercise.name_pt_status === "reviewed" && exercise.media_verified && !exercise.is_hybrid && exercise.exercise_tier !== "specialized";
+  });
+  if (!matches.length) unmatched.push(`${entry.slot}: ${entry.match.join(" / ")}`);
+  for (const exercise of matches.slice(0, 3)) rows.push({ exercise_id: exercise.id, slot: entry.slot, priority: entry.priority, rationale: manifest.policy, reviewed_at: new Date().toISOString() });
+}
+if (unmatched.length) console.warn(`No production-eligible match for ${unmatched.length} manifest entries:\n${unmatched.join("\n")}`);
+if (!rows.length) throw new Error("No eligible exercises matched. Review names/media/taxonomy before enabling the essential catalog.");
+const { error: upsertError } = await supabase.from("canetta_essential_exercises").upsert(rows, { onConflict: "exercise_id,slot" });
+if (upsertError) throw upsertError;
+console.log(`Seeded ${rows.length} essential exercise mappings from ${manifest.entries.length} curated slots.`);

@@ -1,4 +1,5 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { classifyOperational } from "./exercise-taxonomy.mjs";
 
 const input = process.argv[2] || "/private/tmp/canetta-exercises-dataset/data/exercises.json";
 const outputDir = process.argv[3] || "/private/tmp/canetta_enrichment_parts";
@@ -28,9 +29,14 @@ function classify(exercise) {
 }
 
 const escapeSql = (value) => value.replaceAll("\\", "\\\\").replaceAll("'", "''");
+const sqlText = (value) => `'${escapeSql(String(value ?? ""))}'`;
+const sqlArray = (values) => `array[${(values ?? []).map((value) => sqlText(value)).join(",")}]::text[]`;
 await mkdir(outputDir, { recursive: true });
 for (let index = 0; index < data.length; index += 100) {
-  const rows = data.slice(index, index + 100).map((exercise) => `update public.canetta_exercises set name_pt='${escapeSql(translate(exercise.name))}', difficulty_level='${classify(exercise)}', updated_at=now() where external_id='${escapeSql(String(exercise.id))}';`).join("\n");
+  const rows = data.slice(index, index + 100).map((exercise) => {
+    const taxonomy = classifyOperational(exercise, { namePtStatus: "automatic", productionEligible: false, mediaVerified: Boolean(exercise.image && exercise.gif_url) });
+    return `update public.canetta_exercises set name_pt=${sqlText(translate(exercise.name))}, name_pt_status='automatic', difficulty_level='${classify(exercise)}', primary_pattern=${sqlText(taxonomy.primary_pattern)}, secondary_patterns=${sqlArray(taxonomy.secondary_patterns)}, movement_family=${sqlText(taxonomy.movement_family)}, joint_class=${sqlText(taxonomy.joint_class)}, session_role=${sqlText(taxonomy.session_role)}, exercise_tier=${sqlText(taxonomy.exercise_tier)}, valid_slots=${sqlArray(taxonomy.valid_slots)}, valid_session_types=${sqlArray(taxonomy.valid_session_types)}, technical_complexity=${taxonomy.technical_complexity}, balance_demand=${taxonomy.balance_demand}, mobility_demand=${taxonomy.mobility_demand}, setup_complexity=${taxonomy.setup_complexity}, progression_clarity=${taxonomy.progression_clarity}, unsupervised_suitability=${taxonomy.unsupervised_suitability}, is_hybrid=${taxonomy.is_hybrid}, is_unilateral=${taxonomy.is_unilateral}, requires_spotter=${taxonomy.requires_spotter}, media_verified=${taxonomy.media_verified}, production_eligible=false, context_scores='{}'::jsonb, taxonomy_version='2026-07-17.v1', updated_at=now() where external_id='${escapeSql(String(exercise.id))}';`;
+  }).join("\n");
   await writeFile(`${outputDir}/part-${String(index / 100).padStart(2, "0")}.sql`, `${rows}\n`);
 }
 console.log(`Generated ${Math.ceil(data.length / 100)} enrichment parts for ${data.length} exercises.`);

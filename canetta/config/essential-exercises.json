@@ -1,0 +1,26 @@
+{
+  "version": "2026-07-17.v1",
+  "policy": "Curadoria operacional do produto; não é uma lista de exercícios cientificamente superior.",
+  "entries": [
+    {"slot":"knee_primary","match":["leg press"],"priority":10},
+    {"slot":"knee_primary","match":["hack squat"],"priority":20},
+    {"slot":"knee_secondary","match":["box squat","goblet squat"],"priority":30},
+    {"slot":"hip_primary","match":["hip thrust"],"priority":10},
+    {"slot":"hip_primary","match":["romanian deadlift","dumbbell romanian"],"priority":20},
+    {"slot":"hip_secondary","match":["pull through","glute bridge"],"priority":30},
+    {"slot":"horizontal_push","match":["chest press"],"priority":10},
+    {"slot":"horizontal_push","match":["bench press"],"priority":20},
+    {"slot":"vertical_push","match":["shoulder press","overhead press","military press"],"priority":20},
+    {"slot":"horizontal_pull","match":["seated row","machine row","cable row"],"priority":10},
+    {"slot":"horizontal_pull","match":["supported row","dumbbell row"],"priority":20},
+    {"slot":"vertical_pull","match":["lat pulldown","pulldown"],"priority":10},
+    {"slot":"knee_secondary","match":["leg extension"],"priority":50},
+    {"slot":"knee_flexion","match":["leg curl","leg extension machine","hamstring curl"],"priority":10},
+    {"slot":"unilateral","match":["supported split squat","step-up","split squat"],"priority":20},
+    {"slot":"calf","match":["calf raise"],"priority":10},
+    {"slot":"accessory","match":["lateral raise"],"priority":30},
+    {"slot":"biceps","match":["biceps curl","dumbbell curl","cable curl"],"priority":30},
+    {"slot":"triceps","match":["triceps pushdown","triceps extension"],"priority":30},
+    {"slot":"trunk","match":["pallof press","dead bug","plank"],"priority":10}
+  ]
+}

@@ -9,7 +9,10 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit --incremental false",
     "seed:exercises": "node scripts/seed-exercises.mjs",
-    "enrich:exercises": "node scripts/enrich-exercises.mjs"
+    "enrich:exercises": "node scripts/enrich-exercises.mjs",
+    "seed:essential-exercises": "node scripts/seed-essential-exercises.mjs",
+    "audit:exercises": "node scripts/audit-exercise-catalog.mjs",
+    "test:exercise-taxonomy": "node scripts/test-exercise-taxonomy.mjs && node scripts/test-essential-manifest.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

@@ -1,61 +1,66 @@
 import type { AiWorkoutPlan, TrainingProfile } from "@/lib/ai/prescribe-workout";
 import type { GateResult } from "@/lib/ai/anamnesis";
-import { classifyExercise } from "@/lib/ai/exercise-taxonomy";
+import { classifyExercise, isProductionEligible, type ExerciseTaxonomy } from "@/lib/ai/exercise-taxonomy";
 
-type CatalogExercise = {
+export type CatalogExercise = {
   name: string;
+  name_pt?: string | null;
+  name_pt_status?: "reviewed" | "automatic" | "blocked" | null;
   body_part?: string | null;
   target_muscle?: string | null;
+  equipment?: string | null;
+  media_verified?: boolean | null;
+  production_eligible?: boolean | null;
+  primary_pattern?: string | null;
+  movement_family?: string | null;
+  joint_class?: ExerciseTaxonomy["jointClass"] | null;
+  session_role?: ExerciseTaxonomy["sessionRole"] | null;
+  exercise_tier?: ExerciseTaxonomy["tier"] | null;
+  valid_slots?: string[] | null;
+  valid_session_types?: ExerciseTaxonomy["validSessionTypes"] | null;
+  technical_complexity?: number | null;
+  balance_demand?: number | null;
+  mobility_demand?: number | null;
+  setup_complexity?: number | null;
+  progression_clarity?: number | null;
+  unsupervised_suitability?: number | null;
+  is_hybrid?: boolean | null;
+  is_unilateral?: boolean | null;
+  requires_spotter?: boolean | null;
+  context_scores?: Record<string, number> | null;
 };
 
-const SESSION_SLOTS: Record<number, [number, number]> = {
-  20: [3, 4],
-  30: [4, 5],
-  45: [5, 7],
-  60: [6, 8]
-};
-
+const SESSION_SLOTS: Record<number, [number, number]> = { 20: [3, 4], 30: [4, 6], 45: [5, 7], 60: [6, 8] };
 export function getSessionExerciseBudget(minutes: number, yellow: boolean): [number, number] {
   const key = Object.keys(SESSION_SLOTS).map(Number).sort((a, b) => a - b).find((value) => minutes <= value) ?? 60;
   const [min, max] = SESSION_SLOTS[key];
-  // Os templates atuais têm seis slots de movimento. Em sessões de 30 min,
-  // seis exercícios ainda cabem quando são usados 1–2 sets e não há HIIT.
-  const adjustedMax = key === 30 ? Math.max(max, 6) : max;
-  return yellow ? [Math.min(min, 3), Math.min(adjustedMax, 4)] : [min, adjustedMax];
+  return yellow ? [Math.min(min, 3), Math.min(max, 4)] : [min, max];
 }
-
-function normalize(value: string | null | undefined) {
-  return (value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-function family(exercise: CatalogExercise): string {
-  const text = normalize(`${exercise.name} ${exercise.target_muscle} ${exercise.body_part}`);
-  if (/bench press|chest press|push up|pushup|supino|peitoral|chest fly|crucifix/.test(text)) return "pressao_peito";
-  if (/row|remada|upper back|trapezius|rhomboid/.test(text)) return "remada";
-  if (/pull up|chin up|pulldown|latissimus|dorsal/.test(text)) return "puxada_vertical";
-  if (/squat|leg press|lunge|step up|quadriceps|quad/.test(text)) return "dominante_joelho";
-  if (/deadlift|romanian|hip thrust|glute|hamstring|good morning/.test(text)) return "dominante_quadril";
-  if (/curl|biceps/.test(text)) return "flexao_cotovelo";
-  if (/triceps|pushdown|extension.*elbow/.test(text)) return "extensao_cotovelo";
-  if (/plank|crunch|sit up|abdominal|oblique|core/.test(text)) return "tronco";
-  return "outro";
-}
+const normalize = (value: string | null | undefined) => (value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 
 export type VolumeLedger = Record<string, { direct_sets: number; exercises: number }>;
-
 export function buildVolumeLedger(plan: AiWorkoutPlan, catalog: CatalogExercise[]): VolumeLedger {
   const byName = new Map(catalog.map((item) => [normalize(item.name), item]));
   const ledger: VolumeLedger = {};
-  for (const workout of plan.workouts ?? []) {
-    for (const exercise of workout.exercises ?? []) {
-      const item = byName.get(normalize(exercise.name));
-      const key = item ? family(item) : "outro";
-      ledger[key] ??= { direct_sets: 0, exercises: 0 };
-      ledger[key].direct_sets += Math.max(0, Math.round(exercise.sets || 0));
-      ledger[key].exercises += 1;
-    }
+  for (const workout of plan.workouts ?? []) for (const exercise of workout.exercises ?? []) {
+    const item = byName.get(normalize(exercise.name));
+    const key = item ? classifyExercise(item).movementFamily : "unknown_catalog_item";
+    ledger[key] ??= { direct_sets: 0, exercises: 0 };
+    ledger[key].direct_sets += Math.max(0, Math.round(exercise.sets || 0));
+    ledger[key].exercises += 1;
   }
   return ledger;
+}
+
+function requiredCoverage(focus: string): { sessionType: "full_body" | "upper" | "lower"; patterns: string[] } {
+  const value = normalize(focus);
+  if (value.includes("superior")) return { sessionType: "upper", patterns: ["horizontal_push", "horizontal_pull", "vertical_pull", "vertical_push"] };
+  if (value.includes("inferior")) return { sessionType: "lower", patterns: ["knee_dominant", "hip_dominant"] };
+  return { sessionType: "full_body", patterns: ["knee_dominant", "hip_dominant", "horizontal_push", "horizontal_pull"] };
+}
+
+function findCatalogItem(name: string, catalog: CatalogExercise[]) {
+  return catalog.find((candidate) => normalize(candidate.name) === normalize(name));
 }
 
 export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfile | null, gate: GateResult, catalog: CatalogExercise[]) {
@@ -63,47 +68,41 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
   const [minSlots, maxSlots] = getSessionExerciseBudget(minutes, gate.status === "amarelo");
   const errors: string[] = [];
   const seen = new Map<string, number>();
-
   for (const workout of plan.workouts ?? []) {
-    const count = workout.exercises?.length ?? 0;
-    if (count < minSlots || count > maxSlots) errors.push(`${workout.day}: ${count} exercícios; esperado entre ${minSlots} e ${maxSlots} para ${minutes} min.`);
-    const sessionSets = (workout.exercises ?? []).reduce((sum, exercise) => sum + (Number.isFinite(exercise.sets) ? exercise.sets : 0), 0);
+    const exercises = workout.exercises ?? [];
+    if (exercises.length < minSlots || exercises.length > maxSlots) errors.push(`${workout.day}: ${exercises.length} exercícios; esperado entre ${minSlots} e ${maxSlots} para ${minutes} min.`);
+    const sessionSets = exercises.reduce((sum, exercise) => sum + (Number.isFinite(exercise.sets) ? exercise.sets : 0), 0);
     if (sessionSets > (gate.status === "amarelo" ? 12 : 24)) errors.push(`${workout.day}: volume total de séries acima do limite operacional.`);
+    const coverage = requiredCoverage(workout.focus);
+    const taxonomies: Array<{ name: string; taxonomy: ExerciseTaxonomy }> = [];
     const families = new Map<string, number>();
     let trunkCount = 0;
-    for (const exercise of workout.exercises ?? []) {
+    for (const exercise of exercises) {
+      const item = findCatalogItem(exercise.name, catalog);
+      if (!item) { errors.push(`${workout.day}: exercício fora do catálogo permitido (${exercise.name}).`); continue; }
+      if (!isProductionEligible(item)) errors.push(`${workout.day}: exercício não elegível para produção (${exercise.name}); requer nome/mídia/taxonomia revisados.`);
+      const taxonomy = classifyExercise(item);
+      taxonomies.push({ name: exercise.name, taxonomy });
+      if (taxonomy.validSessionTypes.includes(coverage.sessionType) === false) errors.push(`${workout.day}: ${exercise.name} não é válido para sessão ${coverage.sessionType}.`);
+      if (taxonomy.tier === "specialized" || taxonomy.isHybrid || taxonomy.technicalComplexity >= 4) errors.push(`${workout.day}: exercício especializado/híbrido não permitido (${exercise.name}).`);
       if (!Number.isInteger(exercise.sets) || exercise.sets < 1 || exercise.sets > 4) errors.push(`${workout.day}: séries inválidas em ${exercise.name}.`);
-      const item = catalog.find((candidate) => normalize(candidate.name) === normalize(exercise.name));
-      const taxonomy = item ? classifyExercise(item) : null;
-      const currentFamily = taxonomy?.movementFamily ?? (item ? family(item) : "outro");
-      if (taxonomy?.tier === "specialized" || taxonomy?.isHybrid || (taxonomy?.complexity ?? 0) >= 4) errors.push(`${workout.day}: exercício especializado/híbrido não permitido no catálogo operacional (${exercise.name}).`);
-      if (taxonomy?.sessionRole === "trunk") trunkCount += 1;
-      const familyCount = (families.get(currentFamily) ?? 0) + 1;
-      // Templates de corpo inteiro podem ter até três variações da mesma
-      // família (por exemplo, puxada horizontal + remada de suporte + uma
-      // variação leve). O limite semanal de séries continua sendo aplicado
-      // abaixo para impedir excesso de volume.
-      const allowedFamilyCount = 3;
-      if (currentFamily !== "outro" && familyCount > allowedFamilyCount) errors.push(`${workout.day}: redundância excessiva na família ${currentFamily}.`);
-      families.set(currentFamily, familyCount);
-      const key = normalize(exercise.name);
-      seen.set(key, (seen.get(key) ?? 0) + 1);
+      const family = taxonomy.movementFamily;
+      const familyCount = (families.get(family) ?? 0) + 1;
+      if (family !== "trunk" && family !== "accessory" && familyCount > 1) errors.push(`${workout.day}: família redundante ${family}; escolha uma variação diferente ou registre prioridade explícita.`);
+      families.set(family, familyCount);
+      if (taxonomy.sessionRole === "trunk") trunkCount += 1;
+      if (taxonomy.sessionRole === "accessory" && taxonomies.some(({ taxonomy: prior }) => coverage.patterns.some((pattern) => prior.primaryPattern === pattern) === false)) errors.push(`${workout.day}: acessório antes da cobertura dos padrões principais.`);
+      seen.set(normalize(exercise.name), (seen.get(normalize(exercise.name)) ?? 0) + 1);
     }
-    if (trunkCount > 2) errors.push(`${workout.day}: mais de dois exercícios de tronco.`);
+    for (const pattern of coverage.patterns) if (!taxonomies.some(({ taxonomy }) => taxonomy.primaryPattern === pattern || taxonomy.validSlots.includes(pattern))) errors.push(`${workout.day}: falta cobertura obrigatória ${pattern}.`);
+    if (trunkCount > 1) errors.push(`${workout.day}: mais de um exercício de tronco sem prioridade explícita.`);
+    for (let index = 1; index < taxonomies.length; index += 1) {
+      if (taxonomies[index].taxonomy.sessionRole === "primary" && taxonomies[index - 1].taxonomy.sessionRole === "accessory") errors.push(`${workout.day}: exercício principal depois de acessório (${taxonomies[index].name}).`);
+    }
   }
-
   const ledger = buildVolumeLedger(plan, catalog);
-  for (const [key, value] of Object.entries(ledger)) {
-    // "outro" significa que o catálogo ainda não tem taxonomia suficiente
-    // para aquele item; não é um grupo muscular real e não deve bloquear a geração.
-    if (key !== "outro" && value.direct_sets > (gate.status === "amarelo" ? 8 : 16)) errors.push(`Ledger semanal: ${key} excede o limite de ${gate.status === "amarelo" ? 8 : 16} séries diretas.`);
-  }
-  if (gate.status === "amarelo" && (plan.workouts ?? []).some((workout) => (workout.exercises ?? []).some((exercise) => exercise.sets > 2))) {
-    errors.push("AMARELO: cada exercício deve ter no máximo 2 séries e a sessão deve permanecer de baixa demanda.");
-  }
-  for (const [name, count] of seen) {
-    if (training?.experience_level === "nunca_treinei" && count > 3) errors.push(`Iniciante: ${name} foi repetido mais de 3 vezes na semana.`);
-  }
-
+  for (const [key, value] of Object.entries(ledger)) if (key !== "unknown_catalog_item" && value.direct_sets > (gate.status === "amarelo" ? 8 : 16)) errors.push(`Ledger semanal: ${key} excede o limite operacional.`);
+  if (gate.status === "amarelo" && (plan.workouts ?? []).some((workout) => (workout.exercises ?? []).some((exercise) => exercise.sets > 2))) errors.push("AMARELO: cada exercício deve ter no máximo 2 séries.");
+  for (const [name, count] of seen) if (training?.experience_level === "nunca_treinei" && count > 3) errors.push(`Iniciante: ${name} foi repetido mais de 3 vezes na semana.`);
   return { ok: errors.length === 0, errors, ledger };
 }

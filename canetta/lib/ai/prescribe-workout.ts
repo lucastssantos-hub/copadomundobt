@@ -217,8 +217,14 @@ async function gatherUserContext(userId: string) {
 
   let exerciseQuery = supabase
     .from("canetta_exercises")
-    .select("name, name_pt, difficulty_level, body_part, equipment, target_muscle, gif_url, image_url")
+    .select("name, name_pt, name_pt_status, difficulty_level, body_part, equipment, target_muscle, gif_url, image_url, media_verified, production_eligible, primary_pattern, secondary_patterns, movement_family, joint_class, session_role, exercise_tier, valid_slots, valid_session_types, technical_complexity, balance_demand, mobility_demand, setup_complexity, progression_clarity, unsupervised_suitability, is_hybrid, is_unilateral, requires_spotter, context_scores, canetta_essential_exercises!inner(slot, priority, enabled)")
     .order("name")
+    .eq("production_eligible", true)
+    .eq("name_pt_status", "reviewed")
+    .eq("media_verified", true)
+    .eq("is_hybrid", false)
+    .neq("exercise_tier", "specialized")
+    .eq("canetta_essential_exercises.enabled", true)
     .limit(1000);
 
   const allowedDifficulty = training?.experience_level === "nunca_treinei"
@@ -284,7 +290,7 @@ function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gat
   const missedLines = missedDoses.map((m) => `${new Date(m.scheduled_for).toISOString().slice(0, 10)}: ${m.reason ?? "motivo não informado"}`).join("\n") || "Nenhuma dose perdida registrada.";
   const catalogLines = exercises.map((e) => {
     const taxonomy = classifyExercise(e);
-    return `- ${e.name} | nome em português: ${e.name_pt ?? "?"} | nível: ${e.difficulty_level ?? "?"} | papel: ${taxonomy.sessionRole} | padrão primário: ${taxonomy.primaryPattern} | família: ${taxonomy.movementFamily} | tier: ${taxonomy.tier} | complexidade: ${taxonomy.complexity}/4 | progressão: ${taxonomy.progressionClarity}/4 | híbrido: ${taxonomy.isHybrid ? "sim" : "não"} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`;
+    return `- ${e.name} | nome em português: ${e.name_pt ?? "?"} | nível: ${e.difficulty_level ?? "?"} | papel: ${taxonomy.sessionRole} | padrão primário: ${taxonomy.primaryPattern} | família: ${taxonomy.movementFamily} | tier: ${taxonomy.tier} | complexidade: ${taxonomy.technicalComplexity}/4 | progressão: ${taxonomy.progressionClarity}/4 | híbrido: ${taxonomy.isHybrid ? "sim" : "não"} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`;
   }).join("\n");
 
   const treatmentWeeks = profile?.created_at
@@ -522,20 +528,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         mismatches.push(`${expected.length + extraIndex + 1}: extra deve ser accessory/complementary/trunk`);
       }
     });
-    if (mismatches.length) {
-      // O campo pattern é um metadado de slot, não deve impedir a entrega
-      // quando o modelo escolheu um exercício válido mas rotulou a posição
-      // de forma inconsistente. Normalizamos deterministicamente pela ordem
-      // do template; a validação de segurança/taxonomia continua bloqueando
-      // exercícios inadequados.
-      console.warn(`Normalizando padrões da sessão ${template.sessions[sessionIndex].day}: ${mismatches.join("; ")}`);
-    }
-    expected.forEach((pattern, exerciseIndex) => {
-      if (exercises[exerciseIndex]) exercises[exerciseIndex].pattern = pattern;
-    });
-    exercises.slice(expected.length).forEach((exercise) => {
-      if (!["accessory", "complementary", "trunk"].includes(exercise.pattern ?? "")) exercise.pattern = "accessory";
-    });
+    if (mismatches.length) throw new Error(`O plano não respeitou os slots de ${template.sessions[sessionIndex].day}: ${mismatches.join("; ")}`);
   }
 
   capWeeklyDirectVolume(plan, context.exercises, gate.status === "amarelo" ? 8 : 16);
