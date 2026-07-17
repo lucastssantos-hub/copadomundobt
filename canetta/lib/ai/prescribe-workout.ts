@@ -325,6 +325,7 @@ Variabilidade de exercícios: ${template.variability} (iniciante mantém a maior
 Você deve devolver exatamente estas sessões, nesta ordem:
 ${template.sessions.map((session, index) => `${index + 1}. ${session.day} — ${session.focus}\n   Padrões obrigatórios: ${session.patterns.join("; ")}`).join("\n")}
 Não crie uma divisão por músculo, não troque o template e não concentre todos os exercícios de pernas, peito ou costas em um único dia.
+Se algum padrão listado não tiver candidato aprovado no catálogo, não invente nem use exercício antigo: use uma alternativa já presente na lista, mantendo a sessão dentro do volume seguro.
 
 === TRIAGEM DE SEGURANÇA (gate determinístico já aplicado pelo sistema — respeite integralmente) ===
 ${anamnesis ? anamnesisPromptSummary(anamnesis, gate) : "Triagem não disponível — gere apenas sessões de baixa demanda."}
@@ -495,9 +496,13 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   const template = selectWorkoutTemplate(context.training);
   const requiredPatterns = new Set(template.sessions.flatMap((session) => session.patterns.map(slotPattern)));
   const availablePatterns = new Set(context.exercises.flatMap((exercise) => classifyExercise(exercise).validSlots));
-  const missingPattern = [...requiredPatterns].find((pattern) => !availablePatterns.has(pattern));
-  if (missingPattern) {
-    throw new Error(JSON.stringify({ code: "NO_ELIGIBLE_EXERCISE_FOR_SLOT", slot: missingPattern, template: template.key, context: { experience: context.training?.experience_level, location: context.training?.training_location } }));
+  const missingPatterns = [...requiredPatterns].filter((pattern) => !availablePatterns.has(pattern));
+  if (missingPatterns.length) {
+    console.warn("Canetta template slots without approved candidates", {
+      template: template.key,
+      missing: missingPatterns,
+      context: { experience: context.training?.experience_level, location: context.training?.training_location }
+    });
   }
 
   const openai = new OpenAI({ apiKey });
