@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { anamnesisPromptSummary, evaluateGate, type AnamnesisData, type GateResult } from "@/lib/ai/anamnesis";
-import { validateWorkoutPlan } from "@/lib/ai/workout-validation";
+import { getSessionExerciseBudget, validateWorkoutPlan } from "@/lib/ai/workout-validation";
 
 export class GateBlockedError extends Error {
   gate: GateResult;
@@ -105,7 +105,8 @@ function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplat
   };
 }
 
-function buildPlanSchema(allowedExerciseNames: string[], template: WorkoutTemplate) {
+function buildPlanSchema(allowedExerciseNames: string[], template: WorkoutTemplate, training: TrainingProfile | null, yellow: boolean) {
+  const [minExercises, maxExercises] = getSessionExerciseBudget(training?.minutes_per_session ?? 30, yellow);
   return {
     type: "object",
     properties: {
@@ -123,6 +124,8 @@ function buildPlanSchema(allowedExerciseNames: string[], template: WorkoutTempla
             focus: { type: "string" },
             exercises: {
               type: "array",
+              minItems: minExercises,
+              maxItems: maxExercises,
               items: {
                 type: "object",
                 properties: {
@@ -399,7 +402,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       json_schema: {
         name: "weekly_workout_plan",
         strict: true,
-        schema: buildPlanSchema(allowedNames, template) as unknown as Record<string, unknown>
+        schema: buildPlanSchema(allowedNames, template, context.training, gate.status === "amarelo") as unknown as Record<string, unknown>
       }
     },
     messages: [{ role: "user", content: prompt }]

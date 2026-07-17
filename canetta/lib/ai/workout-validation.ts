@@ -14,7 +14,7 @@ const SESSION_SLOTS: Record<number, [number, number]> = {
   60: [6, 8]
 };
 
-function slotBudget(minutes: number, yellow: boolean): [number, number] {
+export function getSessionExerciseBudget(minutes: number, yellow: boolean): [number, number] {
   const key = Object.keys(SESSION_SLOTS).map(Number).sort((a, b) => a - b).find((value) => minutes <= value) ?? 60;
   const [min, max] = SESSION_SLOTS[key];
   // Os templates atuais têm seis slots de movimento. Em sessões de 30 min,
@@ -59,7 +59,7 @@ export function buildVolumeLedger(plan: AiWorkoutPlan, catalog: CatalogExercise[
 
 export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfile | null, gate: GateResult, catalog: CatalogExercise[]) {
   const minutes = training?.minutes_per_session ?? 30;
-  const [minSlots, maxSlots] = slotBudget(minutes, gate.status === "amarelo");
+  const [minSlots, maxSlots] = getSessionExerciseBudget(minutes, gate.status === "amarelo");
   const errors: string[] = [];
   const seen = new Map<string, number>();
 
