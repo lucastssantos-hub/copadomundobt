@@ -92,6 +92,19 @@ function slotPattern(label: string): Pattern {
   return "accessory";
 }
 
+function canonicalPattern(value: string): Pattern {
+  if (value.includes("knee")) return "knee_dominant";
+  if (value.includes("hip")) return "hip_dominant";
+  if (value.includes("horizontal_push")) return "horizontal_push";
+  if (value.includes("vertical_push")) return "vertical_push";
+  if (value.includes("horizontal_pull")) return "horizontal_pull";
+  if (value.includes("vertical_pull")) return "vertical_pull";
+  if (value.includes("unilateral")) return "unilateral";
+  if (value.includes("trunk")) return "trunk";
+  if (value.includes("accessory") || value.includes("biceps") || value.includes("triceps") || value.includes("calf")) return "accessory";
+  return "complementary";
+}
+
 function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplate {
   const days = training?.days_per_week ?? 3;
   const beginner = training?.experience_level === "nunca_treinei";
@@ -144,7 +157,7 @@ function selectWorkoutTemplate(training: TrainingProfile | null): WorkoutTemplat
 }
 
 function adaptTemplateToCatalog(template: WorkoutTemplate, exercises: Array<{ name: string; target_muscle?: string | null; body_part?: string | null; equipment?: string | null }>, training: TrainingProfile | null): WorkoutTemplate {
-  const available = new Set(exercises.flatMap((exercise) => classifyExercise(exercise).validSlots));
+  const available = new Set(exercises.flatMap((exercise) => classifyExercise(exercise).validSlots.map(canonicalPattern)));
   const minimum = Math.max(4, Math.min(6, getSessionExerciseBudget(training?.minutes_per_session ?? 30, false)[0]));
   const fallbackBySession = (session: { day: string }): Pattern[] => /superior/i.test(session.day)
     ? ["horizontal_push", "horizontal_pull", "vertical_pull", "vertical_push"]
