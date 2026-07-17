@@ -92,7 +92,9 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
 
   const ledger = buildVolumeLedger(plan, catalog);
   for (const [key, value] of Object.entries(ledger)) {
-    if (value.direct_sets > (gate.status === "amarelo" ? 8 : 16)) errors.push(`Ledger semanal: ${key} excede o limite de ${gate.status === "amarelo" ? 8 : 16} séries diretas.`);
+    // "outro" significa que o catálogo ainda não tem taxonomia suficiente
+    // para aquele item; não é um grupo muscular real e não deve bloquear a geração.
+    if (key !== "outro" && value.direct_sets > (gate.status === "amarelo" ? 8 : 16)) errors.push(`Ledger semanal: ${key} excede o limite de ${gate.status === "amarelo" ? 8 : 16} séries diretas.`);
   }
   if (gate.status === "amarelo" && (plan.workouts ?? []).some((workout) => (workout.exercises ?? []).some((exercise) => exercise.sets > 2))) {
     errors.push("AMARELO: cada exercício deve ter no máximo 2 séries e a sessão deve permanecer de baixa demanda.");
