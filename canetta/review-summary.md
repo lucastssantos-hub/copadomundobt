@@ -34,7 +34,9 @@ O lote cobre candidatos para joelho, quadril, empurrar horizontal, puxar horizon
 
 ## Gate de banco
 
-Não executado nesta sessão por ausência de `SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` no ambiente. Após configurar o staging, executar:
+Aplicado em 2026-07-17 no projeto Supabase `copa do mundo` (`llplopgctwaxgnfwzaqi`) via CLI autenticado. Resultado: 20 exercícios revisados e 20 `production_eligible=true`; os 8 rejeitados e 2 `needs_changes` permanecem fora de produção. O catálogo total contém 1.324 exercícios.
+
+Comandos equivalentes para repetir em outro ambiente:
 
 ```bash
 node scripts/approve-exercise-batch.mjs review.json
