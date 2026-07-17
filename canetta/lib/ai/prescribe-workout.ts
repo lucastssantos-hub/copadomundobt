@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { anamnesisPromptSummary, evaluateGate, type AnamnesisData, type GateResult } from "@/lib/ai/anamnesis";
+import { validateWorkoutPlan } from "@/lib/ai/workout-validation";
 
 export class GateBlockedError extends Error {
   gate: GateResult;
@@ -303,6 +304,11 @@ Leia a região/alvo/equipamento de cada um — escolha pelo que o exercício rea
 ${catalogLines}
 
 === DIRETRIZES DE PROGRAMAÇÃO (padrões operacionais ajustáveis, informados pela literatura geral de treinamento resistido) ===
+=== REGRAS DETERMINÍSTICAS DE DOSE (o servidor rejeita qualquer violação) ===
+Para cada sessão, respeite o tempo disponível: 20 min = 3–4 exercícios; 30 min = 4–5; 45 min = 5–7; 60 min = 6–8.
+Use 1–4 séries por exercício. Evite repetir a mesma família de movimento na mesma sessão (por exemplo, dois presses de peito ou duas remadas), salvo se não houver alternativa segura no catálogo.
+O ledger semanal limita cada família a 16 séries diretas (8 em AMARELO). Em AMARELO use no máximo 3–4 exercícios por sessão, no máximo 2 séries por exercício, sem progressão e sem HIIT.
+Distribua joelho, quadril, puxar, empurrar e tronco pela semana; não concentre todo o trabalho de uma região em um único dia.
 IMPORTANTE SOBRE EVIDÊNCIA: a evidência direta específica para exercício durante uso de GLP-1 ainda é limitada (ensaios dedicados estão em andamento). As regras abaixo são padrões iniciais de programação derivados de literatura geral (ACSM 2026, OMS) e consensos de especialistas — não protocolos clínicos comprovados para GLP-1. Nunca apresente o plano como "cientificamente comprovado".
 
 CONTEXTO (literatura GLP-1 — comunicar sem exagerar):
@@ -411,6 +417,11 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
     throw new Error(`O plano não respeitou o template ${template.key}. Gere novamente.`);
   }
 
+  const validation = validateWorkoutPlan(plan, context.training, gate, context.exercises);
+  if (!validation.ok) {
+    throw new Error(`O plano falhou na validação de dose e redundância: ${validation.errors.join(" | ")}`);
+  }
+
   // Anexa GIF/imagem do catálogo a cada exercício (match exato + fallback normalizado).
   const mediaByName = new Map<string, { gif_url: string | null; image_url: string | null; name_pt: string | null }>();
   for (const exercise of context.exercises) {
@@ -448,6 +459,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
         checkins: context.checkins.slice(0, 5),
         workout_count: context.workoutLogs.length,
         reassessment: context.reassessment ?? null,
+        volume_ledger: validation.ledger,
         template: { key: template.key, label: template.label, sessions: template.sessions }
       },
       ai_model: "gpt-4o-mini"
