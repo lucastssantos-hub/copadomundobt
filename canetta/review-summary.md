@@ -46,3 +46,13 @@ npm run audit:exercise-blocked
 ```
 
 O script de aprovação agora ignora explicitamente itens `needs_changes` e `rejected`; apenas itens `approved` podem ser atualizados, e todos continuam com `production_eligible = false` até a autorização separada.
+
+## Segunda rodada — acessórios e core
+
+Lote revisado em 2026-07-17 (`review-next.json`), com imagens CDN conferidas visualmente para os candidatos aprovados.
+
+- Aprovados e autorizados: `0178`, `0192`, `0977`, `0382`, `0868`, `0417`, `0999`, `0306`, `0998`, `0979`, `1015`, `3544`.
+- Mantidos como `needs_changes`: `0809`, `3236`, `0046`.
+- Os itens híbridos/unilaterais já rejeitados permanecem bloqueados.
+
+Cobertura elegível após a rodada: accessory 3, biceps 2, calf 2, hip_primary 2, hip_secondary 3, horizontal_pull 4, horizontal_push 3, knee_primary 2, knee_secondary 2, triceps 2, trunk 3, vertical_pull 2 e vertical_push 2. `knee_flexion` e `unilateral` continuam sem exercícios liberados para não introduzir candidatos de maior complexidade sem revisão específica.
