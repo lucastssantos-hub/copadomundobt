@@ -418,6 +418,30 @@ function normalizeName(value: string) {
   return value.trim().toLowerCase().replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function capWeeklyDirectVolume(plan: AiWorkoutPlan, catalog: Array<{ name: string; target_muscle?: string | null; body_part?: string | null; equipment?: string | null }>, cap: number) {
+  const byName = new Map(catalog.map((item) => [normalizeName(item.name), item]));
+  const totals = new Map<string, number>();
+  for (const workout of plan.workouts ?? []) for (const exercise of workout.exercises ?? []) {
+    const item = byName.get(normalizeName(exercise.name));
+    const key = item ? classifyExercise(item).movementFamily : "outro";
+    totals.set(key, (totals.get(key) ?? 0) + Math.max(0, exercise.sets));
+  }
+  for (const [key, total] of totals) {
+    let excess = total - cap;
+    if (key === "outro" || excess <= 0) continue;
+    for (const workout of [...(plan.workouts ?? [])].reverse()) {
+      for (const exercise of [...(workout.exercises ?? [])].reverse()) {
+        if (excess <= 0) break;
+        const item = byName.get(normalizeName(exercise.name));
+        if (!item || classifyExercise(item).movementFamily !== key) continue;
+        const reduction = Math.min(Math.max(0, exercise.sets - 1), excess);
+        exercise.sets -= reduction;
+        excess -= reduction;
+      }
+    }
+  }
+}
+
 function isTransientOpenAiError(error: unknown) {
   const candidate = error as { status?: number; code?: string } | null;
   return candidate?.status === 408 || candidate?.status === 409 || candidate?.status === 429 || (candidate?.status ?? 0) >= 500 || ["ETIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(candidate?.code ?? "");
@@ -513,6 +537,8 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       if (!["accessory", "complementary", "trunk"].includes(exercise.pattern ?? "")) exercise.pattern = "accessory";
     });
   }
+
+  capWeeklyDirectVolume(plan, context.exercises, gate.status === "amarelo" ? 8 : 16);
 
   const validation = validateWorkoutPlan(plan, context.training, gate, context.exercises);
   if (!validation.ok) {

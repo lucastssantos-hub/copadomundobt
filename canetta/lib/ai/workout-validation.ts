@@ -79,7 +79,11 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
       if (taxonomy?.tier === "specialized" || taxonomy?.isHybrid || (taxonomy?.complexity ?? 0) >= 4) errors.push(`${workout.day}: exercício especializado/híbrido não permitido no catálogo operacional (${exercise.name}).`);
       if (taxonomy?.sessionRole === "trunk") trunkCount += 1;
       const familyCount = (families.get(currentFamily) ?? 0) + 1;
-      const allowedFamilyCount = currentFamily === "dominante_quadril" ? 3 : 2;
+      // Templates de corpo inteiro podem ter até três variações da mesma
+      // família (por exemplo, puxada horizontal + remada de suporte + uma
+      // variação leve). O limite semanal de séries continua sendo aplicado
+      // abaixo para impedir excesso de volume.
+      const allowedFamilyCount = 3;
       if (currentFamily !== "outro" && familyCount > allowedFamilyCount) errors.push(`${workout.day}: redundância excessiva na família ${currentFamily}.`);
       families.set(currentFamily, familyCount);
       const key = normalize(exercise.name);
