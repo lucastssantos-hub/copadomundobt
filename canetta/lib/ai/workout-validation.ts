@@ -71,7 +71,6 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
     if (sessionSets > (gate.status === "amarelo" ? 12 : 24)) errors.push(`${workout.day}: volume total de séries acima do limite operacional.`);
     const families = new Map<string, number>();
     let trunkCount = 0;
-    let primarySeen = false;
     for (const exercise of workout.exercises ?? []) {
       if (!Number.isInteger(exercise.sets) || exercise.sets < 1 || exercise.sets > 4) errors.push(`${workout.day}: séries inválidas em ${exercise.name}.`);
       const item = catalog.find((candidate) => normalize(candidate.name) === normalize(exercise.name));
@@ -79,10 +78,9 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
       const currentFamily = taxonomy?.movementFamily ?? (item ? family(item) : "outro");
       if (taxonomy?.tier === "specialized" || taxonomy?.isHybrid || (taxonomy?.complexity ?? 0) >= 4) errors.push(`${workout.day}: exercício especializado/híbrido não permitido no catálogo operacional (${exercise.name}).`);
       if (taxonomy?.sessionRole === "trunk") trunkCount += 1;
-      if (taxonomy?.sessionRole === "primary" || taxonomy?.sessionRole === "secondary") primarySeen = true;
-      if (taxonomy?.sessionRole === "accessory" && !primarySeen) errors.push(`${workout.day}: acessório antes do primeiro movimento principal (${exercise.name}).`);
       const familyCount = (families.get(currentFamily) ?? 0) + 1;
-      if (currentFamily !== "outro" && familyCount > 2) errors.push(`${workout.day}: redundância excessiva na família ${currentFamily}.`);
+      const allowedFamilyCount = currentFamily === "dominante_quadril" ? 3 : 2;
+      if (currentFamily !== "outro" && familyCount > allowedFamilyCount) errors.push(`${workout.day}: redundância excessiva na família ${currentFamily}.`);
       families.set(currentFamily, familyCount);
       const key = normalize(exercise.name);
       seen.set(key, (seen.get(key) ?? 0) + 1);
