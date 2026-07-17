@@ -12,6 +12,7 @@ export class GateBlockedError extends Error {
 
 export type AiWorkoutExercise = {
   name: string;
+  name_pt?: string | null;
   sets: number;
   reps: string;
   why: string;
@@ -177,9 +178,16 @@ async function gatherUserContext(userId: string) {
 
   let exerciseQuery = supabase
     .from("canetta_exercises")
-    .select("name, body_part, equipment, target_muscle, gif_url, image_url")
+    .select("name, name_pt, difficulty_level, body_part, equipment, target_muscle, gif_url, image_url")
     .order("name")
     .limit(280);
+
+  const allowedDifficulty = training?.experience_level === "nunca_treinei"
+    ? ["iniciante"]
+    : training?.experience_level === "retomando"
+      ? ["iniciante", "intermediario"]
+      : ["iniciante", "intermediario", "avancado"];
+  exerciseQuery = exerciseQuery.in("difficulty_level", allowedDifficulty);
 
   if (training?.training_location === "casa_sem_equipamento") {
     exerciseQuery = exerciseQuery.in("equipment", HOME_NO_EQUIPMENT);
@@ -232,7 +240,7 @@ function buildPrompt(context: Awaited<ReturnType<typeof gatherUserContext>>, gat
     ? `Última reavaliação (${new Date(reassessment.created_at).toISOString().slice(0, 10)}): força ${reassessment.anchor_strength}; função ${reassessment.function_level}; dor ${reassessment.pain_level}; aderência ${reassessment.adherence}; mudança de medicação ${reassessment.medication_change ? "sim" : "não"}. ${reassessment.note ?? ""}`
     : "Sem reavaliação periódica registrada.";
   const missedLines = missedDoses.map((m) => `${new Date(m.scheduled_for).toISOString().slice(0, 10)}: ${m.reason ?? "motivo não informado"}`).join("\n") || "Nenhuma dose perdida registrada.";
-  const catalogLines = exercises.map((e) => `- ${e.name} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`).join("\n");
+  const catalogLines = exercises.map((e) => `- ${e.name} | nome em português: ${e.name_pt ?? "?"} | nível: ${e.difficulty_level ?? "?"} | região: ${e.body_part ?? "?"} | alvo: ${e.target_muscle ?? "?"} | equipamento: ${e.equipment ?? "?"}`).join("\n");
 
   const treatmentWeeks = profile?.created_at
     ? Math.max(1, Math.ceil((Date.now() - new Date(profile.created_at).getTime()) / (7 * 24 * 60 * 60 * 1000)))
@@ -404,9 +412,9 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
   }
 
   // Anexa GIF/imagem do catálogo a cada exercício (match exato + fallback normalizado).
-  const mediaByName = new Map<string, { gif_url: string | null; image_url: string | null }>();
+  const mediaByName = new Map<string, { gif_url: string | null; image_url: string | null; name_pt: string | null }>();
   for (const exercise of context.exercises) {
-    const media = { gif_url: exercise.gif_url ?? null, image_url: exercise.image_url ?? null };
+    const media = { gif_url: exercise.gif_url ?? null, image_url: exercise.image_url ?? null, name_pt: exercise.name_pt ?? null };
     mediaByName.set(exercise.name.trim().toLowerCase(), media);
     mediaByName.set(normalizeName(exercise.name), media);
   }
@@ -415,6 +423,7 @@ export async function prescribeWeeklyWorkout(userId: string): Promise<{ plan: Ai
       const media = mediaByName.get(exercise.name.trim().toLowerCase()) ?? mediaByName.get(normalizeName(exercise.name));
       exercise.gif_url = media?.gif_url ?? null;
       exercise.image_url = media?.image_url ?? null;
+      exercise.name_pt = media?.name_pt ?? null;
     }
   }
 

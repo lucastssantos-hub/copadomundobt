@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit --incremental false",
-    "seed:exercises": "node scripts/seed-exercises.mjs"
+    "seed:exercises": "node scripts/seed-exercises.mjs",
+    "enrich:exercises": "node scripts/enrich-exercises.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

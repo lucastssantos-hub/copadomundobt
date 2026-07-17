@@ -1835,7 +1835,7 @@ export default function JourneyPage() {
                                 )}
                                 <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{exercise.name_pt || exercise.name}</div>
                                     <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", whiteSpace: "nowrap" }}>{exercise.sets} × {exercise.reps}</div>
                                   </div>
                                   <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.45 }}>{exercise.why}</div>
@@ -1884,8 +1884,8 @@ export default function JourneyPage() {
                             <button type="button" aria-label={`Abrir demonstração de ${exercise.name}`} onClick={(event) => { event.stopPropagation(); setMediaPreview({ url: exercise.gif_url || exercise.image_url || "", name: exercise.name }); }} style={{ padding: 0, border: "none", background: "transparent", cursor: "zoom-in", flexShrink: 0 }}><img src={exercise.gif_url || exercise.image_url || ""} alt={`Ver demonstração de ${exercise.name}`} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, border: "1px solid #E2E7E2", background: "#F4F6F4", display: "block" }} /></button>
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{exercise.name}</div>
-                            <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exercise.body_part, exercise.equipment, exercise.target_muscle].filter(Boolean).join(" · ") || "exercício"}</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{exercise.name_pt || exercise.name}</div>
+                            <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exercise.body_part, exercise.equipment, exercise.target_muscle, exercise.difficulty_level].filter(Boolean).join(" · ") || "exercício"}</div>
                           </div>
                           <span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
                         </div>

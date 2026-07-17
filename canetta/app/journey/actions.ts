@@ -7,6 +7,8 @@ import type { OnboardingPayload } from "@/app/onboarding/flow/actions";
 export type ExerciseCatalogItem = {
   external_id: string;
   name: string;
+  name_pt?: string | null;
+  difficulty_level?: "iniciante" | "intermediario" | "avancado";
   body_part: string | null;
   equipment: string | null;
   target_muscle: string | null;
@@ -62,7 +64,7 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     supabase.from("canetta_questions").select("id, question, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_reminders").select("id, weekday, time, active").eq("user_id", user.id).limit(1),
     supabase.from("canetta_workout_logs").select("id, exercise_external_id, exercise_name, body_part, equipment, sets_completed, reps_completed, difficulty_felt, note, completed_at").eq("user_id", user.id).order("completed_at", { ascending: true }),
-    supabase.from("canetta_exercises").select("external_id, name, body_part, equipment, target_muscle, muscle_group, secondary_muscles, image_url, gif_url, attribution").order("name", { ascending: true }).limit(36),
+    supabase.from("canetta_exercises").select("external_id, name, name_pt, difficulty_level, body_part, equipment, target_muscle, muscle_group, secondary_muscles, image_url, gif_url, attribution").order("name_pt", { ascending: true }).limit(36),
     supabase.from("canetta_session_checkins").select("id, session_date, session_label, status, data, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(14),
     supabase.from("canetta_workout_feedback").select("id, workout_log_id, completed, rpe, symptoms_during, symptoms_after, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
     supabase.from("canetta_training_reassessments").select("id, anchor_strength, function_level, pain_level, adherence, medication_change, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1)
@@ -478,7 +480,7 @@ export type AiWorkoutPlanRow = {
   workouts: Array<{
     day: string;
     focus: string;
-    exercises: Array<{ name: string; sets: number; reps: string; why: string; gif_url?: string | null; image_url?: string | null }>;
+    exercises: Array<{ name: string; name_pt?: string | null; sets: number; reps: string; why: string; gif_url?: string | null; image_url?: string | null }>;
   }>;
   created_at: string;
 };
