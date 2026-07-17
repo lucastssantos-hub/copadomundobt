@@ -17,7 +17,10 @@ const SESSION_SLOTS: Record<number, [number, number]> = {
 function slotBudget(minutes: number, yellow: boolean): [number, number] {
   const key = Object.keys(SESSION_SLOTS).map(Number).sort((a, b) => a - b).find((value) => minutes <= value) ?? 60;
   const [min, max] = SESSION_SLOTS[key];
-  return yellow ? [Math.min(min, 3), Math.min(max, 4)] : [min, max];
+  // Os templates atuais têm seis slots de movimento. Em sessões de 30 min,
+  // seis exercícios ainda cabem quando são usados 1–2 sets e não há HIIT.
+  const adjustedMax = key === 30 ? Math.max(max, 6) : max;
+  return yellow ? [Math.min(min, 3), Math.min(adjustedMax, 4)] : [min, adjustedMax];
 }
 
 function normalize(value: string | null | undefined) {
@@ -65,13 +68,14 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
     if (count < minSlots || count > maxSlots) errors.push(`${workout.day}: ${count} exercícios; esperado entre ${minSlots} e ${maxSlots} para ${minutes} min.`);
     const sessionSets = (workout.exercises ?? []).reduce((sum, exercise) => sum + (Number.isFinite(exercise.sets) ? exercise.sets : 0), 0);
     if (sessionSets > (gate.status === "amarelo" ? 12 : 24)) errors.push(`${workout.day}: volume total de séries acima do limite operacional.`);
-    const families = new Set<string>();
+    const families = new Map<string, number>();
     for (const exercise of workout.exercises ?? []) {
       if (!Number.isInteger(exercise.sets) || exercise.sets < 1 || exercise.sets > 4) errors.push(`${workout.day}: séries inválidas em ${exercise.name}.`);
       const item = catalog.find((candidate) => normalize(candidate.name) === normalize(exercise.name));
       const currentFamily = item ? family(item) : "outro";
-      if (currentFamily !== "outro" && families.has(currentFamily)) errors.push(`${workout.day}: redundância na família ${currentFamily}.`);
-      families.add(currentFamily);
+      const familyCount = (families.get(currentFamily) ?? 0) + 1;
+      if (currentFamily !== "outro" && familyCount > 2) errors.push(`${workout.day}: redundância excessiva na família ${currentFamily}.`);
+      families.set(currentFamily, familyCount);
       const key = normalize(exercise.name);
       seen.set(key, (seen.get(key) ?? 0) + 1);
     }

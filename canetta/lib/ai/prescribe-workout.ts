@@ -305,8 +305,8 @@ ${catalogLines}
 
 === DIRETRIZES DE PROGRAMAÇÃO (padrões operacionais ajustáveis, informados pela literatura geral de treinamento resistido) ===
 === REGRAS DETERMINÍSTICAS DE DOSE (o servidor rejeita qualquer violação) ===
-Para cada sessão, respeite o tempo disponível: 20 min = 3–4 exercícios; 30 min = 4–5; 45 min = 5–7; 60 min = 6–8.
-Use 1–4 séries por exercício. Evite repetir a mesma família de movimento na mesma sessão (por exemplo, dois presses de peito ou duas remadas), salvo se não houver alternativa segura no catálogo.
+Para cada sessão, respeite o tempo disponível: 20 min = 3–4 exercícios; 30 min = 4–6; 45 min = 5–7; 60 min = 6–8.
+Use 1–4 séries por exercício. Não use mais de duas ocorrências da mesma família de movimento na mesma sessão (por exemplo, no máximo dois presses de peito ou duas remadas).
 O ledger semanal limita cada família a 16 séries diretas (8 em AMARELO). Em AMARELO use no máximo 3–4 exercícios por sessão, no máximo 2 séries por exercício, sem progressão e sem HIIT.
 Distribua joelho, quadril, puxar, empurrar e tronco pela semana; não concentre todo o trabalho de uma região em um único dia.
 IMPORTANTE SOBRE EVIDÊNCIA: a evidência direta específica para exercício durante uso de GLP-1 ainda é limitada (ensaios dedicados estão em andamento). As regras abaixo são padrões iniciais de programação derivados de literatura geral (ACSM 2026, OMS) e consensos de especialistas — não protocolos clínicos comprovados para GLP-1. Nunca apresente o plano como "cientificamente comprovado".
