@@ -68,6 +68,7 @@ interface AppState {
   nome: string; mascotNome: string; medicamento: string; dose: string; freqLabel: string;
   objetivo: string; faseAtual: string; lembretesOn: boolean; reminderWeekday: number; reminderTime: string;
   tab: Tab; diarioSub: string; consultaSub: string; treinoSub: string; maisSub: string; periodo: string; exerciseSearch: string;
+  nutritionGoal: "diaria" | "tres_por_semana" | "livre";
   sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; draft: Draft;
   aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[]; medidas: Medida[]; nutricao: Nutricao[];
   perguntas: Pergunta[]; treinos: Treino[]; exercises: ExerciseCatalogItem[]; toastMsg: string;
@@ -76,7 +77,7 @@ interface AppState {
 const INITIAL: AppState = {
   nome: "você", mascotNome: "Canetta", medicamento: "Medicamento", dose: "Dose atual", freqLabel: "Semanal",
   objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
-  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "",
+  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "", nutritionGoal: "livre",
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
   aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], medidas: [], nutricao: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
@@ -1035,7 +1036,7 @@ export default function JourneyPage() {
   const quickDefs = [
     { key: "aplicacao", icon: "💉", label: "Aplicação" }, { key: "peso", icon: "⚖️", label: "Peso" },
     { key: "sintoma", icon: "📝", label: "Sintoma" }, { key: "rotina", icon: "🗓️", label: "Rotina" },
-    { key: "medidas", icon: "📏", label: "Medidas" }, { key: "nutricao", icon: "🍽️", label: "Alimentação" },
+    { key: "medidas", icon: "📏", label: "Medidas" }, { key: "nutricao", icon: "🍽️", label: "Alimentação & água" },
     { key: "treino", icon: "🏋️", label: "Treino" },
     { key: "pergunta", icon: "❓", label: "Pergunta" },
   ] as const;
@@ -1047,6 +1048,9 @@ export default function JourneyPage() {
   }, [exerciseCatalog, st.exerciseSearch]);
   const workoutWeekStart = startOfWeek(new Date());
   const weeklyWorkouts = st.treinos.filter((item) => item.data >= workoutWeekStart).length;
+  const nutritionWeekCount = st.nutricao.filter((item) => item.data >= workoutWeekStart).length;
+  const nutritionGoalTarget = st.nutritionGoal === "diaria" ? 7 : st.nutritionGoal === "tres_por_semana" ? 3 : 0;
+  const nutritionGoalLabel = st.nutritionGoal === "diaria" ? "1 registro por dia" : st.nutritionGoal === "tres_por_semana" ? "3 registros por semana" : "Sem meta fixa";
   const greetingName = st.nome.trim().toLowerCase() === "você" ? "Oi" : `Oi, ${st.nome}`;
   const syncLabel = authenticated ? "Dados sincronizados na conta." : "Dados salvos neste aparelho.";
   const hasProfileBasics = st.nome.trim().toLowerCase() !== "você" && st.medicamento.trim() !== "Medicamento" && st.dose.trim() !== "Dose atual";
@@ -1383,7 +1387,9 @@ export default function JourneyPage() {
           {st.registerFlow === "nutricao" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Registrar alimentação", cancelFlow)}
-              <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 16 }}>Este registro organiza água, proteína e contexto. Não calcula metas nem prescreve alimentos.</div>
+              <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 16 }}><strong style={{ color: "#16302B" }}>O que você quer observar?</strong><br />Escolha um foco de acompanhamento. O Canetta não calcula calorias nem prescreve alimentos.</div>
+              <div><div style={fieldLabel}>FOCO DO ACOMPANHAMENTO</div><ChipRow options={["Hidratação", "Proteína", "Tolerância e apetite", "Só refeição"]} current={st.draft.contexto} onPick={(v) => setDraft({ contexto: v })} wrap /></div>
+              <div style={{ marginTop: 16 }}><div style={fieldLabel}>META DE REGISTRO (OPCIONAL)</div><ChipRow options={["1 registro por dia", "3 registros por semana", "Sem meta fixa"]} current={nutritionGoalLabel} onPick={(v) => set({ nutritionGoal: v === "1 registro por dia" ? "diaria" : v === "3 registros por semana" ? "tres_por_semana" : "livre" })} wrap /></div>
               <div><div style={fieldLabel}>REFEIÇÃO (OPCIONAL)</div><input className="j-in" value={st.draft.refeicao || ""} onChange={(e) => setDraft({ refeicao: e.target.value })} style={inputSt} placeholder="Ex: almoço" /></div>
               <div style={{ marginTop: 16 }}><div style={fieldLabel}>TEVE UMA FONTE DE PROTEÍNA?</div><ChipRow options={["Sim", "Não", "Não sei"]} current={st.draft.proteina} onPick={(v) => setDraft({ proteina: v })} equal /></div>
               <div style={{ marginTop: 16 }}><div style={fieldLabel}>ÁGUA NO DIA (COPOS)</div><input className="j-in" type="number" min={0} max={50} value={st.draft.agua ?? ""} onChange={(e) => setDraft({ agua: Number(e.target.value) })} style={inputSt} placeholder="Ex: 6" /></div>
@@ -1512,6 +1518,15 @@ export default function JourneyPage() {
                     ))}
                   </div>
                   <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.4 }}>Painel factual: o Canetta organiza registros e não interpreta resultados.</div>
+                </div>
+                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10, background: "#F9FCFA" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                    <div><div style={{ fontSize: 14, fontWeight: 850, color: "#16302B" }}>Acompanhamento de alimentação</div><div style={{ fontSize: 12, color: "#596E68", marginTop: 3 }}>Meta escolhida por você: {nutritionGoalLabel}</div></div>
+                    <div style={{ fontSize: 15, fontWeight: 850, color: "#0E6B5C", whiteSpace: "nowrap" }}>{nutritionGoalTarget ? `${Math.min(nutritionWeekCount, nutritionGoalTarget)}/${nutritionGoalTarget}` : `${nutritionWeekCount}`}</div>
+                  </div>
+                  {nutritionGoalTarget > 0 && <div style={{ height: 8, borderRadius: 99, background: "#E2E7E2", overflow: "hidden" }}><div style={{ width: `${Math.min(100, (nutritionWeekCount / nutritionGoalTarget) * 100)}%`, height: "100%", borderRadius: 99, background: "#22B39A" }} /></div>}
+                  <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.4 }}>É uma meta de registro, não uma meta de calorias ou prescrição nutricional.</div>
+                  <button type="button" onClick={() => startFlow("nutricao")} style={{ alignSelf: "flex-start", padding: "9px 13px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 11, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Registrar alimentação</button>
                 </div>
                 <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
