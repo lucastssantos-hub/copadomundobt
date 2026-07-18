@@ -52,7 +52,12 @@ const STEP_MAP: Record<number, number> = {
 const LOADING_MSGS = ["Organizando seu diário", "Preparando seus registros", "Finalizando"];
 const MEDICATION_OPTIONS = ["Tirzepatida", "Mounjaro", "Zepbound", "Ozempic", "Wegovy", "Trulicity", "Saxenda", "Victoza", "Rybelsus", "Outro"];
 const TIRZEPATIDE_DOSES = ["2.5 mg", "5 mg", "7.5 mg", "10 mg", "12.5 mg", "15 mg", "Ainda não sei"];
-const DEFAULT_DOSES = ["Dose 1", "Dose 2", "Dose 3", "Dose 4", "Dose 5", "Ainda não sei"];
+const SEMAGLUTIDE_DOSES: Record<string, string[]> = {
+  Ozempic: ["0.25 mg", "0.5 mg", "1 mg", "2 mg", "Ainda não sei"],
+  Wegovy: ["0.25 mg", "0.5 mg", "1 mg", "1.7 mg", "2.4 mg", "Ainda não sei"],
+  Rybelsus: ["3 mg", "7 mg", "14 mg", "Ainda não sei"]
+};
+const DEFAULT_DOSES = ["Informe a dose prescrita", "Ainda não sei"];
 
 function isTirzepatideMedication(value: string | null | undefined) {
   const normalized = `${value ?? ""}`.toLowerCase();
@@ -60,7 +65,8 @@ function isTirzepatideMedication(value: string | null | undefined) {
 }
 
 function doseOptionsForMedication(value: string | null | undefined) {
-  return isTirzepatideMedication(value) ? TIRZEPATIDE_DOSES : DEFAULT_DOSES;
+  if (isTirzepatideMedication(value)) return TIRZEPATIDE_DOSES;
+  return SEMAGLUTIDE_DOSES[value || ""] || DEFAULT_DOSES;
 }
 
 // ---------- estilos compartilhados ----------
