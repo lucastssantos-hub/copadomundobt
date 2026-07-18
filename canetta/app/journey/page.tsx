@@ -1119,7 +1119,7 @@ export default function JourneyPage() {
     const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     return (
       <div style={{ ...stage, overflowY: "auto", padding: "22px 22px 28px" }}>
-        {st.toastMsg && <div style={{ position: "sticky", top: 0, zIndex: 4, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 14 }}>{st.toastMsg}</div>}
+        {st.toastMsg && <div role="status" aria-live="polite" style={{ position: "sticky", top: 0, zIndex: 4, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 14 }}>{st.toastMsg}</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <MascotBadge size={46} />
@@ -1131,23 +1131,23 @@ export default function JourneyPage() {
 
           <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
-              <div style={fieldLabel}>NOME</div>
-              <input className="j-in" value={st.nome === "você" ? "" : st.nome} onChange={(e) => set({ nome: e.target.value })} placeholder="Como quer aparecer no app?" style={inputSt} />
+              <label htmlFor="setup-name" style={fieldLabel}>NOME</label>
+              <input id="setup-name" className="j-in" value={st.nome === "você" ? "" : st.nome} onChange={(e) => set({ nome: e.target.value })} placeholder="Como quer aparecer no app?" style={inputSt} />
             </div>
             <div>
-              <div style={fieldLabel}>MEDICAMENTO</div>
-              <input className="j-in" list="canetta-medications" value={st.medicamento === "Medicamento" ? "" : st.medicamento} onChange={(e) => set({ medicamento: e.target.value, freqLabel: isTirzepatideMedication(e.target.value) ? "Semanal" : st.freqLabel })} placeholder="Ex: Tirzepatida, Mounjaro, Ozempic" style={inputSt} />
+              <label htmlFor="setup-medication" style={fieldLabel}>MEDICAMENTO</label>
+              <input id="setup-medication" className="j-in" list="canetta-medications" value={st.medicamento === "Medicamento" ? "" : st.medicamento} onChange={(e) => set({ medicamento: e.target.value, freqLabel: isTirzepatideMedication(e.target.value) ? "Semanal" : st.freqLabel })} placeholder="Ex: Tirzepatida, Mounjaro, Ozempic" style={inputSt} />
               <datalist id="canetta-medications">{MEDICATION_OPTIONS.map((item) => <option key={item} value={item} />)}</datalist>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
-                <div style={fieldLabel}>DOSE</div>
-                <input className="j-in" list={isTirzepatideMedication(st.medicamento) ? "canetta-tirzepatide-doses" : undefined} value={st.dose === "Dose atual" ? "" : st.dose} onChange={(e) => set({ dose: e.target.value })} placeholder={isTirzepatideMedication(st.medicamento) ? "Ex: 2.5 mg" : "Ex: 0,5 mg"} style={inputSt} />
+                <label htmlFor="setup-dose" style={fieldLabel}>DOSE</label>
+                <input id="setup-dose" className="j-in" list={isTirzepatideMedication(st.medicamento) ? "canetta-tirzepatide-doses" : undefined} value={st.dose === "Dose atual" ? "" : st.dose} onChange={(e) => set({ dose: e.target.value })} placeholder={isTirzepatideMedication(st.medicamento) ? "Ex: 2.5 mg" : "Ex: 0,5 mg"} style={inputSt} />
                 <datalist id="canetta-tirzepatide-doses">{TIRZEPATIDE_DOSES.map((item) => <option key={item} value={item} />)}</datalist>
               </div>
               <div>
-                <div style={fieldLabel}>FREQUÊNCIA</div>
-                <select className="j-in" value={st.freqLabel} onChange={(e) => set({ freqLabel: e.target.value })} style={inputSt}>
+                <label htmlFor="setup-frequency" style={fieldLabel}>FREQUÊNCIA</label>
+                <select id="setup-frequency" className="j-in" value={st.freqLabel} onChange={(e) => set({ freqLabel: e.target.value })} style={inputSt}>
                   <option>Diária</option>
                   <option>Semanal</option>
                   <option>Quinzenal</option>
@@ -1167,12 +1167,14 @@ export default function JourneyPage() {
                 <button key={label} type="button" aria-pressed={st.reminderWeekday === index} onClick={() => set({ reminderWeekday: index, lembretesOn: true })} style={{ ...chipStyle(st.reminderWeekday === index), padding: "10px 0", fontSize: 11.5 }}>{label}</button>
               ))}
             </div>
-            <input className="j-in" type="time" value={st.reminderTime} onChange={(e) => set({ reminderTime: e.target.value, lembretesOn: true })} style={inputSt} />
+            <label htmlFor="setup-reminder-time" className="sr-only">Horário do lembrete</label>
+            <input id="setup-reminder-time" className="j-in" type="time" value={st.reminderTime} onChange={(e) => set({ reminderTime: e.target.value, lembretesOn: true })} style={inputSt} />
           </div>
 
           <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontSize: 14, fontWeight: 900, color: "#16302B" }}>Peso inicial</div>
-            <input className="j-in" type="number" inputMode="decimal" min={20} max={400} step="0.1" value={st.draft.pesoKg ?? lastPeso()} onChange={(e) => setDraft({ pesoKg: Number(e.target.value) })} style={{ ...inputSt, fontSize: 20, fontWeight: 900 }} />
+            <label htmlFor="setup-initial-weight" className="sr-only">Peso inicial em quilogramas</label>
+            <input id="setup-initial-weight" className="j-in" type="number" inputMode="decimal" min={20} max={400} step="0.1" value={st.draft.pesoKg ?? lastPeso()} onChange={(e) => setDraft({ pesoKg: Number(e.target.value) })} style={{ ...inputSt, fontSize: 20, fontWeight: 900 }} />
             <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.45 }}>Usado apenas para mostrar sua própria evolução, sem meta ou interpretação médica.</div>
           </div>
 
@@ -1187,7 +1189,7 @@ export default function JourneyPage() {
       <style>{`@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}} .j-in:focus,.j-in textarea:focus{outline:none;border-color:#0E6B5C}@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}`}</style>
 
       {st.toastMsg && (
-        <div style={{ position: "absolute", top: 8, left: 20, right: 20, zIndex: 40, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{st.toastMsg}</div>
+        <div role="status" aria-live="polite" style={{ position: "absolute", top: 8, left: 20, right: 20, zIndex: 40, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{st.toastMsg}</div>
       )}
 
       {/* ================= REGISTER FLOWS ================= */}
@@ -1364,9 +1366,9 @@ export default function JourneyPage() {
                 <div>
                   <div style={fieldLabel}>ÁGUA</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <button onClick={() => setDraft({ agua: Math.max(0, (st.draft.agua ?? 0) - 1) })} style={{ width: 38, height: 38, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 18, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{st.draft.agua ?? 0} copos</div>
-                    <button onClick={() => setDraft({ agua: (st.draft.agua ?? 0) + 1 })} style={{ width: 38, height: 38, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 18, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
+                    <button type="button" aria-label="Remover um copo de água" onClick={() => setDraft({ agua: Math.max(0, (st.draft.agua ?? 0) - 1) })} style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 18, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
+                    <div aria-live="polite" style={{ fontSize: 16, fontWeight: 700, color: "#16302B", fontVariantNumeric: "tabular-nums" }}>{st.draft.agua ?? 0} copos</div>
+                    <button type="button" aria-label="Adicionar um copo de água" onClick={() => setDraft({ agua: (st.draft.agua ?? 0) + 1 })} style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 18, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
                   </div>
                 </div>
                 <div><div style={fieldLabel}>MOVIMENTO</div><ChipRow options={["Nenhum", "Leve", "Moderado", "Intenso"]} current={st.draft.movimento} onPick={(v) => setDraft({ movimento: v })} equal /></div>
