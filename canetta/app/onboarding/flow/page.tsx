@@ -201,6 +201,11 @@ export default function OnboardingFlowPage() {
   const dificuldadeLabelSafe = st.dificuldade ?? "sua rotina";
   const faseLabelSafe = st.fase ?? "Primeiro mês";
   const difficultyInsight: Record<string, { title: string; body: string; actions: string[] }> = {
+    "Atividade física e massa magra": {
+      title: "Vamos acompanhar força e movimento, não só o peso.",
+      body: "O Canetta registra seus treinos, esforço percebido, função e resposta do corpo. Depois da triagem de segurança, ele pode organizar sessões de movimento adequadas ao seu nível — sem prometer preservar massa magra nem substituir acompanhamento profissional.",
+      actions: ["Registrar treino e exercícios", "Acompanhar força e função", "Fazer check-in antes da sessão"]
+    },
     "Fome à noite": {
       title: "Vamos entender melhor esse momento do dia.",
       body: "O Canetta ajuda você a registrar quando a fome aparece, como foi seu dia e o que estava acontecendo antes. Assim, você leva fatos — não suposições — para a conversa com seu profissional.",
@@ -288,8 +293,8 @@ export default function OnboardingFlowPage() {
     { icon: "😴", label: "Sono", sub: "Qualidade percebida" },
     { icon: "🫄", label: "Fome percebida", sub: "Sem contagem de calorias" },
   ];
-  const iconMap: Record<string, string> = { "Aplicações": "💉", "Peso": "⚖️", "Sintomas": "📝", "Rotina & hábitos": "🗓️", "Perguntas": "❓" };
-  const revealItems = (st.diario.length ? st.diario : ["Aplicações", "Peso", "Sintomas"]).map((k) => ({ icon: iconMap[k] ?? "📌", label: k }));
+  const iconMap: Record<string, string> = { "Aplicações": "💉", "Peso": "⚖️", "Sintomas": "📝", "Rotina & hábitos": "🗓️", "Movimento e força": "🏋️", "Perguntas": "❓" };
+  const revealItems = (st.diario.length ? st.diario : ["Aplicações", "Peso", "Sintomas", "Movimento e força"]).map((k) => ({ icon: iconMap[k] ?? "📌", label: k }));
 
   const toggleDiario = (key: string) =>
     setSt((s) => ({ ...s, diario: s.diario.includes(key) ? s.diario.filter((k) => k !== key) : [...s.diario, key] }));
@@ -565,7 +570,7 @@ export default function OnboardingFlowPage() {
         <div style={{ ...screenBase, padding: "8px 26px 26px" }}>
           <Header />
           <div style={{ ...title, margin: "18px 0 20px" }}>Qual sua maior dificuldade hoje?</div>
-          <ChoiceList options={["Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento", "Ainda não sei"]} current={st.dificuldade} onPick={(v) => { set({ dificuldade: v }); setDifficultyInsightOpen(true); }} />
+          <ChoiceList options={["Atividade física e massa magra", "Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento", "Ainda não sei"]} current={st.dificuldade} onPick={(v) => { set({ dificuldade: v }); setDifficultyInsightOpen(true); }} />
           <div style={spacer} />
           <button onClick={next} style={primaryBtn}>Continuar</button>
         </div>
@@ -578,7 +583,7 @@ export default function OnboardingFlowPage() {
           <div style={{ ...title, margin: "18px 0 6px" }}>Escolha o que quer acompanhar primeiro.</div>
           <div style={{ ...subLine, marginBottom: 16 }}>Toque para selecionar quantos quiser.</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {["Aplicações", "Peso", "Sintomas", "Rotina & hábitos", "Perguntas"].map((label) => {
+            {["Aplicações", "Peso", "Sintomas", "Rotina & hábitos", "Movimento e força", "Perguntas"].map((label) => {
               const on = st.diario.includes(label);
               return (
                 <button key={label} type="button" aria-pressed={on} onClick={() => toggleDiario(label)} style={{ width: "100%", ...optRowStyle(on) }}>
