@@ -132,7 +132,7 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
         )}
 
         {/* Cartão de dose: a sessão do dia, no escuro que a home reserva para a próxima dose. */}
-        <section style={{ background: `linear-gradient(168deg, ${colors.pine}, ${colors.pineDeep})`, borderRadius: 18, padding: "18px 18px 16px", color: colors.onDark }}>
+        <section style={{ background: colors.pine, borderRadius: 16, padding: "18px 18px 16px", color: colors.onDark }}>
           <div style={{ ...label, fontSize: 10, color: colors.onDarkSoft }}>Sessão {selectedDay + 1} de {plan.workouts.length} · semana de {weekLabel}</div>
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", marginTop: 6 }}>{dayNames[selectedDay]}</div>
           <div style={{ fontSize: 13, color: colors.onDarkSoft, lineHeight: 1.45, marginTop: 3 }}>{workout.focus}</div>
