@@ -80,7 +80,11 @@ export function validateWorkoutPlan(plan: AiWorkoutPlan, training: TrainingProfi
   const minutes = training?.minutes_per_session ?? 30;
   const [minSlots, maxSlots] = getSessionExerciseBudget(minutes, gate.status === "amarelo");
   const errors: string[] = [];
-  const curatedCatalogMode = catalog.length < 50;
+  // Enquanto o catálogo ainda está sendo curado, não imponha cobertura rígida
+  // de sessão/semana: a ausência de um padrão não deve derrubar a geração.
+  // As barreiras de segurança continuam ativas abaixo (elegibilidade,
+  // híbridos/especializados, séries, volume e limites do gate).
+  const curatedCatalogMode = catalog.length < 100;
   const seen = new Map<string, number>();
   for (const workout of plan.workouts ?? []) {
     const exercises = workout.exercises ?? [];
