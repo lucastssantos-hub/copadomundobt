@@ -1054,13 +1054,26 @@ export default function JourneyPage() {
   const launchSetupComplete = hasProfileBasics && hasDoseSchedule && st.pesos.length > 0;
   const shouldShowLaunchSetup = ready && authChecked && authenticated && !launchSetupComplete && !anyDado;
 
-  const IntensityScale = ({ size = 26 }: { size?: number }) => {
-    const cur = st.draft.intensidade ?? -1;
+  // Três níveis qualitativos em vez de escala 0-10 (a nota numérica seca não tem base clínica).
+  // O valor salvo (intensity) segue numérico para compatibilidade: leve=3, moderado=6, forte=9.
+  const INTENSITY_LEVELS: Array<{ label: string; hint: string; value: number }> = [
+    { label: "Leve", hint: "incomoda pouco", value: 3 },
+    { label: "Moderado", hint: "atrapalha o dia", value: 6 },
+    { label: "Forte", hint: "limita bastante", value: 9 }
+  ];
+  const IntensityLevel = () => {
+    const cur = st.draft.intensidade;
     return (
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 4 }}>
-        {Array.from({ length: 11 }, (_, n) => (
-          <button key={n} type="button" aria-label={`Intensidade ${n}`} aria-pressed={cur === n} onClick={() => setDraft({ intensidade: n })} style={{ width: size, height: size, padding: 0, border: "none", borderRadius: "50%", background: cur === n ? "#0E6B5C" : "#fff", color: cur === n ? "#fff" : "#596E68", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>{n}</button>
-        ))}
+      <div style={{ display: "flex", gap: 8 }}>
+        {INTENSITY_LEVELS.map((level) => {
+          const active = cur === level.value;
+          return (
+            <button key={level.label} type="button" aria-pressed={active} onClick={() => setDraft({ intensidade: level.value })} style={{ flex: 1, padding: "12px 8px", border: `1.5px solid ${active ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: 14, background: active ? "#EAF5F2" : "#fff", cursor: "pointer", textAlign: "center" }}>
+              <div style={{ fontSize: 13.5, fontWeight: 800, color: active ? "#0E6B5C" : "#16302B" }}>{level.label}</div>
+              <div style={{ fontSize: 10.5, color: "#859891", marginTop: 2 }}>{level.hint}</div>
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -1253,10 +1266,10 @@ export default function JourneyPage() {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
               <button onClick={finishToHoje} style={{ ...closeX, alignSelf: "flex-start" }}>✕</button>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B", margin: "14px 0 18px" }}>Como você se sentiu?</div>
+              <div style={{ ...fieldLabel, marginBottom: 8 }}>DESCONFORTO GERAL</div>
+              <div style={{ marginBottom: 18 }}><IntensityLevel /></div>
               <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Escreva uma nota (opcional)" style={{ ...textareaSt, minHeight: 70 }} />
-              <div style={{ ...fieldLabel, margin: "18px 0 8px" }}>INTENSIDADE GERAL</div>
-              <IntensityScale />
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#596E68", marginTop: 22 }}>O Canetta não interpreta este valor — apenas registra.</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#596E68", marginTop: 18 }}>O Canetta organiza o que você registra e não interpreta resultados.</div>
               <div style={{ flex: 1 }} />
               <button type="button" disabled={busyAction === "checkin"} onClick={saveCheckin} style={{ ...primaryBtn, opacity: busyAction === "checkin" ? 0.65 : 1 }}>{busyAction === "checkin" ? "Salvando…" : "Salvar"}</button>
             </div>
@@ -1266,19 +1279,15 @@ export default function JourneyPage() {
           {st.registerFlow === "sintoma" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Registrar sintoma", cancelFlow)}
-              <div style={{ ...fieldLabel, marginBottom: 8 }}>TIPO</div>
-              <div style={{ marginBottom: 16 }}><ChipRow options={["Náusea", "Vômitos", "Diarreia", "Constipação", "Refluxo", "Dor abdominal", "Fadiga", "Dor de cabeça", "Outro"]} current={st.draft.tipo} onPick={(v) => setDraft({ tipo: v })} radius={20} wrap /></div>
+              <div style={{ ...fieldLabel, marginBottom: 8 }}>QUAL SINTOMA?</div>
+              <div style={{ marginBottom: 20 }}><ChipRow options={["Náusea", "Vômitos", "Diarreia", "Constipação", "Refluxo", "Dor abdominal", "Fadiga", "Dor de cabeça", "Outro"]} current={st.draft.tipo} onPick={(v) => setDraft({ tipo: v })} radius={20} wrap /></div>
               <div style={{ ...fieldLabel, marginBottom: 8 }}>INTENSIDADE</div>
-              <div style={{ marginBottom: 16 }}><IntensityScale size={24} /></div>
-              <div style={{ ...fieldLabel, marginBottom: 8 }}>DURAÇÃO</div>
-              <div style={{ marginBottom: 16 }}><ChipRow options={["<1h", "1–3h", ">3h", "O dia todo"]} current={st.draft.duracao} onPick={(v) => setDraft({ duracao: v })} equal /></div>
-              <textarea className="j-in" value={st.draft.contexto || ""} onChange={(e) => setDraft({ contexto: e.target.value })} placeholder="Contexto (ex: após a refeição)" style={{ ...textareaSt, minHeight: 44, fontSize: 13.5, marginBottom: 10 }} />
-              <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Nota adicional (opcional)" style={{ ...textareaSt, minHeight: 44, fontSize: 13.5, marginBottom: 16 }} />
-              <div style={{ ...cardWhite, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 5, marginBottom: 6 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#16302B" }}>Sobre efeitos digestivos</div>
-                <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.5 }}>Sintomas gastrointestinais variam de pessoa para pessoa. Fonte: bula do fabricante.</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#0E6B5C" }}>Procure seu médico para orientações.</div>
-              </div>
+              <div style={{ marginBottom: 20 }}><IntensityLevel /></div>
+              <div style={{ ...fieldLabel, marginBottom: 8 }}>QUANTO DUROU?</div>
+              <div style={{ marginBottom: 20 }}><ChipRow options={["<1h", "1–3h", ">3h", "O dia todo"]} current={st.draft.duracao} onPick={(v) => setDraft({ duracao: v })} equal /></div>
+              <div style={{ ...fieldLabel, marginBottom: 8 }}>OBSERVAÇÃO <span style={{ fontWeight: 600, color: "#859891" }}>(opcional)</span></div>
+              <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Ex.: começou depois da refeição" style={{ ...textareaSt, minHeight: 60, fontSize: 13.5, marginBottom: 14 }} />
+              <div style={{ fontSize: 11.5, color: "#859891", lineHeight: 1.5, marginBottom: 4 }}>O Canetta organiza o que você registra e não interpreta sintomas. Procure seu médico para orientações.</div>
               <button type="button" disabled={busyAction === "sintoma"} onClick={saveSintoma} style={{ ...primaryBtn, marginTop: 12, opacity: busyAction === "sintoma" ? 0.65 : 1 }}>{busyAction === "sintoma" ? "Salvando…" : "Salvar"}</button>
             </div>
           )}
