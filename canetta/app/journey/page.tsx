@@ -243,6 +243,7 @@ export default function JourneyPage() {
   const [feedbackNote, setFeedbackNote] = useState("");
   const [reassessment, setReassessment] = useState<{ created_at: string; anchor_strength: string; function_level: string; pain_level: string; adherence: string; medication_change: boolean; note?: string | null } | null>(null);
   const [reassessmentOpen, setReassessmentOpen] = useState(false);
+  const registerFlowRef = useRef<HTMLDivElement>(null);
   const [reassessmentBusy, setReassessmentBusy] = useState(false);
   const [reassessmentDraft, setReassessmentDraft] = useState({ anchorStrength: "", functionLevel: "", painLevel: "", adherence: "", medicationChange: false, note: "" });
   const [mediaPreview, setMediaPreview] = useState<{ url: string; name: string } | null>(null);
@@ -570,6 +571,12 @@ export default function JourneyPage() {
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
   const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", nutritionStep: 0, draft: type === "aplicacao" ? { dataHora: toDatetimeLocal(new Date()) } : {} });
+
+  useEffect(() => {
+    if (!st.registerFlow) return;
+    const frame = window.requestAnimationFrame(() => registerFlowRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [st.registerFlow]);
   const cancelFlow = () => set({ registerFlow: null, registerStep: "form", nutritionStep: 0, draft: {} });
   const finishToHoje = () => set({ registerFlow: null, registerStep: "form", nutritionStep: 0, draft: {}, tab: "hoje" });
   const finishToHistorico = () => set({ registerFlow: null, registerStep: "form", nutritionStep: 0, draft: {}, tab: "diario", diarioSub: "registros" });
@@ -1194,7 +1201,7 @@ export default function JourneyPage() {
 
       {/* ================= REGISTER FLOWS ================= */}
       {st.registerFlow ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+        <div ref={registerFlowRef} tabIndex={-1} aria-label="Formulário de registro" style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", outline: "none" }}>
 
           {/* APLICAÇÃO — FORM */}
           {st.registerFlow === "aplicacao" && st.registerStep === "form" && (
@@ -2010,7 +2017,7 @@ export default function JourneyPage() {
                         <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ ...primaryBtn, maxWidth: 260, padding: 14, fontSize: 14, opacity: aiPlanBusy ? 0.6 : 1, cursor: aiPlanBusy ? "wait" : "pointer" }}>{aiPlanBusy ? "Analisando seus registros…" : "Gerar meu plano da semana"}</button>
                       </div>
                     )}
-                    {aiPlanError && <div style={{ fontSize: 12.5, color: "#A3552B", textAlign: "center" }}>{aiPlanError}</div>}
+                    {aiPlanError && <div id="ai-plan-error" role="alert" aria-live="assertive" style={{ fontSize: 12.5, color: "#A3552B", textAlign: "center" }}>{aiPlanError}</div>}
                     <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.5, padding: "0 4px" }}>Orientação educacional de movimento gerada por IA a partir dos seus registros — não é prescrição médica nem treinamento individualizado supervisionado, e não substitui avaliação do seu médico, nutricionista ou educador físico. Em caso de vômitos persistentes, dor intensa, tontura ou desidratação, pause o treino e procure atendimento.</div>
                   </>
                 )}
@@ -2174,9 +2181,9 @@ export default function JourneyPage() {
       {st.sheetOpen && (
         <>
           <button type="button" aria-label="Fechar novo registro" onClick={() => set({ sheetOpen: false })} style={{ position: "absolute", inset: 0, width: "100%", border: "none", background: "rgba(22,48,43,0.4)", zIndex: 30 }} />
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#F4F6F3", borderRadius: "24px 24px 0 0", padding: "10px 20px 26px", zIndex: 31, boxShadow: "0 -8px 30px rgba(0,0,0,0.15)" }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="new-record-title" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#F4F6F3", borderRadius: "24px 24px 0 0", padding: "10px 20px 26px", zIndex: 31, boxShadow: "0 -8px 30px rgba(0,0,0,0.15)" }}>
             <div style={{ width: 40, height: 5, background: "#E2E7E2", borderRadius: 3, margin: "6px auto 16px" }} />
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B", marginBottom: 12 }}>Novo registro</div>
+            <div id="new-record-title" style={{ fontSize: 15, fontWeight: 800, color: "#16302B", marginBottom: 12 }}>Novo registro</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {quickDefs.map((q) => (
                 <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
