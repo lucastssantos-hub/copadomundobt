@@ -9,6 +9,13 @@
   --ink-soft: #4c635d;
   --line: #e2e7e2;
   --line-soft: #edf0ec;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --focus-ring: 0 0 0 4px rgba(34, 179, 154, 0.24);
 }
 
 * {
@@ -32,6 +39,39 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.canetta-journey {
+  isolation: isolate;
+}
+
+.canetta-journey .j-in,
+.canetta-journey .flow-input {
+  min-height: 48px;
+}
+
+.canetta-journey button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {

@@ -1158,7 +1158,7 @@ export default function JourneyPage() {
   }
 
   return (
-    <div style={stage}>
+    <div className="canetta-journey" style={stage}>
       <style>{`@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}} .j-in:focus,.j-in textarea:focus{outline:none;border-color:#0E6B5C}@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}`}</style>
 
       {st.toastMsg && (
@@ -1917,7 +1917,7 @@ export default function JourneyPage() {
                               <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0E6B5C" }}>{day.focus}</div>
                             </div>
                             {(day.exercises ?? []).map((exercise) => (
-                              <div key={`${day.day}-${exercise.name}`} style={{ borderLeft: "3px solid #0E6B5C", paddingLeft: 12, display: "flex", gap: 10 }}>
+                              <div key={`${day.day}-${exercise.name}`} style={{ background: "#F7FAF8", border: "1.5px solid #DCEBE5", borderRadius: 14, padding: 10, display: "flex", gap: 10 }}>
                                 {(exercise.gif_url || exercise.image_url) && (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <button type="button" aria-label={`Abrir demonstração de ${exercise.name}`} onClick={() => setMediaPreview({ url: exercise.gif_url || exercise.image_url || "", name: exercise.name })} style={{ padding: 0, border: "none", background: "transparent", cursor: "zoom-in", flexShrink: 0 }}><img src={exercise.gif_url || exercise.image_url || ""} alt={`Ver demonstração de ${exercise.name}`} loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 12, border: "1.5px solid #E2E7E2", background: "#fff", display: "block" }} /></button>
@@ -2146,13 +2146,13 @@ export default function JourneyPage() {
         </>
       )}
       {mediaPreview && (
-        <div role="dialog" aria-modal="true" aria-label={`Demonstração de ${mediaPreview.name}`} style={{ position: "absolute", inset: 0, zIndex: 60, background: "rgba(8,28,24,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setMediaPreview(null)}>
-          <div style={{ width: "min(92vw, 420px)", background: "#fff", borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", gap: 10 }} onClick={(event) => event.stopPropagation()}>
+        <div role="dialog" aria-modal="true" aria-label={`Demonstração de ${mediaPreview.name}`} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(8,28,24,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setMediaPreview(null)}>
+          <div style={{ width: "min(94vw, 560px)", maxHeight: "90vh", overflowY: "auto", background: "#fff", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 12 }} onClick={(event) => event.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>{mediaPreview.name}</div><button type="button" aria-label="Fechar demonstração" onClick={() => setMediaPreview(null)} style={{ border: "none", background: "#F4F6F4", color: "#16302B", width: 34, height: 34, borderRadius: 10, fontSize: 20, cursor: "pointer" }}>×</button></div>
             {/* GIFs stay animated in the enlarged preview. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={mediaPreview.url} alt={`Demonstração de ${mediaPreview.name}`} style={{ width: "100%", maxHeight: "65vh", objectFit: "contain", borderRadius: 12, background: "#F4F6F4" }} />
-            <div style={{ fontSize: 11.5, color: "#596E68", textAlign: "center" }}>Toque fora para fechar</div>
+            <img src={mediaPreview.url} alt={`Demonstração de ${mediaPreview.name}`} style={{ width: "100%", maxHeight: "72vh", objectFit: "contain", borderRadius: 12, background: "#F4F6F4" }} />
+            <div style={{ fontSize: 12, color: "#4C635D", textAlign: "center" }}>Demonstração do exercício · toque fora para fechar</div>
           </div>
         </div>
       )}
