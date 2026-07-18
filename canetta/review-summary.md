@@ -86,3 +86,16 @@ Para ampliar a variedade, a fila essencial foi complementada com sete exercício
 - `1409` ponte de glúteos com barra
 
 Todos foram traduzidos, classificados e autorizados no Supabase. O catálogo passou para 44 exercícios elegíveis, com 3 opções de `knee_flexion`, 6 de `horizontal_pull`, 5 de `horizontal_push` e 4 de `hip_secondary`. `unilateral` continua sem liberação automática.
+
+## Sexta rodada — máquinas e puxadas
+
+Foram adicionados seis exercícios estáveis do catálogo geral, com conferência visual:
+
+- `0579` puxada frontal na máquina
+- `0673` puxada frontal na máquina com pegada reversa
+- `0739` leg press a 45 graus
+- `1391` elevação de panturrilha no leg press
+- `2736` puxada frontal na máquina com pegada supinada
+- `3523` ponte de glúteos com os pés no banco
+
+O catálogo passou para 50 exercícios elegíveis, com 6 opções de `vertical_pull`, 3 de `knee_primary`, 4 de `calf` e 5 de `hip_secondary`. A puxada alta em pé (`2330`) ficou pendente por exigir instrução adicional.
