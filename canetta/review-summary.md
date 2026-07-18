@@ -72,3 +72,17 @@ O catálogo agora tem 36 exercícios elegíveis. `knee_flexion` e `unilateral` s
 O único candidato liberado foi `3235`, flexão nórdica reversa assistida no cabo. A taxonomia foi corrigida para `knee_flexion`, e o exercício ficou restrito a `treino_regular`; não é opção para iniciantes.
 
 `0496` permanece pendente por setup menos claro. `0987` e `1001` permanecem pendentes por demanda de equilíbrio. O catálogo passou para 37 exercícios elegíveis, com 1 opção de knee_flexion e nenhum unilateral liberado.
+
+## Quinta rodada — catálogo geral
+
+Para ampliar a variedade, a fila essencial foi complementada com sete exercícios comuns do catálogo geral, todos com mídia conferida:
+
+- `0586` flexão de joelho deitado na máquina
+- `0599` flexão de joelho sentado na máquina
+- `0861` remada sentada no cabo
+- `0576` chest press na máquina
+- `1299` chest press inclinado na máquina
+- `1350` remada sentada na máquina
+- `1409` ponte de glúteos com barra
+
+Todos foram traduzidos, classificados e autorizados no Supabase. O catálogo passou para 44 exercícios elegíveis, com 3 opções de `knee_flexion`, 6 de `horizontal_pull`, 5 de `horizontal_push` e 4 de `hip_secondary`. `unilateral` continua sem liberação automática.
