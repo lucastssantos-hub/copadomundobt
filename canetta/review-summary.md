@@ -146,3 +146,13 @@ Foram adicionados cinco acessórios com mídia conferida:
 - `0195` rosca Scott no cabo
 
 O catálogo passou para 69 exercícios elegíveis, com 4 opções de bíceps, 5 de tríceps e 3 de desenvolvimento vertical.
+
+## Décima primeira rodada — core/tronco
+
+Foram adicionados três exercícios simples:
+
+- `0212` abdominal sentado no cabo
+- `0276` dead bug
+- `0595` abdominal sentado na máquina
+
+O catálogo passou para 72 exercícios elegíveis, com 6 opções de `trunk`. A combinação de agachamento na parede com flexão lateral (`0691`) ficou pendente por ser híbrida.
