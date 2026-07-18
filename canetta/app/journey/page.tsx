@@ -2038,7 +2038,7 @@ export default function JourneyPage() {
                         <button type="button" disabled={aiPlanBusy} onClick={generateAiPlan} style={{ ...primaryBtn, maxWidth: 260, padding: 14, fontSize: 14, opacity: aiPlanBusy ? 0.6 : 1, cursor: aiPlanBusy ? "wait" : "pointer" }}>{aiPlanBusy ? "Analisando seus registros…" : "Gerar meu plano da semana"}</button>
                       </div>
                     )}
-                    {aiPlanError && <div id="ai-plan-error" role="alert" aria-live="assertive" style={{ fontSize: 12.5, color: "#A3552B", textAlign: "center" }}>{aiPlanError}</div>}
+                    {aiPlanError && <div id="ai-plan-error" role="alert" aria-live="assertive" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontSize: 12.5, color: "#A3552B", textAlign: "center" }}><span>{aiPlanError}</span>{!aiPlanBusy && <button type="button" onClick={generateAiPlan} style={{ minHeight: 44, padding: "8px 14px", borderRadius: 12, border: "1.5px solid #D8B4A8", background: "#FFF7F4", color: "#8A493A", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Tentar novamente</button>}</div>}
                     <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.5, padding: "0 4px" }}>Orientação educacional de movimento gerada por IA a partir dos seus registros — não é prescrição médica nem treinamento individualizado supervisionado, e não substitui avaliação do seu médico, nutricionista ou educador físico. Em caso de vômitos persistentes, dor intensa, tontura ou desidratação, pause o treino e procure atendimento.</div>
                   </>
                 )}
