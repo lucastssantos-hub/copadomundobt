@@ -156,3 +156,12 @@ Foram adicionados três exercícios simples:
 - `0595` abdominal sentado na máquina
 
 O catálogo passou para 72 exercícios elegíveis, com 6 opções de `trunk`. A combinação de agachamento na parede com flexão lateral (`0691`) ficou pendente por ser híbrida.
+
+## Décima segunda rodada — deltoide posterior
+
+Foram aprovados dois acessórios:
+
+- `0601` crucifixo reverso sentado na máquina
+- `0203` remada alta para deltoide posterior no cabo
+
+O catálogo passou para 74 exercícios elegíveis, com 5 opções de acessórios. `0993` e `2292` ficaram pendentes por necessidade de confirmar a execução visual.
