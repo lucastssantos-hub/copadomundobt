@@ -66,3 +66,9 @@ Lote revisado em 2026-07-17 (`review-round3.json`), novamente com conferência v
 - Rejeitados: `1769` (variação incomum de bíceps) e `1417` (flexão unilateral na bola com complexidade excessiva).
 
 O catálogo agora tem 36 exercícios elegíveis. `knee_flexion` e `unilateral` seguem deliberadamente em zero até uma rodada específica de validação profissional desses movimentos.
+
+## Quarta rodada — flexão de joelho assistida
+
+O único candidato liberado foi `3235`, flexão nórdica reversa assistida no cabo. A taxonomia foi corrigida para `knee_flexion`, e o exercício ficou restrito a `treino_regular`; não é opção para iniciantes.
+
+`0496` permanece pendente por setup menos claro. `0987` e `1001` permanecem pendentes por demanda de equilíbrio. O catálogo passou para 37 exercícios elegíveis, com 1 opção de knee_flexion e nenhum unilateral liberado.
