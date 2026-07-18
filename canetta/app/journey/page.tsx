@@ -1043,6 +1043,8 @@ export default function JourneyPage() {
     rotina.dorAbdominal
   ].filter(Boolean).length + (rotina.nota?.toLowerCase().includes("sintomas:") ? 1 : 0);
   const symptomTrend = useMemo(() => st.rotinas.slice(-7).map((item) => ({ date: item.data, value: symptomDailyCount(item) })), [st.rotinas]);
+  const appliedLastSeven = lastSevenDays.filter((day) => day.applied).length;
+  const missedLastSeven = lastSevenDays.filter((day) => day.missed).length;
   const weightMin = st.pesos.length ? Math.min(...st.pesos.map((item) => item.kg)) : 0;
   const weightMax = st.pesos.length ? Math.max(...st.pesos.map((item) => item.kg)) : 0;
   const siteSummary = useMemo(() => {
@@ -1682,7 +1684,7 @@ export default function JourneyPage() {
                     </div>
                     <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Aplicações · últimos 7 dias</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, alignItems: "end" }}>
+                      <div role="img" aria-label={`Aplicações nos últimos 7 dias: ${appliedLastSeven} aplicadas e ${missedLastSeven} não aplicadas`} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, alignItems: "end" }}>
                         {lastSevenDays.map((day) => (
                           <div key={`diario-${day.date.toISOString()}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                             <div style={{ width: "100%", height: day.applied ? 38 : day.missed ? 24 : 12, borderRadius: 7, background: day.applied ? "#0E6B5C" : day.missed ? "#C49A36" : "#E2E7E2" }} />
@@ -1690,18 +1692,19 @@ export default function JourneyPage() {
                           </div>
                         ))}
                       </div>
+                      <div className="sr-only">Resumo do período: {appliedLastSeven} aplicações registradas e {missedLastSeven} doses não aplicadas nos últimos 7 dias.</div>
                     </div>
                     <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Sintomas · check-ins recentes</div>
                       {symptomTrend.length ? (
-                        <div style={{ display: "grid", gridTemplateColumns: `repeat(${symptomTrend.length}, 1fr)`, gap: 8, alignItems: "end", minHeight: 58 }}>
+                        <><div role="img" aria-label={`Check-ins de sintomas recentes: ${symptomTrend.map((item) => `${fmtDate(item.date)} com ${item.value} sinais`).join(", ")}`} style={{ display: "grid", gridTemplateColumns: `repeat(${symptomTrend.length}, 1fr)`, gap: 8, alignItems: "end", minHeight: 58 }}>
                           {symptomTrend.map((item) => (
                             <div key={item.date.toISOString()} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                               <div style={{ width: "100%", height: Math.max(8, item.value * 14), borderRadius: 7, background: item.value ? "#0E6B5C" : "#E2E7E2" }} />
                               <div style={{ fontSize: 9.5, fontWeight: 700, color: "#596E68" }}>{fmtDate(item.date).split(",")[0]}</div>
                             </div>
                           ))}
-                        </div>
+                        </div><ul className="sr-only">{symptomTrend.map((item) => <li key={`text-${item.date.toISOString()}`}>{fmtDate(item.date)}: {item.value} sinais registrados.</li>)}</ul></>
                       ) : <div style={{ fontSize: 13, color: "#596E68" }}>Registre um check-in diário para ver esta linha factual.</div>}
                     </div>
                     <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
