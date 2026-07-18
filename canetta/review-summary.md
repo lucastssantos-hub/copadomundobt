@@ -134,3 +134,15 @@ Foi liberada uma nova opção de máquina:
 - `3195` flexão de joelho deitado unilateral na máquina, restrita a usuários com experiência adequada.
 
 `1766` ficou pendente por exigir controle nórdico autoassistido. `3562` foi rejeitado por duplicar a ponte de glúteos já existente. O catálogo passou para 64 exercícios elegíveis, com 4 opções de `knee_flexion`.
+
+## Décima rodada — acessórios de cabo
+
+Foram adicionados cinco acessórios com mídia conferida:
+
+- `0148` desenvolvimento alternado de ombros no cabo
+- `0149` extensão alternada de tríceps no cabo
+- `0165` rosca martelo no cabo com corda
+- `0194` extensão de tríceps acima da cabeça no cabo
+- `0195` rosca Scott no cabo
+
+O catálogo passou para 69 exercícios elegíveis, com 4 opções de bíceps, 5 de tríceps e 3 de desenvolvimento vertical.
