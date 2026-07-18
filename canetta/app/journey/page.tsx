@@ -25,6 +25,9 @@ import {
   saveAnamnesisAction,
   saveSessionCheckinAction,
   saveSymptomAction,
+  saveBodyMeasurementAction,
+  saveNutritionEntryAction,
+  savePersonalReportAction,
   saveTrainingProfileAction,
   saveTrainingReassessmentAction,
   saveWorkoutAction,
@@ -38,7 +41,7 @@ import { signOutAction } from "@/app/auth/actions";
 import WorkoutRedesign from "./WorkoutRedesign";
 
 type Tab = "hoje" | "diario" | "consulta" | "treino" | "mais";
-type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "pergunta" | "treino" | null;
+type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "medidas" | "nutricao" | "pergunta" | "treino" | null;
 type RegisterStep = "form" | "missed" | "saved" | "missedSaved" | "checkin";
 
 interface Draft {
@@ -49,12 +52,15 @@ interface Draft {
   series?: number; repeticoes?: string; dificuldadeSentida?: string;
   nausea?: boolean; vomitos?: boolean; diarreia?: boolean; constipacao?: boolean; dorAbdominal?: boolean;
   energia?: number; apetite?: string;
+  cinturaCm?: number; quadrilCm?: number; refeicao?: string; proteina?: string;
 }
 interface Aplicacao { id?: string; dataHora: string; local: string; obs: string; data: Date; }
 interface DoseNaoAplicada { id?: string; dataHora: string; motivo: string; nota?: string; data: Date; }
 interface Sintoma { id?: string; tipo: string; intensidade: number; duracao?: string; contexto?: string; nota?: string; data: Date; }
 interface Peso { id?: string; kg: number; data: string; raw: Date; }
 interface Rotina extends Draft { id?: string; data: Date; }
+interface Medida { id?: string; cinturaCm?: number | null; quadrilCm?: number | null; nota?: string | null; data: Date; }
+interface Nutricao { id?: string; refeicao?: string | null; proteina?: boolean | null; agua?: number | null; nota?: string | null; data: Date; }
 interface Pergunta { id?: string; texto: string; data: Date; }
 interface Treino { id?: string; exerciseExternalId?: string; exerciseName: string; bodyPart?: string; equipment?: string; setsCompleted?: number; repsCompleted?: string; difficultyFelt?: string; note?: string; data: Date; }
 
@@ -63,7 +69,7 @@ interface AppState {
   objetivo: string; faseAtual: string; lembretesOn: boolean; reminderWeekday: number; reminderTime: string;
   tab: Tab; diarioSub: string; consultaSub: string; treinoSub: string; maisSub: string; periodo: string; exerciseSearch: string;
   sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; draft: Draft;
-  aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[];
+  aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[]; medidas: Medida[]; nutricao: Nutricao[];
   perguntas: Pergunta[]; treinos: Treino[]; exercises: ExerciseCatalogItem[]; toastMsg: string;
 }
 
@@ -72,7 +78,7 @@ const INITIAL: AppState = {
   objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
   tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "",
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
-  aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
+  aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], medidas: [], nutricao: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
 
 const REGION_COORDS = [
@@ -143,6 +149,8 @@ function reviveState(value: Partial<AppState>): Partial<AppState> {
     sintomas: list(value.sintomas).map((item) => ({ ...item, data: date(item.data) })),
     pesos: list(value.pesos).map((item) => ({ ...item, raw: date(item.raw) })),
     rotinas: list(value.rotinas).map((item) => ({ ...item, data: date(item.data) })),
+    medidas: list(value.medidas).map((item) => ({ ...item, data: date(item.data) })),
+    nutricao: list(value.nutricao).map((item) => ({ ...item, data: date(item.data) })),
     perguntas: list(value.perguntas).map((item) => ({ ...item, data: date(item.data) })),
     treinos: list(value.treinos).map((item) => ({ ...item, data: date(item.data) })),
     exercises: list(value.exercises)
@@ -290,6 +298,8 @@ export default function JourneyPage() {
       const weights = Array.isArray(result.weights) ? result.weights : [];
       const symptoms = Array.isArray(result.symptoms) ? result.symptoms : [];
       const routines = Array.isArray(result.routines) ? result.routines : [];
+      const measurements = Array.isArray(result.measurements) ? result.measurements : [];
+      const nutrition = Array.isArray(result.nutrition) ? result.nutrition : [];
       const questions = Array.isArray(result.questions) ? result.questions : [];
       const workouts = Array.isArray(result.workouts) ? result.workouts : [];
       const exercises = Array.isArray(result.exercises) ? result.exercises : [];
@@ -316,6 +326,8 @@ export default function JourneyPage() {
         pesos: weights.map((item) => ({ id: item.id, kg: Number(item.weight), data: fmtDate(new Date(item.recorded_at)), raw: new Date(item.recorded_at) })),
         sintomas: symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
         rotinas: routines.map((item) => ({ id: item.id, agua: item.water_cups ?? undefined, movimento: item.movement || undefined, sono: item.sleep || undefined, fome: item.hunger || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
+        medidas: measurements.map((item) => ({ id: item.id, cinturaCm: item.waist_cm, quadrilCm: item.hip_cm, nota: item.note, data: new Date(item.recorded_at) })),
+        nutricao: nutrition.map((item) => ({ id: item.id, refeicao: item.meal_label, proteina: item.protein_logged, agua: item.water_cups, nota: item.note, data: new Date(item.recorded_at) })),
         perguntas: questions.map((item) => ({ id: item.id, texto: item.question, data: new Date(item.recorded_at) })),
         treinos: workouts.map((item) => ({ id: item.id, exerciseExternalId: item.exercise_external_id || undefined, exerciseName: item.exercise_name, bodyPart: item.body_part || undefined, equipment: item.equipment || undefined, setsCompleted: item.sets_completed ?? undefined, repsCompleted: item.reps_completed || undefined, difficultyFelt: item.difficulty_felt || undefined, note: item.note || undefined, data: new Date(item.completed_at) })),
         exercises: exercises.length ? exercises : current.exercises,
@@ -631,6 +643,21 @@ export default function JourneyPage() {
     setBusyAction(null);
     toast("Check-in diário registrado."); finishToHoje();
   };
+  const saveMedidas = async () => {
+    setBusyAction("medidas");
+    const result = await saveBodyMeasurementAction({ waistCm: st.draft.cinturaCm, hipCm: st.draft.quadrilCm, note: st.draft.nota });
+    if ("validation" in result && result.validation) { setBusyAction(null); toast("Informe cintura ou quadril em centímetros."); return; }
+    const recordedAt = result.synced ? new Date(result.measurement.recorded_at) : new Date();
+    set({ medidas: [...st.medidas, { id: result.synced ? result.measurement.id : undefined, cinturaCm: st.draft.cinturaCm, quadrilCm: st.draft.quadrilCm, nota: st.draft.nota, data: recordedAt }] });
+    setBusyAction(null); toast("Medidas registradas."); finishToHoje();
+  };
+  const saveNutricao = async () => {
+    setBusyAction("nutricao");
+    const result = await saveNutritionEntryAction({ mealLabel: st.draft.refeicao, proteinLogged: st.draft.proteina === "Sim" ? true : st.draft.proteina === "Não" ? false : undefined, waterCups: st.draft.agua, note: st.draft.nota });
+    const recordedAt = result.synced ? new Date(result.nutrition.recorded_at) : new Date();
+    set({ nutricao: [...st.nutricao, { id: result.synced ? result.nutrition.id : undefined, refeicao: st.draft.refeicao, proteina: st.draft.proteina === "Sim" ? true : st.draft.proteina === "Não" ? false : null, agua: st.draft.agua, nota: st.draft.nota, data: recordedAt }] });
+    setBusyAction(null); toast("Registro de alimentação salvo."); finishToHoje();
+  };
   const savePergunta = async () => {
     if (!st.draft.pergunta) { finishToHoje(); return; }
     setBusyAction("pergunta");
@@ -706,7 +733,9 @@ export default function JourneyPage() {
     const symptoms = st.sintomas.filter((item) => inPeriod(item.data));
     const routines = st.rotinas.filter((item) => inPeriod(item.data));
     const questions = st.perguntas.filter((item) => inPeriod(item.data));
-    const workouts = st.treinos.filter((item) => inPeriod(item.data));
+      const workouts = st.treinos.filter((item) => inPeriod(item.data));
+    const measurements = st.medidas.filter((item) => inPeriod(item.data));
+    const nutrition = st.nutricao.filter((item) => inPeriod(item.data));
     const expected = applications.length + missedDoses.length;
     const adherence = expected ? Math.round((applications.length / expected) * 100) : null;
     const symptomSummary = symptoms.reduce<Record<string, number>>((acc, item) => {
@@ -738,6 +767,8 @@ export default function JourneyPage() {
       ...(Object.keys(symptomSummary).length ? ["Sintomas por tipo:", ...Object.entries(symptomSummary).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       `Registros de rotina: ${routines.length}`,
       `Treinos registrados: ${workouts.length}`,
+      `Medidas corporais: ${measurements.length}`,
+      `Registros de alimentação/água: ${nutrition.length}`,
       ...(workouts.length ? ["Treinos no período:", ...workouts.map((item) => `• ${fmtDate(item.data)} — ${item.exerciseName}${item.setsCompleted ? ` · ${item.setsCompleted} séries` : ""}${item.repsCompleted ? ` · ${item.repsCompleted}` : ""}`)] : []),
       ...(Object.keys(routineSymptomMentions).length ? ["Sintomas citados nos check-ins diários:", ...Object.entries(routineSymptomMentions).map(([tipo, total]) => `• ${tipo}: ${total}`)] : []),
       ...(missedDoses.length ? ["", "Doses não aplicadas:", ...missedDoses.map((item) => `• ${item.dataHora} — ${item.motivo}${item.nota ? ` (${item.nota})` : ""}`)] : []),
@@ -752,7 +783,11 @@ export default function JourneyPage() {
 
   const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" })[char] || char);
 
-  const generatePdf = () => {
+  const generatePdf = async () => {
+    if (authenticated) {
+      const period = st.periodo === "Últimos 7 dias" ? "7d" : st.periodo === "Últimos 30 dias" ? "30d" : "all";
+      await savePersonalReportAction({ period, snapshot: { medication: st.medicamento, dose: st.dose, applications: st.aplicacoes.length, symptoms: st.sintomas.length, weights: st.pesos.length, measurements: st.medidas.length, nutrition: st.nutricao.length, generatedAt: new Date().toISOString() } });
+    }
     const popup = window.open("", "_blank", "noopener,noreferrer");
     if (!popup) { toast("Permita a abertura da janela para gerar o PDF."); return; }
     const content = escapeHtml(reportText()).replace(/\n/g, "<br>");
@@ -936,13 +971,15 @@ export default function JourneyPage() {
       ...st.sintomas.map((a) => ({ icon: "📝", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data })),
       ...st.pesos.map((a) => ({ icon: "⚖️", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw })),
       ...st.rotinas.map((a) => ({ icon: "🗓️", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data })),
+      ...st.medidas.map((a) => ({ icon: "📏", label: "Medidas corporais", data: fmtDate(a.data), t: a.data })),
+      ...st.nutricao.map((a) => ({ icon: "🍽️", label: "Alimentação/água", data: fmtDate(a.data), t: a.data })),
       ...st.treinos.map((a) => ({ icon: "🏋️", label: "Treino · " + a.exerciseName, data: fmtDate(a.data), t: a.data })),
       ...st.perguntas.map((a) => ({ icon: "❓", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data })),
     ];
     return evs.sort((x, y) => y.t.getTime() - x.t.getTime());
-  }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.treinos, st.perguntas, st.medicamento]);
+  }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.medidas, st.nutricao, st.treinos, st.perguntas, st.medicamento]);
 
-  const anyDado = st.aplicacoes.length || st.dosesNaoAplicadas.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.treinos.length || st.perguntas.length;
+  const anyDado = st.aplicacoes.length || st.dosesNaoAplicadas.length || st.pesos.length || st.sintomas.length || st.rotinas.length || st.medidas.length || st.nutricao.length || st.treinos.length || st.perguntas.length;
   const conquista = anyDado > 0;
   const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
   const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
@@ -998,6 +1035,7 @@ export default function JourneyPage() {
   const quickDefs = [
     { key: "aplicacao", icon: "💉", label: "Aplicação" }, { key: "peso", icon: "⚖️", label: "Peso" },
     { key: "sintoma", icon: "📝", label: "Sintoma" }, { key: "rotina", icon: "🗓️", label: "Rotina" },
+    { key: "medidas", icon: "📏", label: "Medidas" }, { key: "nutricao", icon: "🍽️", label: "Alimentação" },
     { key: "treino", icon: "🏋️", label: "Treino" },
     { key: "pergunta", icon: "❓", label: "Pergunta" },
   ] as const;
@@ -1317,6 +1355,35 @@ export default function JourneyPage() {
             </div>
           )}
 
+          {/* MEDIDAS */}
+          {st.registerFlow === "medidas" && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
+              {flowHeader("Registrar medidas", cancelFlow)}
+              <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 16 }}>Registre medidas feitas por você. O Canetta mostra apenas os dados informados, sem meta ou interpretação.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><div style={fieldLabel}>CINTURA (CM)</div><input className="j-in" type="number" min={20} max={300} step="0.1" value={st.draft.cinturaCm ?? ""} onChange={(e) => setDraft({ cinturaCm: Number(e.target.value) })} style={inputSt} placeholder="Ex: 96" /></div>
+                <div><div style={fieldLabel}>QUADRIL (CM)</div><input className="j-in" type="number" min={20} max={300} step="0.1" value={st.draft.quadrilCm ?? ""} onChange={(e) => setDraft({ quadrilCm: Number(e.target.value) })} style={inputSt} placeholder="Ex: 108" /></div>
+              </div>
+              <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Nota opcional" style={{ ...textareaSt, marginTop: 14 }} />
+              <div style={{ flex: 1 }} />
+              <button type="button" disabled={busyAction === "medidas"} onClick={saveMedidas} style={{ ...primaryBtn, opacity: busyAction === "medidas" ? 0.65 : 1 }}>{busyAction === "medidas" ? "Salvando…" : "Salvar medidas"}</button>
+            </div>
+          )}
+
+          {/* NUTRIÇÃO */}
+          {st.registerFlow === "nutricao" && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
+              {flowHeader("Registrar alimentação", cancelFlow)}
+              <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 16 }}>Este registro organiza água, proteína e contexto. Não calcula metas nem prescreve alimentos.</div>
+              <div><div style={fieldLabel}>REFEIÇÃO (OPCIONAL)</div><input className="j-in" value={st.draft.refeicao || ""} onChange={(e) => setDraft({ refeicao: e.target.value })} style={inputSt} placeholder="Ex: almoço" /></div>
+              <div style={{ marginTop: 16 }}><div style={fieldLabel}>TEVE UMA FONTE DE PROTEÍNA?</div><ChipRow options={["Sim", "Não", "Não sei"]} current={st.draft.proteina} onPick={(v) => setDraft({ proteina: v })} equal /></div>
+              <div style={{ marginTop: 16 }}><div style={fieldLabel}>ÁGUA NO DIA (COPOS)</div><input className="j-in" type="number" min={0} max={50} value={st.draft.agua ?? ""} onChange={(e) => setDraft({ agua: Number(e.target.value) })} style={inputSt} placeholder="Ex: 6" /></div>
+              <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Nota opcional sobre tolerância ou apetite" style={{ ...textareaSt, marginTop: 14 }} />
+              <div style={{ flex: 1 }} />
+              <button type="button" disabled={busyAction === "nutricao"} onClick={saveNutricao} style={{ ...primaryBtn, opacity: busyAction === "nutricao" ? 0.65 : 1 }}>{busyAction === "nutricao" ? "Salvando…" : "Salvar registro"}</button>
+            </div>
+          )}
+
           {/* TREINO */}
           {st.registerFlow === "treino" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
@@ -1412,6 +1479,20 @@ export default function JourneyPage() {
                       <button onClick={() => startFlow("aplicacao")} style={{ alignSelf: "flex-start", marginTop: 4, padding: "9px 16px", background: "#22B39A", color: "#0E2A23", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Registrar aplicação</button>
                     </>
                   )}
+                </div>
+                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#16302B" }}>Resumo do tratamento</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                    {[
+                      ["Peso", pesoAtual ? `${pesoAtual} kg` : "—", "peso"],
+                      ["Sintomas", String(st.sintomas.length), "sintoma"],
+                      ["Medidas", String(st.medidas.length), "medidas"],
+                      ["Água/proteína", String(st.nutricao.length), "nutricao"]
+                    ].map(([label, value, key]) => (
+                      <button key={key} type="button" onClick={() => startFlow(key as RegisterFlow)} style={{ textAlign: "left", padding: "11px 12px", background: "#F7F9F6", border: "1px solid #E2E7E2", borderRadius: 12, cursor: "pointer" }}><div style={{ fontSize: 11, color: "#596E68", fontWeight: 700 }}>{label}</div><div style={{ fontSize: 16, color: "#16302B", fontWeight: 900, marginTop: 3 }}>{value}</div></button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.4 }}>Painel factual: o Canetta organiza registros e não interpreta resultados.</div>
                 </div>
                 <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>

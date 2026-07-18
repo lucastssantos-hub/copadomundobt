@@ -19,6 +19,9 @@ export type ExerciseCatalogItem = {
   attribution: string | null;
 };
 
+export type BodyMeasurementRow = { id: string; waist_cm: number | null; hip_cm: number | null; note: string | null; recorded_at: string };
+export type NutritionEntryRow = { id: string; meal_label: string | null; protein_logged: boolean | null; water_cups: number | null; note: string | null; recorded_at: string };
+
 async function currentSession() {
   try {
     const supabase = await createSupabaseServerClient();
@@ -54,12 +57,12 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     }, { onConflict: "user_id" });
   }
 
-  const [profileResult, applicationsResult, missedDosesResult, weightsResult, symptomsResult, routinesResult, questionsResult, remindersResult, workoutsResult, exercisesResult, sessionCheckinsResult, feedbackResult, reassessmentResult] = await Promise.all([
-    supabase.from("canetta_profiles").select("name, medication, current_dose, frequency, biggest_difficulty").eq("user_id", user.id).maybeSingle(),
-    supabase.from("canetta_dose_applications").select("id, medication, dose, site, note, applied_at").eq("user_id", user.id).order("applied_at", { ascending: true }),
+  const [profileResult, applicationsResult, missedDosesResult, weightsResult, symptomsResult, routinesResult, questionsResult, remindersResult, workoutsResult, exercisesResult, sessionCheckinsResult, feedbackResult, reassessmentResult, measurementsResult, nutritionResult] = await Promise.all([
+    supabase.from("canetta_profiles").select("name, medication, medication_code, current_dose, frequency, route, dose_unit, schedule_interval_days, biggest_difficulty").eq("user_id", user.id).maybeSingle(),
+    supabase.from("canetta_dose_applications").select("id, medication, dose, dose_unit, route, site, note, applied_at, scheduled_for").eq("user_id", user.id).order("applied_at", { ascending: true }),
     supabase.from("canetta_missed_doses").select("id, medication, dose, reason, note, scheduled_for, recorded_at").eq("user_id", user.id).order("scheduled_for", { ascending: true }),
     supabase.from("canetta_weight_entries").select("id, weight, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
-    supabase.from("canetta_side_effects").select("id, types, intensity, duration, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
+    supabase.from("canetta_side_effects").select("id, types, intensity, duration, note, application_id, days_since_application, hydration_ok, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_routine_entries").select("id, water_cups, movement, sleep, hunger, note, photo, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_questions").select("id, question, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
     supabase.from("canetta_reminders").select("id, weekday, time, active").eq("user_id", user.id).limit(1),
@@ -67,10 +70,12 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     supabase.from("canetta_exercises").select("external_id, name, name_pt, difficulty_level, body_part, equipment, target_muscle, muscle_group, secondary_muscles, image_url, gif_url, attribution").order("name_pt", { ascending: true }).limit(36),
     supabase.from("canetta_session_checkins").select("id, session_date, session_label, status, data, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(14),
     supabase.from("canetta_workout_feedback").select("id, workout_log_id, completed, rpe, symptoms_during, symptoms_after, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
-    supabase.from("canetta_training_reassessments").select("id, anchor_strength, function_level, pain_level, adherence, medication_change, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1)
+    supabase.from("canetta_training_reassessments").select("id, anchor_strength, function_level, pain_level, adherence, medication_change, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
+    supabase.from("canetta_body_measurements").select("id, waist_cm, hip_cm, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
+    supabase.from("canetta_nutrition_entries").select("id, meal_label, protein_logged, water_cups, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true })
   ]);
 
-  const error = profileResult.error || applicationsResult.error || missedDosesResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error || workoutsResult.error || exercisesResult.error || sessionCheckinsResult.error || feedbackResult.error || reassessmentResult.error;
+  const error = profileResult.error || applicationsResult.error || missedDosesResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error || workoutsResult.error || exercisesResult.error || sessionCheckinsResult.error || feedbackResult.error || reassessmentResult.error || measurementsResult.error || nutritionResult.error;
   if (error) return { authenticated: true as const, error: "Não foi possível carregar os registros sincronizados." };
 
   return {
@@ -88,10 +93,12 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     sessionCheckins: sessionCheckinsResult.data ?? [],
     workoutFeedback: feedbackResult.data ?? [],
     reassessment: reassessmentResult.data?.[0] ?? null
+    ,measurements: (measurementsResult.data ?? []) as BodyMeasurementRow[]
+    ,nutrition: (nutritionResult.data ?? []) as NutritionEntryRow[]
   };
 }
 
-export async function saveApplicationAction(input: { medication: string; dose: string; site?: string; note?: string; appliedAt?: string }) {
+export async function saveApplicationAction(input: { medication: string; dose: string; doseUnit?: string; route?: string; site?: string; note?: string; appliedAt?: string; scheduledFor?: string }) {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { synced: false as const };
   const appliedAt = input.appliedAt && !Number.isNaN(Date.parse(input.appliedAt)) ? input.appliedAt : new Date().toISOString();
@@ -99,9 +106,12 @@ export async function saveApplicationAction(input: { medication: string; dose: s
     user_id: user.id,
     medication: input.medication || null,
     dose: input.dose || null,
+    dose_unit: input.doseUnit?.trim() || null,
+    route: input.route?.trim() || null,
     site: applicationSite(input.site),
     note: input.note?.trim() || null,
-    applied_at: appliedAt
+    applied_at: appliedAt,
+    scheduled_for: input.scheduledFor && !Number.isNaN(Date.parse(input.scheduledFor)) ? input.scheduledFor : null
   }).select("id, applied_at").single();
   return error ? { synced: false as const } : { synced: true as const, id: data.id, appliedAt: data.applied_at };
 }
@@ -129,18 +139,60 @@ export async function saveWeightAction(input: { weight: number }) {
   return error ? { synced: false as const } : { synced: true as const, id: data.id, recordedAt: data.recorded_at };
 }
 
-export async function saveSymptomAction(input: { type?: string; intensity: number; duration?: string; note?: string }) {
+export async function saveSymptomAction(input: { type?: string; intensity: number; duration?: string; note?: string; applicationId?: string; daysSinceApplication?: number; hydrationOk?: boolean }) {
   const intensity = Math.max(0, Math.min(10, Math.round(input.intensity)));
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { synced: false as const };
+  let applicationId = input.applicationId || null;
+  let daysSinceApplication = Number.isFinite(input.daysSinceApplication) ? Math.max(0, Math.min(90, Math.round(input.daysSinceApplication ?? 0))) : null;
+  if (!applicationId) {
+    const latest = await supabase.from("canetta_dose_applications").select("id, applied_at").eq("user_id", user.id).order("applied_at", { ascending: false }).limit(1).maybeSingle();
+    if (latest.data) {
+      applicationId = latest.data.id;
+      if (daysSinceApplication == null) daysSinceApplication = Math.max(0, Math.min(90, Math.floor((Date.now() - Date.parse(latest.data.applied_at)) / 86400000)));
+    }
+  }
   const { data, error } = await supabase.from("canetta_side_effects").insert({
     user_id: user.id,
     types: input.type ? [input.type] : [],
     intensity,
     duration: input.duration?.trim() || null,
-    note: input.note?.trim() || null
+    note: input.note?.trim() || null,
+    application_id: applicationId,
+    days_since_application: daysSinceApplication,
+    hydration_ok: input.hydrationOk == null ? null : !!input.hydrationOk
   }).select("id, recorded_at").single();
   return error ? { synced: false as const } : { synced: true as const, id: data.id, recordedAt: data.recorded_at };
+}
+
+export async function saveBodyMeasurementAction(input: { waistCm?: number; hipCm?: number; note?: string }) {
+  const waist = Number.isFinite(input.waistCm) ? input.waistCm : null;
+  const hip = Number.isFinite(input.hipCm) ? input.hipCm : null;
+  if (waist == null && hip == null) return { synced: false as const, validation: true as const };
+  if ([waist, hip].some((v) => v != null && (v < 20 || v > 300))) return { synced: false as const, validation: true as const };
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { synced: false as const };
+  const { data, error } = await supabase.from("canetta_body_measurements").insert({ user_id: user.id, waist_cm: waist, hip_cm: hip, note: input.note?.trim() || null }).select("id, waist_cm, hip_cm, note, recorded_at").single();
+  return error ? { synced: false as const } : { synced: true as const, measurement: data };
+}
+
+export async function saveNutritionEntryAction(input: { mealLabel?: string; proteinLogged?: boolean; waterCups?: number; note?: string }) {
+  const water = input.waterCups == null ? null : Math.max(0, Math.min(50, Math.round(input.waterCups)));
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { synced: false as const };
+  const { data, error } = await supabase.from("canetta_nutrition_entries").insert({ user_id: user.id, meal_label: input.mealLabel?.trim() || null, protein_logged: input.proteinLogged == null ? null : !!input.proteinLogged, water_cups: water, note: input.note?.trim() || null }).select("id, meal_label, protein_logged, water_cups, note, recorded_at").single();
+  return error ? { synced: false as const } : { synced: true as const, nutrition: data };
+}
+
+export async function savePersonalReportAction(input: { period: "7d" | "30d" | "all"; snapshot: Record<string, unknown> }) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { saved: false as const };
+  const end = new Date();
+  const start = new Date(end);
+  if (input.period === "7d") start.setDate(start.getDate() - 6);
+  if (input.period === "30d") start.setDate(start.getDate() - 29);
+  const { data, error } = await supabase.from("canetta_personal_reports").insert({ user_id: user.id, period: input.period, range_start: start.toISOString().slice(0, 10), range_end: end.toISOString().slice(0, 10), snapshot: input.snapshot }).select("id, created_at").single();
+  return error ? { saved: false as const } : { saved: true as const, report: data };
 }
 
 export async function saveRoutineAction(input: { waterCups?: number; movement?: string; sleep?: string; hunger?: string; note?: string; photo?: boolean }) {
@@ -417,6 +469,9 @@ export async function exportMyDataAction() {
     "canetta_daily_checkins",
     "canetta_weekly_checkins",
     "canetta_side_effects",
+    "canetta_body_measurements",
+    "canetta_nutrition_entries",
+    "canetta_personal_reports",
     "canetta_reminders",
     "canetta_push_subscriptions",
     "canetta_workout_logs",
