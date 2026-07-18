@@ -99,3 +99,17 @@ Foram adicionados seis exercícios estáveis do catálogo geral, com conferênci
 - `3523` ponte de glúteos com os pés no banco
 
 O catálogo passou para 50 exercícios elegíveis, com 6 opções de `vertical_pull`, 3 de `knee_primary`, 4 de `calf` e 5 de `hip_secondary`. A puxada alta em pé (`2330`) ficou pendente por exigir instrução adicional.
+
+## Sétima rodada — presses e remadas
+
+Foram liberadas sete alternativas de academia, todas com mídia conferida:
+
+- `0151` supino no cabo
+- `0239` remada sentada no cabo com costas retas
+- `0289` supino reto com halteres (com spotter)
+- `0588` remada sentada na máquina com pegada fechada
+- `0748` supino reto no smith
+- `0757` supino inclinado no smith
+- `1323` remada sentada com corda no cabo
+
+O catálogo passou para 57 exercícios elegíveis, com 9 opções de `horizontal_pull` e 9 de `horizontal_push`. As opções com halteres/smith foram marcadas para usuários com experiência adequada.
