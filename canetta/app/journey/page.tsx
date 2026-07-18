@@ -170,7 +170,7 @@ const textareaSt: CSSProperties = { width: "100%", minHeight: 60, padding: "14px
 const cardWhite: CSSProperties = { background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, padding: 18 };
 const flowHeader = (titulo: string, onClose: () => void) => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-    <button onClick={onClose} style={closeX}>✕</button>
+    <button type="button" aria-label={`Fechar ${titulo}`} onClick={onClose} style={{ ...closeX, minWidth: 44, minHeight: 44 }}>✕</button>
     <div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>{titulo}</div>
     <div style={{ width: 20 }} />
   </div>
