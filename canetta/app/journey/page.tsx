@@ -2045,6 +2045,7 @@ export default function JourneyPage() {
                   <>
                     <button type="button" onClick={() => set({ maisSub: "conteudo" })} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, cursor: "pointer" }}><span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>📚 Conteúdo educativo</span><span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span></button>
                     <button type="button" onClick={() => set({ maisSub: "perfil" })} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, cursor: "pointer" }}><span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>⚙️ Perfil &amp; ajustes</span><span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span></button>
+                    {authenticated && <form action={signOutAction} style={{ marginTop: 4 }}><button type="submit" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", background: "#FFF8F5", color: "#75443C", border: "1.5px solid #F0D8D0", borderRadius: 16, cursor: "pointer", fontSize: 14.5, fontWeight: 700 }}><span>↪ Sair da conta</span><span style={{ color: "#A56D61", fontSize: 18 }}>›</span></button></form>}
                   </>
                 )}
 
