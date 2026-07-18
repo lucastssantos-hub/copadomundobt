@@ -182,6 +182,24 @@ function MascotBadge({ size = 36 }: { size?: number }) {
 }
 const BODY_SVG = `<svg width="150" height="210" viewBox="0 0 150 210"><ellipse cx="75" cy="24" rx="18" ry="20" fill="#E2E7E2"/><rect x="45" y="44" width="60" height="90" rx="26" fill="#E2E7E2"/><rect x="18" y="52" width="20" height="80" rx="10" fill="#E2E7E2"/><rect x="112" y="52" width="20" height="80" rx="10" fill="#E2E7E2"/><rect x="52" y="132" width="20" height="70" rx="10" fill="#E2E7E2"/><rect x="78" y="132" width="20" height="70" rx="10" fill="#E2E7E2"/></svg>`;
 
+function IconGlyph({ name, size = 18 }: { name: string; size?: number }) {
+  const paths: Record<string, string> = {
+    AP: "M7 3v4m0 0v10m0-10h5m-5 0H5m2 10v2m10-16v4m0 0v10m0-10h3m-3 10v2M5 7h4m6 0h4",
+    KG: "M6 8h12l2 12H4L6 8Zm3 0a3 3 0 0 1 6 0",
+    SX: "M3 12h4l2-5 4 10 2-5h6",
+    RT: "M5 8a7 7 0 0 1 12-2l2 2m0-4v4h-4M19 16a7 7 0 0 1-12 2l-2-2m0 4v-4h4",
+    CM: "M4 6h16v12H4zM8 6v4m4-4v4m4-4v4",
+    NU: "M4 13h16a8 8 0 0 1-16 0Zm4 5h8M8 9c0-2 1-3 3-4m2 4c0-2-1-3-3-4",
+    TR: "M3 9h6v6H3zM15 9h6v6h-6zM9 12h6M6 7v10m12-10v10",
+    "?": "M9 9a3 3 0 1 1 5 2c-2 1-3 2-3 4m0 3h.01",
+    HO: "M4 11 12 4l8 7v8H4zM9 19v-5h6v5",
+    JO: "M5 5h14M5 12h14M5 19h14",
+    CO: "M4 6h16v12H4zM8 10h8m-8 4h5",
+    "…": "M6 12h.01M12 12h.01M18 12h.01"
+  };
+  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name] || paths["?"]} /></svg>;
+}
+
 function chipStyle(sel: boolean, radius = 12): CSSProperties {
   return { background: sel ? "#EAF5F2" : "#fff", border: `1.5px solid ${sel ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: radius, fontWeight: 700, color: "#16302B", cursor: "pointer" };
 }
@@ -1570,7 +1588,7 @@ export default function JourneyPage() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                     {quickDefs.map((q) => (
                       <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minHeight: 68, padding: "10px 2px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
-                        <span aria-hidden="true" style={{ minWidth: 32, height: 32, padding: "0 4px", borderRadius: 10, background: "#EAF5F2", color: "#0E6B5C", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{q.icon}</span><span style={{ fontSize: 10, fontWeight: 700, color: "#16302B", textAlign: "center" }}>{q.label}</span>
+                        <span style={{ minWidth: 32, height: 32, padding: "0 4px", borderRadius: 10, background: "#EAF5F2", color: "#0E6B5C", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><IconGlyph name={q.icon} size={17} /></span><span style={{ fontSize: 10, fontWeight: 700, color: "#16302B", textAlign: "center" }}>{q.label}</span>
                       </button>
                     ))}
                   </div>
@@ -2169,7 +2187,7 @@ export default function JourneyPage() {
           <div className="bottom-nav" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
             {([["hoje", "HO", "Hoje"], ["diario", "JO", "Jornada"], ["consulta", "CO", "Consulta"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
               <button key={key} type="button" aria-label={`Abrir ${label}`} aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 64, padding: "5px 4px", background: st.tab === key ? "#EAF5F2" : "transparent", border: "none", borderRadius: 12 }}>
-                <span aria-hidden="true" style={{ minWidth: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, letterSpacing: "0.03em", lineHeight: 1, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
+                <span style={{ minWidth: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: st.tab === key ? "#0E6B5C" : "#596E68" }}><IconGlyph name={icon} size={18} /></span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
               </button>
             ))}
             <button type="button" aria-label="Novo registro" onClick={() => set({ sheetOpen: true })} style={{ position: "absolute", left: "50%", top: -22, transform: "translateX(-50%)", width: 52, height: 52, padding: 0, border: "none", borderRadius: "50%", background: "#0E6B5C", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 26, cursor: "pointer", boxShadow: "0 6px 16px rgba(14,107,92,0.4)" }}>＋</button>
@@ -2187,7 +2205,7 @@ export default function JourneyPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {quickDefs.map((q) => (
                 <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
-                  <span aria-hidden="true" style={{ minWidth: 34, height: 34, borderRadius: 10, background: "#EAF5F2", color: "#0E6B5C", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{q.icon}</span><span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>{q.label}</span>
+                  <span style={{ minWidth: 34, height: 34, borderRadius: 10, background: "#EAF5F2", color: "#0E6B5C", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><IconGlyph name={q.icon} size={18} /></span><span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>{q.label}</span>
                 </button>
               ))}
             </div>
