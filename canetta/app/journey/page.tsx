@@ -975,15 +975,15 @@ export default function JourneyPage() {
 
   const events = useMemo(() => {
     const evs = [
-      ...st.aplicacoes.map((a) => ({ icon: "💉", label: "Aplicação · " + st.medicamento, data: a.dataHora, t: a.data })),
+      ...st.aplicacoes.map((a) => ({ icon: "AP", label: "Aplicação · " + st.medicamento, data: a.dataHora, t: a.data })),
       ...st.dosesNaoAplicadas.map((a) => ({ icon: "○", label: "Dose não aplicada · " + a.motivo, data: a.dataHora, t: a.data })),
-      ...st.sintomas.map((a) => ({ icon: "📝", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data })),
-      ...st.pesos.map((a) => ({ icon: "⚖️", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw })),
-      ...st.rotinas.map((a) => ({ icon: "🗓️", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data })),
-      ...st.medidas.map((a) => ({ icon: "📏", label: "Medidas corporais", data: fmtDate(a.data), t: a.data })),
-      ...st.nutricao.map((a) => ({ icon: "🍽️", label: "Alimentação/água", data: fmtDate(a.data), t: a.data })),
-      ...st.treinos.map((a) => ({ icon: "🏋️", label: "Treino · " + a.exerciseName, data: fmtDate(a.data), t: a.data })),
-      ...st.perguntas.map((a) => ({ icon: "❓", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data })),
+      ...st.sintomas.map((a) => ({ icon: "SX", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data })),
+      ...st.pesos.map((a) => ({ icon: "KG", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw })),
+      ...st.rotinas.map((a) => ({ icon: "RT", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data })),
+      ...st.medidas.map((a) => ({ icon: "CM", label: "Medidas corporais", data: fmtDate(a.data), t: a.data })),
+      ...st.nutricao.map((a) => ({ icon: "NU", label: "Alimentação/água", data: fmtDate(a.data), t: a.data })),
+      ...st.treinos.map((a) => ({ icon: "TR", label: "Treino · " + a.exerciseName, data: fmtDate(a.data), t: a.data })),
+      ...st.perguntas.map((a) => ({ icon: "?", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data })),
     ];
     return evs.sort((x, y) => y.t.getTime() - x.t.getTime());
   }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.medidas, st.nutricao, st.treinos, st.perguntas, st.medicamento]);
@@ -1042,11 +1042,11 @@ export default function JourneyPage() {
   }, [adherencePct, expectedDoses, pesoAtual, siteSummary, st.aplicacoes.length, st.dosesNaoAplicadas.length, st.pesos.length, st.sintomas.length, st.rotinas.length, st.treinos.length]);
 
   const quickDefs = [
-    { key: "aplicacao", icon: "💉", label: "Aplicação" }, { key: "peso", icon: "⚖️", label: "Peso" },
-    { key: "sintoma", icon: "📝", label: "Sintoma" }, { key: "rotina", icon: "🗓️", label: "Rotina" },
-    { key: "medidas", icon: "📏", label: "Medidas" }, { key: "nutricao", icon: "🍽️", label: "Check-in nutricional" },
-    { key: "treino", icon: "🏋️", label: "Treino" },
-    { key: "pergunta", icon: "❓", label: "Pergunta" },
+    { key: "aplicacao", icon: "AP", label: "Aplicação" }, { key: "peso", icon: "KG", label: "Peso" },
+    { key: "sintoma", icon: "SX", label: "Sintoma" }, { key: "rotina", icon: "RT", label: "Rotina" },
+    { key: "medidas", icon: "CM", label: "Medidas" }, { key: "nutricao", icon: "NU", label: "Check-in nutricional" },
+    { key: "treino", icon: "TR", label: "Treino" },
+    { key: "pergunta", icon: "?", label: "Pergunta" },
   ] as const;
   const exerciseCatalog = st.exercises.length ? st.exercises : FALLBACK_EXERCISES;
   const filteredExercises = useMemo(() => {
@@ -1561,7 +1561,7 @@ export default function JourneyPage() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                     {quickDefs.map((q) => (
                       <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minHeight: 68, padding: "10px 2px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
-                        <span style={{ fontSize: 19 }}>{q.icon}</span><span style={{ fontSize: 10, fontWeight: 700, color: "#16302B", textAlign: "center" }}>{q.label}</span>
+                        <span aria-hidden="true" style={{ minWidth: 32, height: 32, padding: "0 4px", borderRadius: 10, background: "#EAF5F2", color: "#0E6B5C", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{q.icon}</span><span style={{ fontSize: 10, fontWeight: 700, color: "#16302B", textAlign: "center" }}>{q.label}</span>
                       </button>
                     ))}
                   </div>
@@ -2158,9 +2158,9 @@ export default function JourneyPage() {
 
           {/* TAB BAR */}
           <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
-            {([["hoje", "🏠", "Hoje"], ["diario", "📖", "Jornada"], ["consulta", "📋", "Consulta"], ["treino", "🏋️", "Treino"], ["mais", "⋯", "Mais"]] as const).map(([key, icon, label]) => (
+            {([["hoje", "HO", "Hoje"], ["diario", "JO", "Jornada"], ["consulta", "CO", "Consulta"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
               <button key={key} type="button" aria-label={`Abrir ${label}`} aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 64, padding: "5px 4px", background: st.tab === key ? "#EAF5F2" : "transparent", border: "none", borderRadius: 12 }}>
-                <span style={{ fontSize: 19, lineHeight: 1 }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
+                <span aria-hidden="true" style={{ minWidth: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, letterSpacing: "0.03em", lineHeight: 1, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
               </button>
             ))}
             <button type="button" aria-label="Novo registro" onClick={() => set({ sheetOpen: true })} style={{ position: "absolute", left: "50%", top: -22, transform: "translateX(-50%)", width: 52, height: 52, padding: 0, border: "none", borderRadius: "50%", background: "#0E6B5C", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 26, cursor: "pointer", boxShadow: "0 6px 16px rgba(14,107,92,0.4)" }}>＋</button>
@@ -2178,7 +2178,7 @@ export default function JourneyPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {quickDefs.map((q) => (
                 <button key={q.key} type="button" onClick={() => startFlow(q.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, cursor: "pointer" }}>
-                  <span style={{ fontSize: 19 }}>{q.icon}</span><span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>{q.label}</span>
+                  <span aria-hidden="true" style={{ minWidth: 34, height: 34, borderRadius: 10, background: "#EAF5F2", color: "#0E6B5C", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900 }}>{q.icon}</span><span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>{q.label}</span>
                 </button>
               ))}
             </div>

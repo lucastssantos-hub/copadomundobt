@@ -10,7 +10,7 @@ Data: 2026-07-18.
 | 1 | Acessibilidade | Parcialmente atendida | Associar `label`/`htmlFor` a todos os campos, revisar foco em sheets e substituir estados comunicados apenas por cor. |
 | 2 | Toque e interação | Parcialmente atendida | Garantir 44–48 px em todos os controles, incluindo pontos do mapa corporal e controles compactos de água/peso. Manter loading e feedback de pressão. |
 | 3 | Performance | Boa base | Manter `loading="lazy"` nos GIFs/imagens, reservar dimensões, observar bundle da jornada e evitar carregar dados abaixo da dobra sem necessidade. |
-| 4 | Seleção de estilo | Pendente | Consolidar linguagem de ícones SVG/Lucide ou Phosphor; remover emojis estruturais de navegação e ações. Preservar o tom calmo de saúde. |
+| 4 | Seleção de estilo | Em andamento | A navegação e os registros rápidos agora usam identificadores visuais consistentes em vez de emojis; próxima evolução: ícones SVG/Lucide ou Phosphor. |
 | 5 | Layout e responsividade | Parcialmente atendida | Testar 375, 768, 1024 e 1440 px; preservar safe-area, evitar scroll aninhado e manter a divulgação progressiva da tela Hoje. |
 | 6 | Tipografia e cor | Parcialmente atendida | Migrar hexadecimais espalhados para tokens semânticos e medir contraste de textos secundários. Usar escala mínima de 14–16 px para conteúdo de leitura. |
 | 7 | Animação | Boa base | Manter transições de 150–300 ms e redução de movimento. Evitar animação decorativa além do mascote e de mudanças de estado. |
@@ -36,4 +36,3 @@ Data: 2026-07-18.
 - [ ] Testado em 375 px e em orientação paisagem.
 - [ ] `prefers-reduced-motion` não bloqueia conteúdo.
 - [ ] Dados temporais têm alternativa textual antes de qualquer gráfico.
-
