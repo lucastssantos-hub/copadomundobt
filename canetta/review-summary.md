@@ -113,3 +113,16 @@ Foram liberadas sete alternativas de academia, todas com mídia conferida:
 - `1323` remada sentada com corda no cabo
 
 O catálogo passou para 57 exercícios elegíveis, com 9 opções de `horizontal_pull` e 9 de `horizontal_push`. As opções com halteres/smith foram marcadas para usuários com experiência adequada.
+
+## Oitava rodada — variações de cabo e máquina
+
+Foram adicionados seis exercícios:
+
+- `0169` supino inclinado no cabo
+- `0571` remada sentada na máquina com pegada alternada
+- `0751` supino fechado no smith (slot tríceps)
+- `1300` chest press declinado na máquina
+- `1301` chest press interno na máquina
+- `1321` remada sentada elevada com corda
+
+O catálogo passou para 63 exercícios elegíveis, com 11 opções de `horizontal_pull`, 12 de `horizontal_push` e 3 de `triceps`.
