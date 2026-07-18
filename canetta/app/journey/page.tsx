@@ -1734,19 +1734,6 @@ export default function JourneyPage() {
 
                 {st.treinoSub === "plano" && (
                   <>
-                    {aiPlan && aiGate && !["vermelho", "liberacao", "insuficiente"].includes(aiGate.status) && (
-                      <div style={{ ...cardWhite, background: sessionCheckinResult?.status === "verde" && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? "#EAF5F2" : "#fff", display: "flex", flexDirection: "column", gap: 10 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-                          <div>
-                            <div style={{ fontSize: 14.5, fontWeight: 800, color: "#16302B" }}>Antes de começar</div>
-                            <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.45, marginTop: 3 }}>Um check-in rápido decide se hoje é dia normal, leve ou de pausa.</div>
-                          </div>
-                          {sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) && <div style={{ fontSize: 12, fontWeight: 800, color: sessionCheckinResult.status === "verde" ? "#0E6B5C" : sessionCheckinResult.status === "amarelo" ? "#7A6017" : "#8A3B2A" }}>{sessionCheckinResult.status === "verde" ? "VERDE" : sessionCheckinResult.status === "amarelo" ? "LEVE" : "PAUSA"}</div>}
-                        </div>
-                        {sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) && <div style={{ fontSize: 12, color: "#4B5F59", lineHeight: 1.45 }}>{sessionCheckinResult.motivos.length ? sessionCheckinResult.motivos.join(" ") : "Tudo certo para seguir com a sessão planejada."}</div>}
-                        <button type="button" onClick={() => { setPendingExercise(null); setSessionCheckinOpen(true); }} style={{ ...primaryBtn, padding: 12, fontSize: 13.5 }}>{sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? "Refazer check-in" : "Fazer check-in de hoje"}</button>
-                      </div>
-                    )}
                     {sessionCheckinOpen && (
                       <div style={{ ...cardWhite, background: "#F4F6F4", display: "flex", flexDirection: "column", gap: 14 }}>
                         <div><div style={{ fontSize: 15, fontWeight: 800, color: "#16302B" }}>Check-in pré-sessão</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Responda pensando em agora. Se algo parecer fora do seu padrão, pare e procure orientação.</div></div>
@@ -1957,7 +1944,8 @@ export default function JourneyPage() {
                           onOpenReassessment={() => setReassessmentOpen(true)}
                           onOpenMedia={setMediaPreview}
                           onRecordExercise={recordPlannedExercise}
-                          checkinLabel={sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? `Check-in de hoje: ${sessionCheckinResult.status === "verde" ? "pronto para seguir" : "modo leve"}` : undefined}
+                          checkin={sessionCheckinResult && sessionCheckinDate === new Date().toISOString().slice(0, 10) ? sessionCheckinResult : null}
+                          onOpenCheckin={() => { setPendingExercise(null); setSessionCheckinOpen(true); }}
                           isYellow={aiGate?.status === "amarelo"}
                         />
                       )
