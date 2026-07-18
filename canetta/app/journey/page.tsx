@@ -196,6 +196,7 @@ export default function JourneyPage() {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushEndpoint, setPushEndpoint] = useState<string | undefined>();
+  const [todayExpanded, setTodayExpanded] = useState(false);
   const [pushStatus, setPushStatus] = useState("Push ainda não ativado.");
   const [aiPlan, setAiPlan] = useState<AiWorkoutPlanRow | null>(null);
   const [aiPlanLoaded, setAiPlanLoaded] = useState(false);
@@ -1514,7 +1515,8 @@ export default function JourneyPage() {
                     </>
                   )}
                 </div>
-                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                <button type="button" onClick={() => setTodayExpanded((value) => !value)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: "#fff", border: "1px solid #E2E7E2", borderRadius: 12, color: "#0E6B5C", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}><span>{todayExpanded ? "Ocultar detalhes" : "Ver detalhes da jornada"}</span><span style={{ fontSize: 16 }}>{todayExpanded ? "⌃" : "⌄"}</span></button>
+                <div style={{ ...cardWhite, display: todayExpanded ? "flex" : "none", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: "#16302B" }}>Resumo do tratamento</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
                     {[
@@ -1528,7 +1530,7 @@ export default function JourneyPage() {
                   </div>
                   <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.4 }}>Painel factual: o Canetta organiza registros e não interpreta resultados.</div>
                 </div>
-                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10, background: "#F9FCFA" }}>
+                <div style={{ ...cardWhite, display: todayExpanded ? "flex" : "none", flexDirection: "column", gap: 10, background: "#F9FCFA" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
                     <div><div style={{ fontSize: 14, fontWeight: 850, color: "#16302B" }}>Check-in nutricional</div><div style={{ fontSize: 12, color: "#596E68", marginTop: 3 }}>Meta de registro escolhida por você: {nutritionGoalLabel}</div></div>
                     <div style={{ fontSize: 15, fontWeight: 850, color: "#0E6B5C", whiteSpace: "nowrap" }}>{nutritionGoalTarget ? `${Math.min(nutritionWeekCount, nutritionGoalTarget)}/${nutritionGoalTarget}` : `${nutritionWeekCount}`}</div>
@@ -1537,7 +1539,7 @@ export default function JourneyPage() {
                   <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.4 }}>Os registros acompanham tolerância, ingestão percebida, proteína, hidratação e força. Não são uma meta de calorias nem substituem uma orientação individual.</div>
                   <button type="button" onClick={() => startFlow("nutricao")} style={{ alignSelf: "flex-start", padding: "9px 13px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 11, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Fazer check-in</button>
                 </div>
-                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ ...cardWhite, display: todayExpanded ? "flex" : "none", flexDirection: "column", gap: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#596E68" }}>ADERÊNCIA RÁPIDA</div>
@@ -1564,10 +1566,10 @@ export default function JourneyPage() {
                     ))}
                   </div>
                 </div>
-                <button type="button" onClick={() => set({ tab: "consulta", consultaSub: "resumo" })} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, cursor: "pointer" }}>
+                <button type="button" onClick={() => set({ tab: "consulta", consultaSub: "resumo" })} style={{ display: todayExpanded ? "flex" : "none", width: "100%", alignItems: "center", justifyContent: "space-between", padding: "15px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, cursor: "pointer" }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>📄 Preparar consulta</span><span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
                 </button>
-                <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ ...cardWhite, display: todayExpanded ? "flex" : "none", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#596E68" }}>HISTÓRICO RECENTE</div>
                   {recentDoseEvents.length ? recentDoseEvents.map((item, index) => (
                     <div key={`${item.status}-${item.date.toISOString()}-${index}`} style={{ display: "grid", gridTemplateColumns: "72px 1fr auto", gap: 8, alignItems: "center", fontSize: 12.5 }}>
@@ -1577,7 +1579,7 @@ export default function JourneyPage() {
                     </div>
                   )) : <div style={{ fontSize: 13, color: "#596E68" }}>As últimas aplicações aparecerão aqui.</div>}
                 </div>
-                <div style={{ ...cardWhite, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, background: weeklyPerfect ? "#EAF5F2" : "#fff" }}>
+                <div style={{ ...cardWhite, display: todayExpanded ? "flex" : "none", justifyContent: "space-between", alignItems: "center", gap: 14, background: weeklyPerfect ? "#EAF5F2" : "#fff" }}>
                   <div>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{weeklyPerfect ? "Semana perfeita!" : "Meta semanal"}</div>
                     <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 3 }}>{weeklyProgress}/{weeklyPlanned} aplicação(ões) planejadas</div>
@@ -1586,7 +1588,7 @@ export default function JourneyPage() {
                     <div style={{ width: `${Math.min(100, (weeklyProgress / weeklyPlanned) * 100)}%`, height: "100%", borderRadius: 99, background: "#0E6B5C" }} />
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: conquista ? "#EAF5F2" : "#fff", borderRadius: 16 }}>
+                <div style={{ display: todayExpanded ? "flex" : "none", alignItems: "center", gap: 12, padding: "14px 18px", background: conquista ? "#EAF5F2" : "#fff", borderRadius: 16 }}>
                   <span style={{ fontSize: 20 }}>🏅</span>
                   <div><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>Conquista do dia</div><div style={{ fontSize: 12, color: "#4B5F59" }}>{conquista ? "Você já registrou algo hoje." : "Faça seu primeiro registro para desbloquear."}</div></div>
                 </div>
