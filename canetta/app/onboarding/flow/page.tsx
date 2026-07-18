@@ -144,6 +144,7 @@ function MascotBadge() {
 export default function OnboardingFlowPage() {
   const router = useRouter();
   const [st, setSt] = useState<FlowState>(INITIAL);
+  const [difficultyInsightOpen, setDifficultyInsightOpen] = useState(false);
   const [loadingIdx, setLoadingIdx] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -199,6 +200,39 @@ export default function OnboardingFlowPage() {
   const doseLabelSafe = st.dose ?? "Não informado";
   const dificuldadeLabelSafe = st.dificuldade ?? "sua rotina";
   const faseLabelSafe = st.fase ?? "Primeiro mês";
+  const difficultyInsight: Record<string, { title: string; body: string; actions: string[] }> = {
+    "Fome à noite": {
+      title: "Vamos entender melhor esse momento do dia.",
+      body: "O Canetta ajuda você a registrar quando a fome aparece, como foi seu dia e o que estava acontecendo antes. Assim, você leva fatos — não suposições — para a conversa com seu profissional.",
+      actions: ["Registrar contexto e horário", "Observar padrões na Jornada", "Anotar perguntas para a consulta"]
+    },
+    "Náusea": {
+      title: "Vamos acompanhar como seu corpo responde.",
+      body: "Você pode registrar intensidade, duração, hidratação e contexto da náusea. Se houver sinais de alerta, o Canetta orienta pausar o treino e procurar avaliação — sem alterar seu medicamento.",
+      actions: ["Registrar intensidade e duração", "Acompanhar hidratação", "Preparar um resumo para a consulta"]
+    },
+    "Constipação": {
+      title: "Vamos deixar esse padrão visível.",
+      body: "O Canetta organiza seus registros de rotina e sintomas para você perceber quando a constipação aparece e conversar com seu profissional. Ele não prescreve laxantes, dieta ou mudanças de dose.",
+      actions: ["Registrar o sintoma", "Relacionar com sua rotina", "Levar perguntas para a consulta"]
+    },
+    "Fim de semana": {
+      title: "Vamos organizar os dias que saem do padrão.",
+      body: "O Canetta registra aplicações, rotina e contexto ao longo da semana. Assim você revisa o que aconteceu no fim de semana sem depender da memória.",
+      actions: ["Ativar lembrete de dose", "Fazer um check-in curto", "Revisar a semana na Jornada"]
+    },
+    "Esquecimento": {
+      title: "Vamos tornar a próxima aplicação mais fácil de lembrar.",
+      body: "Você pode configurar agenda e push da dose e registrar quando aplicou ou quando não conseguiu. O Canetta organiza o histórico; não decide o que fazer com uma dose perdida.",
+      actions: ["Configurar lembrete", "Registrar aplicação", "Anotar uma dose não aplicada"]
+    },
+    "Ainda não sei": {
+      title: "Tudo bem começar sem uma resposta pronta.",
+      body: "O Canetta começa com registros simples. Com o tempo, você poderá observar seus próprios padrões e levar informações mais concretas para a consulta.",
+      actions: ["Começar pelo registro de aplicação", "Registrar como você está", "Revisar sua Jornada"]
+    }
+  };
+  const selectedDifficultyInsight = difficultyInsight[st.dificuldade ?? "Ainda não sei"] ?? difficultyInsight["Ainda não sei"];
 
   // header com voltar + progresso explícito, inspirado em fluxos de quiz
   const Header = () => {
@@ -507,11 +541,31 @@ export default function OnboardingFlowPage() {
       )}
 
       {/* SCREEN 15 — MAIOR DIFICULDADE */}
-      {st.i === 15 && (
+      {st.i === 15 && difficultyInsightOpen && (
+        <div style={{ ...screenBase, padding: "8px 26px 26px" }}>
+          <Header />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 18 }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: "#EAF5F2", color: "#0E6B5C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>✦</div>
+            <div style={{ ...title, marginTop: 2 }}>{selectedDifficultyInsight.title}</div>
+            <div style={{ ...subLine, fontSize: 14, lineHeight: 1.6 }}>{selectedDifficultyInsight.body}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 4 }}>
+              {selectedDifficultyInsight.actions.map((action) => (
+                <div key={action} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 13 }}>
+                  <span style={{ color: "#0E6B5C", fontWeight: 900 }}>✓</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{action}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button type="button" onClick={() => { setDifficultyInsightOpen(false); next(); }} style={primaryBtn}>Continuar</button>
+          <button type="button" onClick={() => setDifficultyInsightOpen(false)} style={ghostBtn}>Voltar à pergunta</button>
+        </div>
+      )}
+      {st.i === 15 && !difficultyInsightOpen && (
         <div style={{ ...screenBase, padding: "8px 26px 26px" }}>
           <Header />
           <div style={{ ...title, margin: "18px 0 20px" }}>Qual sua maior dificuldade hoje?</div>
-          <ChoiceList options={["Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento", "Ainda não sei"]} current={st.dificuldade} onPick={(v) => set({ dificuldade: v })} />
+          <ChoiceList options={["Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento", "Ainda não sei"]} current={st.dificuldade} onPick={(v) => { set({ dificuldade: v }); setDifficultyInsightOpen(true); }} />
           <div style={spacer} />
           <button onClick={next} style={primaryBtn}>Continuar</button>
         </div>
