@@ -20,7 +20,7 @@ export type ExerciseCatalogItem = {
 };
 
 export type BodyMeasurementRow = { id: string; waist_cm: number | null; hip_cm: number | null; note: string | null; recorded_at: string };
-export type NutritionEntryRow = { id: string; meal_label: string | null; protein_logged: boolean | null; water_cups: number | null; note: string | null; recorded_at: string };
+export type NutritionEntryRow = { id: string; meal_label: string | null; protein_logged: boolean | null; water_cups: number | null; note: string | null; meals_tolerated?: string | null; intake_adequacy?: string | null; hydration_status?: string | null; weakness_status?: string | null; professional_target?: string | null; recorded_at: string };
 
 async function currentSession() {
   try {
@@ -176,11 +176,11 @@ export async function saveBodyMeasurementAction(input: { waistCm?: number; hipCm
   return error ? { synced: false as const } : { synced: true as const, measurement: data };
 }
 
-export async function saveNutritionEntryAction(input: { mealLabel?: string; proteinLogged?: boolean; waterCups?: number; note?: string }) {
+export async function saveNutritionEntryAction(input: { mealLabel?: string; proteinLogged?: boolean; waterCups?: number; note?: string; mealsTolerated?: string; intakeAdequacy?: string; hydrationStatus?: string; weaknessStatus?: string; professionalTarget?: string }) {
   const water = input.waterCups == null ? null : Math.max(0, Math.min(50, Math.round(input.waterCups)));
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { synced: false as const };
-  const { data, error } = await supabase.from("canetta_nutrition_entries").insert({ user_id: user.id, meal_label: input.mealLabel?.trim() || null, protein_logged: input.proteinLogged == null ? null : !!input.proteinLogged, water_cups: water, note: input.note?.trim() || null }).select("id, meal_label, protein_logged, water_cups, note, recorded_at").single();
+  const { data, error } = await supabase.from("canetta_nutrition_entries").insert({ user_id: user.id, meal_label: input.mealLabel?.trim() || null, protein_logged: input.proteinLogged == null ? null : !!input.proteinLogged, water_cups: water, note: input.note?.trim() || null, meals_tolerated: input.mealsTolerated || null, intake_adequacy: input.intakeAdequacy || null, hydration_status: input.hydrationStatus || null, weakness_status: input.weaknessStatus || null, professional_target: input.professionalTarget || null }).select("id, meal_label, protein_logged, water_cups, note, meals_tolerated, intake_adequacy, hydration_status, weakness_status, professional_target, recorded_at").single();
   return error ? { synced: false as const } : { synced: true as const, nutrition: data };
 }
 
