@@ -70,7 +70,7 @@ interface AppState {
   objetivo: string; faseAtual: string; lembretesOn: boolean; reminderWeekday: number; reminderTime: string;
   tab: Tab; diarioSub: string; consultaSub: string; treinoSub: string; maisSub: string; periodo: string; exerciseSearch: string;
   nutritionGoal: "diaria" | "tres_por_semana" | "livre";
-  sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; draft: Draft;
+  sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; nutritionStep: number; draft: Draft;
   aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[]; medidas: Medida[]; nutricao: Nutricao[];
   perguntas: Pergunta[]; treinos: Treino[]; exercises: ExerciseCatalogItem[]; toastMsg: string;
 }
@@ -78,7 +78,7 @@ interface AppState {
 const INITIAL: AppState = {
   nome: "você", mascotNome: "Canetta", medicamento: "Medicamento", dose: "Dose atual", freqLabel: "Semanal",
   objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
-  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "", nutritionGoal: "livre",
+  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "", nutritionGoal: "livre", nutritionStep: 0,
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
   aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], medidas: [], nutricao: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
@@ -144,6 +144,7 @@ function reviveState(value: Partial<AppState>): Partial<AppState> {
     sheetOpen: false,
     registerFlow: null,
     registerStep: "form",
+    nutritionStep: 0,
     draft: {},
     toastMsg: "",
     aplicacoes: list(value.aplicacoes).map((item) => ({ ...item, data: date(item.data) })),
@@ -566,10 +567,10 @@ export default function JourneyPage() {
 
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
-  const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", draft: type === "aplicacao" ? { dataHora: toDatetimeLocal(new Date()) } : {} });
-  const cancelFlow = () => set({ registerFlow: null, registerStep: "form", draft: {} });
-  const finishToHoje = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "hoje" });
-  const finishToHistorico = () => set({ registerFlow: null, registerStep: "form", draft: {}, tab: "diario", diarioSub: "registros" });
+  const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", nutritionStep: 0, draft: type === "aplicacao" ? { dataHora: toDatetimeLocal(new Date()) } : {} });
+  const cancelFlow = () => set({ registerFlow: null, registerStep: "form", nutritionStep: 0, draft: {} });
+  const finishToHoje = () => set({ registerFlow: null, registerStep: "form", nutritionStep: 0, draft: {}, tab: "hoje" });
+  const finishToHistorico = () => set({ registerFlow: null, registerStep: "form", nutritionStep: 0, draft: {}, tab: "diario", diarioSub: "registros" });
 
   const lastPeso = () => (st.pesos.length ? st.pesos[st.pesos.length - 1].kg : 78);
 
@@ -659,6 +660,10 @@ export default function JourneyPage() {
     const recordedAt = result.synced ? new Date(result.nutrition.recorded_at) : new Date();
     set({ nutricao: [...st.nutricao, { id: result.synced ? result.nutrition.id : undefined, refeicao: st.draft.refeicao, proteina: st.draft.proteina === "Sim" ? true : st.draft.proteina === "Não" ? false : null, agua: st.draft.agua, nota: st.draft.nota, refeicoesToleradas: st.draft.refeicoesToleradas, ingestaoHabitual: st.draft.ingestaoHabitual, hidratacaoStatus: st.draft.hidratacaoStatus, fraqueza: st.draft.fraqueza, metaProfissional: st.draft.metaProfissional, data: recordedAt }] });
     setBusyAction(null); toast("Registro de alimentação salvo."); finishToHoje();
+  };
+  const nutritionNext = () => {
+    if (st.nutritionStep < 5) set({ nutritionStep: st.nutritionStep + 1 });
+    else void saveNutricao();
   };
   const savePergunta = async () => {
     if (!st.draft.pergunta) { finishToHoje(); return; }
@@ -1388,21 +1393,17 @@ export default function JourneyPage() {
           {st.registerFlow === "nutricao" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Check-in nutricional", cancelFlow)}
-              <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 16 }}><strong style={{ color: "#16302B" }}>Por que registrar?</strong><br />Para observar se você está tolerando as refeições, conseguindo manter líquidos, incluindo proteína e preservando energia para se movimentar. O Canetta organiza sinais para você acompanhar e conversar com seu profissional — não conclui sozinho se sua ingestão é suficiente nem prescreve calorias.</div>
-              <div><div style={fieldLabel}>O QUE VOCÊ QUER OBSERVAR?</div><ChipRow options={["Tolerância e apetite", "Hidratação", "Proteína", "Só refeição"]} current={st.draft.contexto} onPick={(v) => setDraft({ contexto: v })} wrap /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>META DE REGISTRO (OPCIONAL)</div><ChipRow options={["1 registro por dia", "3 registros por semana", "Sem meta fixa"]} current={nutritionGoalLabel} onPick={(v) => set({ nutritionGoal: v === "1 registro por dia" ? "diaria" : v === "3 registros por semana" ? "tres_por_semana" : "livre" })} wrap /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>REFEIÇÕES QUE VOCÊ CONSEGUIU TOLERAR HOJE</div><ChipRow options={["0", "1", "2", "3 ou mais", "Não sei"]} current={st.draft.refeicoesToleradas} onPick={(v) => setDraft({ refeicoesToleradas: v })} wrap /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>COMO SUA INGESTÃO FICOU COMPARADA AO SEU HABITUAL?</div><ChipRow options={["Parecida", "Menor", "Muito menor", "Não sei"]} current={st.draft.ingestaoHabitual} onPick={(v) => setDraft({ ingestaoHabitual: v })} wrap /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>CONSEGUIU MANTER LÍQUIDOS?</div><ChipRow options={["Sim", "Parcialmente", "Não"]} current={st.draft.hidratacaoStatus} onPick={(v) => setDraft({ hidratacaoStatus: v })} equal /></div>
-              <div><div style={fieldLabel}>REFEIÇÃO (OPCIONAL)</div><input className="j-in" value={st.draft.refeicao || ""} onChange={(e) => setDraft({ refeicao: e.target.value })} style={inputSt} placeholder="Ex: almoço" /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>TEVE UMA FONTE DE PROTEÍNA?</div><ChipRow options={["Sim", "Não", "Não sei"]} current={st.draft.proteina} onPick={(v) => setDraft({ proteina: v })} equal /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>SENTIU FRAQUEZA OU QUEDA DE RENDIMENTO?</div><ChipRow options={["Não", "Um pouco", "Sim", "Não sei"]} current={st.draft.fraqueza} onPick={(v) => setDraft({ fraqueza: v })} wrap /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>HÁ UMA META DEFINIDA PELO PROFISSIONAL?</div><ChipRow options={["Sim, quero registrar contra ela", "Não", "Ainda não sei"]} current={st.draft.metaProfissional} onPick={(v) => setDraft({ metaProfissional: v })} wrap /></div>
-              <div style={{ marginTop: 16 }}><div style={fieldLabel}>ÁGUA NO DIA (COPOS)</div><input className="j-in" type="number" min={0} max={50} value={st.draft.agua ?? ""} onChange={(e) => setDraft({ agua: Number(e.target.value) })} style={inputSt} placeholder="Ex: 6" /></div>
-              {(st.draft.hidratacaoStatus === "Não" || st.draft.ingestaoHabitual === "Muito menor" || st.draft.fraqueza === "Sim") && <div style={{ ...cardWhite, marginTop: 14, padding: "12px 14px", background: "#FFF7F4", borderColor: "#F0D7CE", color: "#75443C", fontSize: 12.5, lineHeight: 1.45 }}>Esse registro merece atenção na conversa com seu profissional. Se você não consegue manter líquidos, tem vômitos repetidos ou fraqueza importante, pause o treino e procure orientação.</div>}
-              <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Nota opcional sobre tolerância ou apetite" style={{ ...textareaSt, marginTop: 14 }} />
-              <div style={{ flex: 1 }} />
-              <button type="button" disabled={busyAction === "nutricao"} onClick={saveNutricao} style={{ ...primaryBtn, opacity: busyAction === "nutricao" ? 0.65 : 1 }}>{busyAction === "nutricao" ? "Salvando…" : "Salvar check-in"}</button>
+              <div style={{ display: "flex", gap: 5, marginBottom: 18 }} aria-label={`Etapa ${st.nutritionStep + 1} de 6`}>{Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 9, background: i <= st.nutritionStep ? "#0E6B5C" : "#E2E7E2" }} />)}</div>
+              <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 22 }}><strong style={{ color: "#16302B" }}>{st.nutritionStep === 0 ? "Vamos observar o que importa hoje." : "Cada resposta ajuda a acompanhar sua tolerância e energia."}</strong><br />O Canetta organiza sinais para você conversar com seu profissional. Ele não conclui sozinho se sua ingestão é suficiente nem prescreve calorias.</div>
+              {st.nutritionStep === 0 && <div><div style={{ fontSize: 20, fontWeight: 900, color: "#16302B", lineHeight: 1.15, marginBottom: 16 }}>Qual é o foco deste check-in?</div><ChipRow options={["Tolerância e apetite", "Hidratação", "Proteína", "Só refeição"]} current={st.draft.contexto} onPick={(v) => setDraft({ contexto: v })} wrap /><div style={{ marginTop: 20 }}><div style={fieldLabel}>META DE REGISTRO (OPCIONAL)</div><ChipRow options={["1 registro por dia", "3 registros por semana", "Sem meta fixa"]} current={nutritionGoalLabel} onPick={(v) => set({ nutritionGoal: v === "1 registro por dia" ? "diaria" : v === "3 registros por semana" ? "tres_por_semana" : "livre" })} wrap /></div></div>}
+              {st.nutritionStep === 1 && <div><div style={{ fontSize: 20, fontWeight: 900, color: "#16302B", lineHeight: 1.15, marginBottom: 16 }}>Quantas refeições você conseguiu tolerar hoje?</div><ChipRow options={["0", "1", "2", "3 ou mais", "Não sei"]} current={st.draft.refeicoesToleradas} onPick={(v) => setDraft({ refeicoesToleradas: v })} wrap /></div>}
+              {st.nutritionStep === 2 && <div><div style={{ fontSize: 20, fontWeight: 900, color: "#16302B", lineHeight: 1.15, marginBottom: 16 }}>Como sua ingestão ficou comparada ao seu habitual?</div><ChipRow options={["Parecida", "Menor", "Muito menor", "Não sei"]} current={st.draft.ingestaoHabitual} onPick={(v) => setDraft({ ingestaoHabitual: v })} wrap /></div>}
+              {st.nutritionStep === 3 && <div><div style={{ fontSize: 20, fontWeight: 900, color: "#16302B", lineHeight: 1.15, marginBottom: 16 }}>Você conseguiu manter líquidos?</div><ChipRow options={["Sim", "Parcialmente", "Não"]} current={st.draft.hidratacaoStatus} onPick={(v) => setDraft({ hidratacaoStatus: v })} equal /></div>}
+              {st.nutritionStep === 4 && <div><div style={{ fontSize: 20, fontWeight: 900, color: "#16302B", lineHeight: 1.15, marginBottom: 16 }}>Como ficaram proteína e força?</div><div style={fieldLabel}>TEVE UMA FONTE DE PROTEÍNA?</div><ChipRow options={["Sim", "Não", "Não sei"]} current={st.draft.proteina} onPick={(v) => setDraft({ proteina: v })} equal /><div style={{ ...fieldLabel, marginTop: 22 }}>SENTIU FRAQUEZA OU QUEDA DE RENDIMENTO?</div><ChipRow options={["Não", "Um pouco", "Sim", "Não sei"]} current={st.draft.fraqueza} onPick={(v) => setDraft({ fraqueza: v })} wrap /></div>}
+              {st.nutritionStep === 5 && <div><div style={{ fontSize: 20, fontWeight: 900, color: "#16302B", lineHeight: 1.15, marginBottom: 16 }}>Quer deixar um contexto para acompanhar?</div><div style={fieldLabel}>META DEFINIDA PELO PROFISSIONAL?</div><ChipRow options={["Sim, quero registrar contra ela", "Não", "Ainda não sei"]} current={st.draft.metaProfissional} onPick={(v) => setDraft({ metaProfissional: v })} wrap /><div style={{ ...fieldLabel, marginTop: 18 }}>ÁGUA NO DIA (COPOS)</div><input className="j-in" type="number" min={0} max={50} value={st.draft.agua ?? ""} onChange={(e) => setDraft({ agua: Number(e.target.value) })} style={inputSt} placeholder="Ex: 6" /><div style={{ ...fieldLabel, marginTop: 18 }}>REFEIÇÃO (OPCIONAL)</div><input className="j-in" value={st.draft.refeicao || ""} onChange={(e) => setDraft({ refeicao: e.target.value })} style={inputSt} placeholder="Ex: almoço" /><textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Nota opcional" style={{ ...textareaSt, marginTop: 14 }} /></div>}
+              {(st.draft.hidratacaoStatus === "Não" || st.draft.ingestaoHabitual === "Muito menor" || st.draft.fraqueza === "Sim") && <div style={{ ...cardWhite, marginTop: 18, padding: "12px 14px", background: "#FFF7F4", borderColor: "#F0D7CE", color: "#75443C", fontSize: 12.5, lineHeight: 1.45 }}>Esse registro merece atenção na conversa com seu profissional. Se você não consegue manter líquidos, tem vômitos repetidos ou fraqueza importante, pause o treino e procure orientação.</div>}
+              <div style={{ flex: 1, minHeight: 26 }} />
+              <div style={{ display: "flex", gap: 10 }}><button type="button" disabled={st.nutritionStep === 0} onClick={() => set({ nutritionStep: Math.max(0, st.nutritionStep - 1) })} style={{ flex: 1, padding: 13, background: "#fff", color: "#0E6B5C", border: "1px solid #D7E1DC", borderRadius: 14, fontSize: 13.5, fontWeight: 800, cursor: st.nutritionStep === 0 ? "default" : "pointer", opacity: st.nutritionStep === 0 ? 0.35 : 1 }}>Voltar</button><button type="button" disabled={busyAction === "nutricao"} onClick={nutritionNext} style={{ flex: 2, ...primaryBtn, opacity: busyAction === "nutricao" ? 0.65 : 1 }}>{busyAction === "nutricao" ? "Salvando…" : st.nutritionStep === 5 ? "Salvar check-in" : "Continuar"}</button></div>
             </div>
           )}
 
