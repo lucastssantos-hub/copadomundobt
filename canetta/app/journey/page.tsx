@@ -162,12 +162,12 @@ function reviveState(value: Partial<AppState>): Partial<AppState> {
 }
 
 // ---------- estilos ----------
-const primaryBtn: CSSProperties = { width: "100%", padding: 17, background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 16, fontSize: 16, fontWeight: 700, cursor: "pointer" };
-const closeX: CSSProperties = { background: "none", border: "none", color: "#5C7A72", fontSize: 20, cursor: "pointer" };
-const fieldLabel: CSSProperties = { fontSize: 12, fontWeight: 700, color: "#596E68", marginBottom: 6 };
-const inputSt: CSSProperties = { width: "100%", padding: "14px 16px", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 15, fontWeight: 600, color: "#16302B", background: "#fff" };
-const textareaSt: CSSProperties = { width: "100%", minHeight: 60, padding: "14px 16px", border: "1.5px solid #E2E7E2", borderRadius: 14, fontSize: 14, color: "#16302B", background: "#fff", fontFamily: "inherit", resize: "none" };
-const cardWhite: CSSProperties = { background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, padding: 18 };
+const primaryBtn: CSSProperties = { width: "100%", padding: 17, background: "var(--brand)", color: "#fff", border: "none", borderRadius: 16, fontSize: 16, fontWeight: 700, cursor: "pointer" };
+const closeX: CSSProperties = { background: "none", border: "none", color: "var(--ink-soft)", fontSize: 20, cursor: "pointer" };
+const fieldLabel: CSSProperties = { fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginBottom: 6 };
+const inputSt: CSSProperties = { width: "100%", padding: "14px 16px", border: "1.5px solid var(--line)", borderRadius: 14, fontSize: 15, fontWeight: 600, color: "var(--ink)", background: "var(--surface)" };
+const textareaSt: CSSProperties = { width: "100%", minHeight: 60, padding: "14px 16px", border: "1.5px solid var(--line)", borderRadius: 14, fontSize: 14, color: "var(--ink)", background: "var(--surface)", fontFamily: "inherit", resize: "none" };
+const cardWhite: CSSProperties = { background: "var(--surface)", border: "1.5px solid var(--line)", borderRadius: 16, padding: 18 };
 const flowHeader = (titulo: string, onClose: () => void) => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
     <button type="button" aria-label={`Fechar ${titulo}`} onClick={onClose} style={{ ...closeX, minWidth: 44, minHeight: 44 }}>✕</button>
@@ -1212,7 +1212,7 @@ export default function JourneyPage() {
                   <div style={{ position: "relative", width: 150, height: 210, margin: "0 auto" }}>
                     <div style={{ position: "absolute", top: 0, left: 0 }} dangerouslySetInnerHTML={{ __html: BODY_SVG }} />
                     {REGION_COORDS.map((r) => (
-                      <button key={r.label} type="button" aria-label={r.label} aria-pressed={st.draft.local === r.label} onClick={() => setDraft({ local: r.label })} style={{ position: "absolute", left: r.left, top: r.top, width: 26, height: 26, padding: 0, borderRadius: "50%", background: st.draft.local === r.label ? "#0E6B5C" : "#8DA9A2", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", cursor: "pointer" }} />
+                      <button className="map-point" key={r.label} type="button" aria-label={r.label} aria-pressed={st.draft.local === r.label} onClick={() => setDraft({ local: r.label })} style={{ position: "absolute", left: r.left, top: r.top, width: 26, height: 26, minHeight: 26, padding: 0, borderRadius: "50%", background: st.draft.local === r.label ? "#0E6B5C" : "#8DA9A2", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", cursor: "pointer" }} />
                     ))}
                   </div>
                   <div style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0E6B5C", marginTop: 8 }}>{st.draft.local || "Toque em um ponto do corpo"}</div>
@@ -2015,7 +2015,7 @@ export default function JourneyPage() {
 
                 {st.treinoSub === "biblioteca" && (
                   <>
-                    <input className="j-in" value={st.exerciseSearch} onChange={(e) => set({ exerciseSearch: e.target.value })} placeholder="Buscar por exercício, músculo ou equipamento" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} />
+                    <input aria-label="Buscar exercício, músculo ou equipamento" className="j-in" value={st.exerciseSearch} onChange={(e) => set({ exerciseSearch: e.target.value })} placeholder="Buscar por exercício, músculo ou equipamento" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} />
                     <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>
                       {st.exercises.length ? "Catálogo importado do dataset de exercícios." : "Catálogo inicial local. O seed completo importa os 1.324 exercícios para o Supabase."}
                     </div>
@@ -2046,7 +2046,7 @@ export default function JourneyPage() {
                         <div><div style={{ ...fieldLabel, marginBottom: 6 }}>ESFORÇO SENTIDO (1–10)</div><ChipRow options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]} current={feedbackRpe} onPick={setFeedbackRpe} wrap /></div>
                         <div><div style={{ ...fieldLabel, marginBottom: 6 }}>SINTOMAS DURANTE</div><ChipRow options={["Nenhum", "Tontura", "Náusea", "Dor", "Falta de ar"]} current={feedbackDuring.length ? feedbackDuring[0] : "Nenhum"} onPick={(v) => setFeedbackDuring(v === "Nenhum" ? [] : [v])} wrap /></div>
                         <div><div style={{ ...fieldLabel, marginBottom: 6 }}>SINTOMAS DEPOIS</div><ChipRow options={["Nenhum", "Náusea", "Dor", "Cansaço fora do esperado"]} current={feedbackAfter.length ? feedbackAfter[0] : "Nenhum"} onPick={(v) => setFeedbackAfter(v === "Nenhum" ? [] : [v])} wrap /></div>
-                        <label style={{ ...fieldLabel, display: "flex", flexDirection: "column", gap: 6 }}>OBSERVAÇÃO<input className="j-in" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Como seu corpo respondeu?" style={{ ...inputSt, padding: "12px 14px", fontSize: 13.5, fontWeight: 500, textTransform: "none" }} /></label>
+                        <label style={{ ...fieldLabel, display: "flex", flexDirection: "column", gap: 6 }}>OBSERVAÇÃO<input aria-label="Observação sobre como seu corpo respondeu" className="j-in" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="Como seu corpo respondeu?" style={{ ...inputSt, padding: "12px 14px", fontSize: 13.5, fontWeight: 500, textTransform: "none" }} /></label>
                         <button type="button" disabled={feedbackBusy} onClick={saveFeedback} style={{ ...primaryBtn, padding: 13, fontSize: 14, opacity: feedbackBusy ? 0.6 : 1 }}>{feedbackBusy ? "Salvando…" : "Salvar feedback"}</button>
                         <button type="button" onClick={() => setFeedbackOpen(false)} style={{ background: "transparent", border: "none", color: "#596E68", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Responder depois</button>
                       </div>
