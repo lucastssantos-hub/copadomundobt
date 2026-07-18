@@ -1146,7 +1146,7 @@ export default function JourneyPage() {
               <input id="setup-medication" className="j-in" list="canetta-medications" value={st.medicamento === "Medicamento" ? "" : st.medicamento} onChange={(e) => set({ medicamento: e.target.value, freqLabel: isTirzepatideMedication(e.target.value) ? "Semanal" : st.freqLabel })} placeholder="Ex: Tirzepatida, Mounjaro, Ozempic" style={inputSt} />
               <datalist id="canetta-medications">{MEDICATION_OPTIONS.map((item) => <option key={item} value={item} />)}</datalist>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className="responsive-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label htmlFor="setup-dose" style={fieldLabel}>DOSE</label>
                 <input id="setup-dose" className="j-in" list={isTirzepatideMedication(st.medicamento) ? "canetta-tirzepatide-doses" : undefined} value={st.dose === "Dose atual" ? "" : st.dose} onChange={(e) => set({ dose: e.target.value })} placeholder={isTirzepatideMedication(st.medicamento) ? "Ex: 2.5 mg" : "Ex: 0,5 mg"} style={inputSt} />
@@ -1390,7 +1390,7 @@ export default function JourneyPage() {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Registrar medidas", cancelFlow)}
               <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 16 }}>Registre medidas feitas por você. O Canetta mostra apenas os dados informados, sem meta ou interpretação.</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div className="responsive-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div><div style={fieldLabel}>CINTURA (CM)</div><input className="j-in" type="number" min={20} max={300} step="0.1" value={st.draft.cinturaCm ?? ""} onChange={(e) => setDraft({ cinturaCm: Number(e.target.value) })} style={inputSt} placeholder="Ex: 96" /></div>
                 <div><div style={fieldLabel}>QUADRIL (CM)</div><input className="j-in" type="number" min={20} max={300} step="0.1" value={st.draft.quadrilCm ?? ""} onChange={(e) => setDraft({ quadrilCm: Number(e.target.value) })} style={inputSt} placeholder="Ex: 108" /></div>
               </div>
@@ -1428,7 +1428,7 @@ export default function JourneyPage() {
                   <div style={fieldLabel}>EXERCÍCIO</div>
                   <input className="j-in" value={st.draft.exerciseName || ""} onChange={(e) => setDraft({ exerciseName: e.target.value, exerciseExternalId: undefined })} placeholder="Ex: agachamento livre" style={inputSt} />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div className="responsive-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div>
                     <div style={fieldLabel}>SÉRIES</div>
                     <input className="j-in" type="number" min={0} max={99} value={st.draft.series ?? ""} onChange={(e) => setDraft({ series: Number(e.target.value) })} placeholder="3" style={inputSt} />
@@ -2166,7 +2166,7 @@ export default function JourneyPage() {
           </div>
 
           {/* TAB BAR */}
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
+          <div className="bottom-nav" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
             {([["hoje", "HO", "Hoje"], ["diario", "JO", "Jornada"], ["consulta", "CO", "Consulta"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
               <button key={key} type="button" aria-label={`Abrir ${label}`} aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 64, padding: "5px 4px", background: st.tab === key ? "#EAF5F2" : "transparent", border: "none", borderRadius: 12 }}>
                 <span aria-hidden="true" style={{ minWidth: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, letterSpacing: "0.03em", lineHeight: 1, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
@@ -2181,7 +2181,7 @@ export default function JourneyPage() {
       {st.sheetOpen && (
         <>
           <button type="button" aria-label="Fechar novo registro" onClick={() => set({ sheetOpen: false })} style={{ position: "absolute", inset: 0, width: "100%", border: "none", background: "rgba(22,48,43,0.4)", zIndex: 30 }} />
-          <div role="dialog" aria-modal="true" aria-labelledby="new-record-title" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#F4F6F3", borderRadius: "24px 24px 0 0", padding: "10px 20px 26px", zIndex: 31, boxShadow: "0 -8px 30px rgba(0,0,0,0.15)" }}>
+          <div className="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="new-record-title" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#F4F6F3", borderRadius: "24px 24px 0 0", padding: "10px 20px 26px", zIndex: 31, boxShadow: "0 -8px 30px rgba(0,0,0,0.15)" }}>
             <div style={{ width: 40, height: 5, background: "#E2E7E2", borderRadius: 3, margin: "6px auto 16px" }} />
             <div id="new-record-title" style={{ fontSize: 15, fontWeight: 800, color: "#16302B", marginBottom: 12 }}>Novo registro</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

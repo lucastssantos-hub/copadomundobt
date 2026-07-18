@@ -77,6 +77,18 @@ a:focus-visible {
   isolation: isolate;
 }
 
+.canetta-journey .bottom-nav {
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+.canetta-journey .sheet-panel {
+  padding-bottom: max(26px, calc(18px + env(safe-area-inset-bottom)));
+}
+
+.responsive-two-col {
+  min-width: 0;
+}
+
 .canetta-journey .j-in,
 .canetta-journey .flow-input {
   min-height: 48px;
@@ -1000,5 +1012,21 @@ a {
 
   .choice-grid {
     max-height: 172px;
+  }
+
+  .responsive-two-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .canetta-journey .bottom-nav {
+    padding-top: 6px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .canetta-journey .sheet-panel {
+    max-height: 88vh;
+    overflow-y: auto;
   }
 }
