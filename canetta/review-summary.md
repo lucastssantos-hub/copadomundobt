@@ -126,3 +126,11 @@ Foram adicionados seis exercícios:
 - `1321` remada sentada elevada com corda
 
 O catálogo passou para 63 exercícios elegíveis, com 11 opções de `horizontal_pull`, 12 de `horizontal_push` e 3 de `triceps`.
+
+## Nona rodada — posterior de coxa
+
+Foi liberada uma nova opção de máquina:
+
+- `3195` flexão de joelho deitado unilateral na máquina, restrita a usuários com experiência adequada.
+
+`1766` ficou pendente por exigir controle nórdico autoassistido. `3562` foi rejeitado por duplicar a ponte de glúteos já existente. O catálogo passou para 64 exercícios elegíveis, com 4 opções de `knee_flexion`.
