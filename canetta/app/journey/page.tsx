@@ -1472,6 +1472,16 @@ export default function JourneyPage() {
                     {!pushEnabled && <button type="button" onClick={enablePush} disabled={busyAction === "push"} style={{ width: "100%", padding: 12, background: "#fff", color: "#0E6B5C", border: "1.5px solid #C7D6D1", borderRadius: 14, fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: busyAction === "push" ? 0.65 : 1 }}>{busyAction === "push" ? "Ativando…" : "Ativar push"}</button>}
                   </div>
                 )}
+                {st.aplicacoes.length > 0 && (
+                  <div style={{ ...cardWhite, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: "#EAF5F2", borderColor: "#CBE3DC" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 850, letterSpacing: "0.04em", color: "#0E6B5C" }}>PRÓXIMO PASSO</div>
+                      <div style={{ fontSize: 15, fontWeight: 850, color: "#16302B", marginTop: 3 }}>Como você está hoje?</div>
+                      <div style={{ fontSize: 12, color: "#4B5F59", lineHeight: 1.4, marginTop: 3 }}>Um registro curto deixa sua jornada mais completa.</div>
+                    </div>
+                    <button type="button" onClick={() => startFlow(st.pesos.length ? "rotina" : "peso")} style={{ flexShrink: 0, padding: "10px 13px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{st.pesos.length ? "Fazer check-in" : "Registrar peso"}</button>
+                  </div>
+                )}
                 <div style={{ background: "#0E6B5C", borderRadius: 18, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#BEE0D6", letterSpacing: "0.3px" }}>PRÓXIMA DOSE</div>
                   {st.aplicacoes.length ? (
@@ -1531,7 +1541,7 @@ export default function JourneyPage() {
                   </div>
                 </div>
                 <button type="button" onClick={() => set({ tab: "consulta", consultaSub: "resumo" })} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, cursor: "pointer" }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>📄 Resumo da consulta</span><span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>📄 Preparar consulta</span><span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
                 </button>
                 <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#596E68" }}>HISTÓRICO RECENTE</div>
@@ -1559,12 +1569,15 @@ export default function JourneyPage() {
               </div>
             )}
 
-            {/* DIÁRIO */}
+            {/* JORNADA */}
             {st.tab === "diario" && (
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Diário</div>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Jornada</div>
+                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Uma linha do tempo dos registros que você escolheu guardar.</div>
+                </div>
                 <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
-                  {[["registros", "Registros"], ["espelho", "Espelho"]].map(([k, label]) => (
+                  {[["registros", "Linha do tempo"], ["espelho", "Visão geral"]].map(([k, label]) => (
                     <button key={k} type="button" aria-pressed={st.diarioSub === k} onClick={() => set({ diarioSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.diarioSub === k ? "#fff" : "transparent", color: st.diarioSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
                   ))}
                 </div>
@@ -1658,7 +1671,10 @@ export default function JourneyPage() {
             {/* CONSULTA */}
             {st.tab === "consulta" && (
               <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Consulta</div>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Consulta</div>
+                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Organize fatos e perguntas para conversar com seu profissional.</div>
+                </div>
                 <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
                   {[["resumo", "Relatório"], ["exportar", "Exportar"], ["fases", "Fases"]].map(([k, label]) => (
                     <button key={k} type="button" aria-pressed={st.consultaSub === k} onClick={() => set({ consultaSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.consultaSub === k ? "#fff" : "transparent", color: st.consultaSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
@@ -1738,7 +1754,7 @@ export default function JourneyPage() {
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Semana de movimento</div>
                     <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 3 }}>{weeklyWorkouts} treino(s) registrado(s)</div>
                   </div>
-                  <button type="button" onClick={() => startFlow("treino")} style={{ padding: "10px 12px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Registrar</button>
+                  <button type="button" onClick={() => startFlow("treino")} style={{ padding: "10px 12px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Registrar movimento</button>
                 </div>
 
                 {st.treinoSub === "plano" && (
@@ -2116,9 +2132,9 @@ export default function JourneyPage() {
 
           {/* TAB BAR */}
           <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
-            {([["hoje", "🏠", "Hoje"], ["diario", "📖", "Diário"], ["consulta", "📋", "Consulta"], ["treino", "🏋️", "Treino"], ["mais", "⋯", "Mais"]] as const).map(([key, icon, label]) => (
-              <button key={key} type="button" aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 56, padding: 0, background: "none", border: "none" }}>
-                <span style={{ fontSize: 19 }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 700, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
+            {([["hoje", "🏠", "Hoje"], ["diario", "📖", "Jornada"], ["consulta", "📋", "Consulta"], ["treino", "🏋️", "Treino"], ["mais", "⋯", "Mais"]] as const).map(([key, icon, label]) => (
+              <button key={key} type="button" aria-label={`Abrir ${label}`} aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 64, padding: "5px 4px", background: st.tab === key ? "#EAF5F2" : "transparent", border: "none", borderRadius: 12 }}>
+                <span style={{ fontSize: 19, lineHeight: 1 }}>{icon}</span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
               </button>
             ))}
             <button type="button" aria-label="Novo registro" onClick={() => set({ sheetOpen: true })} style={{ position: "absolute", left: "50%", top: -22, transform: "translateX(-50%)", width: 52, height: 52, padding: 0, border: "none", borderRadius: "50%", background: "#0E6B5C", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 26, cursor: "pointer", boxShadow: "0 6px 16px rgba(14,107,92,0.4)" }}>＋</button>
