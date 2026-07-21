@@ -18,20 +18,26 @@ O app organiza informações registradas pela pessoa usuária. Não diagnostica,
 
 ## Configuração
 
-1. Copie `.env.example` para `.env.local` e configure:
+1. Copie `.env.example` para `.env.local` e configure as variáveis necessárias:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+CRON_SECRET=
 ```
 
-2. Aplique as migrations em ordem:
+`SUPABASE_SERVICE_ROLE_KEY` e `CRON_SECRET` são somente de servidor e nunca devem ser expostas no navegador. Os endpoints de cron falham fechado quando `CRON_SECRET` não está configurado.
 
-```text
-supabase/migrations/0001_foundation.sql
-supabase/migrations/0002_routine_questions.sql
-supabase/migrations/0003_mvp_privacy.sql
+2. Aplique todas as migrations em ordem (não apenas as três fundacionais):
+
+```bash
+supabase link --project-ref <seu-project-ref>
+supabase db push
 ```
+
+Isso inclui as migrations de doses perdidas, push, exercícios, treinos, triagem, rastreamento nutricional e metas de proteína.
 
 3. Instale e valide:
 
