@@ -72,7 +72,7 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
     supabase.from("canetta_workout_feedback").select("id, workout_log_id, completed, rpe, symptoms_during, symptoms_after, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
     supabase.from("canetta_training_reassessments").select("id, anchor_strength, function_level, pain_level, adherence, medication_change, note, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
     supabase.from("canetta_body_measurements").select("id, waist_cm, hip_cm, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true }),
-    supabase.from("canetta_nutrition_entries").select("id, meal_label, protein_logged, water_cups, note, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true })
+    supabase.from("canetta_nutrition_entries").select("id, meal_label, protein_logged, water_cups, note, meals_tolerated, intake_adequacy, hydration_status, weakness_status, professional_target, protein_target_grams, protein_target_source, recorded_at").eq("user_id", user.id).order("recorded_at", { ascending: true })
   ]);
 
   const error = profileResult.error || applicationsResult.error || missedDosesResult.error || weightsResult.error || symptomsResult.error || routinesResult.error || questionsResult.error || remindersResult.error || workoutsResult.error || exercisesResult.error || sessionCheckinsResult.error || feedbackResult.error || reassessmentResult.error || measurementsResult.error || nutritionResult.error;

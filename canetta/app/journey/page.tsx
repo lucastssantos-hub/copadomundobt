@@ -327,33 +327,39 @@ export default function JourneyPage() {
       const questions = Array.isArray(result.questions) ? result.questions : [];
       const workouts = Array.isArray(result.workouts) ? result.workouts : [];
       const exercises = Array.isArray(result.exercises) ? result.exercises : [];
+      // Registros sem id são lançamentos locais ainda não sincronizados. Eles
+      // não podem desaparecer quando a sessão remota termina de carregar.
+      const keepPending = <T extends { id?: string }>(remoteItems: T[], localItems: T[]) => [
+        ...remoteItems,
+        ...localItems.filter((item) => !item.id)
+      ];
       setStRaw((current) => ({
         ...current,
         nome: result.profile?.name || current.nome,
         medicamento: result.profile?.medication || current.medicamento,
         dose: result.profile?.current_dose || current.dose,
         freqLabel: result.profile?.frequency || current.freqLabel,
-        aplicacoes: applications.map((item) => ({
+        aplicacoes: keepPending(applications.map((item) => ({
           id: item.id,
           dataHora: fmtDateTime(new Date(item.applied_at)),
           local: item.site || "Não informado",
           obs: item.note || "",
           data: new Date(item.applied_at)
-        })),
-        dosesNaoAplicadas: missedDoses.map((item) => ({
+        })), current.aplicacoes),
+        dosesNaoAplicadas: keepPending(missedDoses.map((item) => ({
           id: item.id,
           dataHora: fmtDateTime(new Date(item.scheduled_for)),
           motivo: item.reason || "Não informado",
           nota: item.note || undefined,
           data: new Date(item.scheduled_for)
-        })),
-        pesos: weights.map((item) => ({ id: item.id, kg: Number(item.weight), data: fmtDate(new Date(item.recorded_at)), raw: new Date(item.recorded_at) })),
-        sintomas: symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
-        rotinas: routines.map((item) => ({ id: item.id, agua: item.water_cups ?? undefined, movimento: item.movement || undefined, sono: item.sleep || undefined, fome: item.hunger || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })),
-        medidas: measurements.map((item) => ({ id: item.id, cinturaCm: item.waist_cm, quadrilCm: item.hip_cm, nota: item.note, data: new Date(item.recorded_at) })),
-        nutricao: nutrition.map((item) => ({ id: item.id, refeicao: item.meal_label, proteina: item.protein_logged, agua: item.water_cups, nota: item.note, refeicoesToleradas: item.meals_tolerated, ingestaoHabitual: item.intake_adequacy, hidratacaoStatus: item.hydration_status, fraqueza: item.weakness_status, metaProfissional: item.professional_target, metaProteinaGramas: item.protein_target_grams, metaProteinaFonte: item.protein_target_source, data: new Date(item.recorded_at) })),
-        perguntas: questions.map((item) => ({ id: item.id, texto: item.question, data: new Date(item.recorded_at) })),
-        treinos: workouts.map((item) => ({ id: item.id, exerciseExternalId: item.exercise_external_id || undefined, exerciseName: item.exercise_name, bodyPart: item.body_part || undefined, equipment: item.equipment || undefined, setsCompleted: item.sets_completed ?? undefined, repsCompleted: item.reps_completed || undefined, difficultyFelt: item.difficulty_felt || undefined, note: item.note || undefined, data: new Date(item.completed_at) })),
+        })), current.dosesNaoAplicadas),
+        pesos: keepPending(weights.map((item) => ({ id: item.id, kg: Number(item.weight), data: fmtDate(new Date(item.recorded_at)), raw: new Date(item.recorded_at) })), current.pesos),
+        sintomas: keepPending(symptoms.map((item) => ({ id: item.id, tipo: item.types?.[0] || "Sintoma", intensidade: item.intensity ?? 0, duracao: item.duration || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })), current.sintomas),
+        rotinas: keepPending(routines.map((item) => ({ id: item.id, agua: item.water_cups ?? undefined, movimento: item.movement || undefined, sono: item.sleep || undefined, fome: item.hunger || undefined, nota: item.note || undefined, data: new Date(item.recorded_at) })), current.rotinas),
+        medidas: keepPending(measurements.map((item) => ({ id: item.id, cinturaCm: item.waist_cm, quadrilCm: item.hip_cm, nota: item.note, data: new Date(item.recorded_at) })), current.medidas),
+        nutricao: keepPending(nutrition.map((item) => ({ id: item.id, refeicao: item.meal_label, proteina: item.protein_logged, agua: item.water_cups, nota: item.note, refeicoesToleradas: item.meals_tolerated, ingestaoHabitual: item.intake_adequacy, hidratacaoStatus: item.hydration_status, fraqueza: item.weakness_status, metaProfissional: item.professional_target, metaProteinaGramas: item.protein_target_grams, metaProteinaFonte: item.protein_target_source, data: new Date(item.recorded_at) })), current.nutricao),
+        perguntas: keepPending(questions.map((item) => ({ id: item.id, texto: item.question, data: new Date(item.recorded_at) })), current.perguntas),
+        treinos: keepPending(workouts.map((item) => ({ id: item.id, exerciseExternalId: item.exercise_external_id || undefined, exerciseName: item.exercise_name, bodyPart: item.body_part || undefined, equipment: item.equipment || undefined, setsCompleted: item.sets_completed ?? undefined, repsCompleted: item.reps_completed || undefined, difficultyFelt: item.difficulty_felt || undefined, note: item.note || undefined, data: new Date(item.completed_at) })), current.treinos),
         exercises: exercises.length ? exercises : current.exercises,
         lembretesOn: result.reminder?.active ?? current.lembretesOn,
         reminderWeekday: result.reminder?.weekday ?? current.reminderWeekday,

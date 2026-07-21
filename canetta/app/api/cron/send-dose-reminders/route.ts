@@ -44,7 +44,7 @@ function currentSaoPauloTime() {
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
@@ -63,7 +63,14 @@ export async function GET(request: NextRequest) {
   }
 
   const rows = (data ?? []) as ReminderRow[];
-  const dueRows = rows;
+  const nowMinutes = now.hour * 60 + now.minute;
+  const dueRows = rows.filter((row) => {
+    const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(String(row.time));
+    if (!match) return false;
+    const scheduledMinutes = Number(match[1]) * 60 + Number(match[2]);
+    const elapsed = nowMinutes - scheduledMinutes;
+    return elapsed >= 0 && elapsed <= 5;
+  });
   const userIds = Array.from(new Set(dueRows.map((row) => row.user_id)));
   const subscriptionsByUser = new Map<string, PushSubscriptionRow[]>();
 
@@ -85,10 +92,11 @@ export async function GET(request: NextRequest) {
   let disabled = 0;
 
   for (const row of dueRows) {
+    const scheduledHour = Number(String(row.time).slice(0, 2));
     const { error: logError } = await supabase.from("canetta_push_delivery_log").insert({
       user_id: row.user_id,
       delivery_date: now.date,
-      delivery_hour: now.hour,
+      delivery_hour: scheduledHour,
       kind: "dose_reminder"
     });
     if (logError) continue;
