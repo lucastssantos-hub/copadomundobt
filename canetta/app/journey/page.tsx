@@ -329,8 +329,11 @@ export default function JourneyPage() {
       const exercises = Array.isArray(result.exercises) ? result.exercises : [];
       // Registros sem id são lançamentos locais ainda não sincronizados. Eles
       // não podem desaparecer quando a sessão remota termina de carregar.
-      const keepPending = <T extends { id?: string }>(remoteItems: T[], localItems: T[]) => [
-        ...remoteItems,
+      const keepPending = <R extends { id?: string }, L extends { id?: string }>(
+        remoteItems: R[],
+        localItems: L[]
+      ): L[] => [
+        ...(remoteItems as unknown as L[]),
         ...localItems.filter((item) => !item.id)
       ];
       setStRaw((current) => ({
