@@ -1061,7 +1061,7 @@ export default function JourneyPage() {
   const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
   const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
   const adherencePct = expectedDoses ? Math.round((st.aplicacoes.length / expectedDoses) * 100) : null;
-  const now = clockReady ? new Date() : new Date(0);
+  const now = useMemo(() => clockReady ? new Date() : new Date(0), [clockReady]);
   const weekStart = startOfWeek(now);
   const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
   const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
