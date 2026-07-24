@@ -2214,12 +2214,14 @@ export default function JourneyPage() {
                       { titulo: "Hidratação no dia a dia", fonte: "Fonte: Ministério da Saúde", corpo: "Use o registro de rotina para lembrar como estavam água, fome, sono e movimento." },
                       { titulo: "Entendendo as fases do tratamento", fonte: "Fonte: SBEM", corpo: "As fases ajudam a organizar o tempo de acompanhamento, sem definir conduta." },
                     ].map((a) => (
-                      <div key={a.titulo} style={{ padding: "15px 17px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14, display: "flex", flexDirection: "column", gap: 5 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#16302B" }}>{a.titulo}</div>
-                        <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>{a.corpo}</div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#8DA9E8" }}>{a.fonte}</div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0E6B5C" }}>Procure seu médico para orientações.</div>
-                      </div>
+                      <details key={a.titulo} style={{ padding: "15px 17px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
+                        <summary style={{ cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#16302B" }}>{a.titulo}</summary>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 7, paddingTop: 10 }}>
+                          <div style={{ fontSize: 12.5, color: "#4B5F59", lineHeight: 1.5 }}>{a.corpo}</div>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: "#596E68" }}>{a.fonte}</div>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: "#0E6B5C" }}>Conteúdo educativo. Procure seu médico para orientações.</div>
+                        </div>
+                      </details>
                     ))}
                   </div>
                 )}

@@ -337,6 +337,29 @@ a {
   text-align: center;
 }
 
+@media (min-width: 700px) {
+  .shell:has(.auth-page) .phone {
+    width: min(100%, 760px);
+  }
+
+  .auth-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    align-items: start;
+    gap: 48px;
+    padding: 64px 56px;
+  }
+
+  .auth-intro {
+    max-width: 34ch;
+    padding-top: 48px;
+  }
+
+  .auth-flow {
+    margin-top: 0;
+  }
+}
+
 .card {
   margin-top: 18px;
   border: 1px solid var(--line);
