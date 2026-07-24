@@ -160,6 +160,48 @@ a:focus-visible {
   flex: 1 1 128px;
 }
 
+/* Hoje — hierarchy from the redesign handoff, keeping every existing action. */
+.canetta-journey .today-screen {
+  background: var(--paper);
+}
+
+.canetta-journey .today-welcome {
+  background: var(--surface) !important;
+  border-color: #cdded7 !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+}
+
+.canetta-journey .today-welcome > div:first-child h2,
+.canetta-journey .today-welcome > div:first-child > div:first-child {
+  color: var(--brand-deep) !important;
+}
+
+.canetta-journey .today-next-step {
+  padding: 16px 18px !important;
+  border-radius: 14px !important;
+}
+
+.canetta-journey .today-next-dose {
+  padding: 20px !important;
+  border-radius: 14px !important;
+}
+
+.canetta-journey .today-quick-actions {
+  padding-top: 4px;
+}
+
+.canetta-journey .today-quick-actions > div:last-child {
+  gap: 10px !important;
+}
+
+.canetta-journey .today-quick-actions > div:last-child > button {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  border-radius: 12px !important;
+  min-height: 76px !important;
+}
+
 @media (max-width: 360px) {
   .canetta-journey .today-screen,
   .canetta-journey .journey-screen,

@@ -1579,7 +1579,7 @@ export default function JourneyPage() {
                 </div>
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: "#596E68", marginTop: -8 }}>{syncLabel}</div>
                 {!st.aplicacoes.length && (
-                  <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14, background: "#FFFDF8" }}>
+                  <div className="today-welcome" style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14, background: "#FFFDF8" }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: "#16302B" }}>Bem-vindo ao Canetta 👋</div>
                       <div style={{ fontSize: 13, color: "#4B5F59", lineHeight: 1.45, marginTop: 4 }}>Comece pelo essencial: registre a primeira aplicação. Depois ative o push e acompanhe peso/sintomas quando fizer sentido.</div>
@@ -1668,7 +1668,7 @@ export default function JourneyPage() {
                     ))}
                   </div>
                 </div>
-                <div>
+                <div className="today-quick-actions">
                   <div style={{ fontSize: 12.5, fontWeight: 700, color: "#596E68", marginBottom: 10 }}>REGISTRO RÁPIDO</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                     {quickDefs.map((q) => (
