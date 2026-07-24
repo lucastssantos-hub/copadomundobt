@@ -1572,7 +1572,7 @@ export default function JourneyPage() {
 
             {/* HOJE */}
             {st.tab === "hoje" && (
-              <div className="today-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="today-screen today-prototype-mode" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
                 <div className="today-prototype-view">
                   <header className="prototype-home-header">
                     <div>

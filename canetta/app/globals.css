@@ -287,7 +287,7 @@ a:focus-visible {
 /* Prototype-faithful Today composition. The legacy blocks remain in the DOM
    so their flows stay available to the app, but the new surface is the one
    presented to the user. */
-.canetta-journey .today-screen:has(.today-prototype-view) > *:not(.today-prototype-view) {
+.canetta-journey .today-screen.today-prototype-mode > *:not(.today-prototype-view) {
   display: none !important;
 }
 
