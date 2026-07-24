@@ -125,6 +125,28 @@ const FALLBACK_EXERCISES: ExerciseCatalogItem[] = [
   { external_id: "canetta-dumbbell-row", name: "Remada com halter", body_part: "back", equipment: "dumbbell", target_muscle: "lats", muscle_group: "back", secondary_muscles: ["biceps"], image_url: null, gif_url: null, attribution: "Canetta starter catalog" }
 ];
 
+const EXERCISE_LABELS: Record<string, string> = {
+  "upper legs": "pernas",
+  chest: "peito",
+  waist: "core",
+  back: "costas",
+  shoulders: "ombros",
+  arms: "braços",
+  "body weight": "peso corporal",
+  dumbbell: "halter",
+  band: "faixa elástica",
+  kettlebell: "kettlebell",
+  quadriceps: "quadríceps",
+  glutes: "glúteos",
+  hamstrings: "posteriores de coxa",
+  pectorals: "peitorais",
+  lats: "dorsais",
+  abs: "abdômen",
+  core: "core",
+};
+
+const exerciseLabel = (value?: string | null) => value ? (EXERCISE_LABELS[value.toLowerCase()] ?? value) : "";
+
 function isTirzepatideMedication(value: string | null | undefined) {
   const normalized = `${value ?? ""}`.toLowerCase();
   return normalized.includes("tirzepatida") || normalized.includes("mounjaro") || normalized.includes("zepbound");
@@ -643,6 +665,10 @@ export default function JourneyPage() {
     toast("Check-in salvo."); finishToHoje();
   };
   const saveSintoma = async () => {
+    if (!st.draft.tipo) {
+      toast("Selecione o sintoma antes de salvar.");
+      return;
+    }
     setBusyAction("sintoma");
     const note = [st.draft.contexto, st.draft.nota].filter(Boolean).join(" · ");
     const result = await saveSymptomAction({ type: st.draft.tipo, intensity: st.draft.intensidade ?? 0, duration: st.draft.duracao, note });
@@ -656,7 +682,10 @@ export default function JourneyPage() {
     const result = await saveWeightAction({ weight: kg });
     if ("validation" in result) { setBusyAction(null); toast("Informe um peso válido."); return; }
     const recordedAt = result.synced ? new Date(result.recordedAt) : new Date();
-    set({ pesos: [...st.pesos, { id: result.synced ? result.id : undefined, kg, data: fmtDate(recordedAt), raw: recordedAt }] });
+    const entry = { id: result.synced ? result.id : undefined, kg, data: fmtDate(recordedAt), raw: recordedAt };
+    const sameDayIndex = st.pesos.findIndex((item) => sameDay(item.raw, recordedAt));
+    const pesos = sameDayIndex >= 0 ? st.pesos.map((item, index) => index === sameDayIndex ? entry : item) : [...st.pesos, entry];
+    set({ pesos });
     setBusyAction(null);
     toast("Peso registrado."); finishToHoje();
   };
@@ -1719,12 +1748,15 @@ export default function JourneyPage() {
                     <div style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Peso</div>
                       {st.pesos.length >= 2 ? (
-                        <div style={{ display: "flex", alignItems: "end", gap: 6, minHeight: 58 }}>
+                        <div role="img" aria-label={`Evolução do peso: ${st.pesos.slice(-8).map((item) => `${item.kg} kg em ${item.data}`).join(", ")}`} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "end", gap: 6, minHeight: 58 }}>
                           {st.pesos.slice(-8).map((item) => {
                             const span = Math.max(1, weightMax - weightMin);
                             const height = 16 + ((item.kg - weightMin) / span) * 40;
-                            return <div key={item.raw.toISOString()} title={`${item.kg} kg`} style={{ flex: 1, height, borderRadius: 7, background: "#0E6B5C" }} />;
+                            return <div key={item.raw.toISOString()} title={`${item.kg} kg · ${item.data}`} style={{ flex: 1, height, borderRadius: 7, background: "#0E6B5C" }} />;
                           })}
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11.5, color: "#596E68" }}><span>Inicial: {st.pesos[0].kg} kg</span><span>Atual: {st.pesos[st.pesos.length - 1].kg} kg</span></div>
                         </div>
                       ) : <div style={{ fontSize: 13, color: "#596E68" }}>Com dois registros de peso, o gráfico aparece aqui.</div>}
                     </div>
@@ -2056,7 +2088,7 @@ export default function JourneyPage() {
                   <>
                     <input aria-label="Buscar exercício, músculo ou equipamento" className="j-in" value={st.exerciseSearch} onChange={(e) => set({ exerciseSearch: e.target.value })} placeholder="Buscar por exercício, músculo ou equipamento" style={{ ...inputSt, padding: "13px 15px", fontSize: 14 }} />
                     <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45 }}>
-                      {st.exercises.length ? "Catálogo importado do dataset de exercícios." : "Catálogo inicial local. O seed completo importa os 1.324 exercícios para o Supabase."}
+                      {st.exercises.length ? "Catálogo de exercícios disponível para consulta." : "Catálogo básico disponível enquanto a biblioteca completa é carregada."}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {filteredExercises.map((exercise) => (
@@ -2067,7 +2099,7 @@ export default function JourneyPage() {
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 800, color: "#16302B" }}>{exercise.name_pt || exercise.name}</div>
-                            <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exercise.body_part, exercise.equipment, exercise.target_muscle, exercise.difficulty_level].filter(Boolean).join(" · ") || "exercício"}</div>
+                            <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 3 }}>{[exerciseLabel(exercise.body_part), exerciseLabel(exercise.equipment), exerciseLabel(exercise.target_muscle), exercise.difficulty_level].filter(Boolean).join(" · ") || "exercício"}</div>
                           </div>
                           <span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
                         </div>
