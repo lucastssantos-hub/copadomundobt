@@ -1573,6 +1573,44 @@ export default function JourneyPage() {
             {/* HOJE */}
             {st.tab === "hoje" && (
               <div className="today-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="today-prototype-view">
+                  <header className="prototype-home-header">
+                    <div>
+                      <p className="prototype-date">{fmtDate(new Date())}</p>
+                      <h1>Olá, {greetingName}</h1>
+                    </div>
+                    <div className="prototype-avatar" aria-hidden><MascotBadge size={36} /></div>
+                  </header>
+
+                  <section className="prototype-dose-card">
+                    <div>
+                      <span className="prototype-label">Próxima dose</span>
+                      <p className="prototype-dose-name">{st.medicamento} · {st.dose}</p>
+                      <p className="prototype-dose-meta">{st.aplicacoes.length ? nextReminderLabel : "Registre sua primeira aplicação"}</p>
+                    </div>
+                    <button type="button" onClick={() => startFlow("aplicacao")}>Registrar</button>
+                  </section>
+
+                  <section className="prototype-weight-card">
+                    <div className="prototype-weight-head">
+                      <div><span className="prototype-label">Peso atual</span><p className="prototype-weight-value">{pesoAtual ?? "—"} <small>kg</small></p></div>
+                      <span className="prototype-weight-badge">Acompanhar</span>
+                    </div>
+                    <button type="button" onClick={() => startFlow("peso")} className="prototype-text-action">Registrar peso <span>›</span></button>
+                  </section>
+
+                  <div className="prototype-section-label">Hoje</div>
+                  <section className="prototype-timeline">
+                    <button type="button" onClick={() => startFlow("sintoma")}><span className="prototype-timeline-dot" /><span><strong>Como você está se sentindo?</strong><small>Registre sintomas ou energia do dia</small></span><time>›</time></button>
+                    <button type="button" onClick={() => startFlow("nutricao")}><span className="prototype-timeline-dot prototype-dot-amber" /><span><strong>Check-in nutricional</strong><small>Proteína, hidratação e tolerância</small></span><time>›</time></button>
+                    <button type="button" onClick={() => set({ tab: "treino" })}><span className="prototype-timeline-dot prototype-dot-green" /><span><strong>Movimento</strong><small>Veja seu treino de hoje</small></span><time>›</time></button>
+                  </section>
+
+                  <button type="button" className="prototype-learning-card" onClick={() => set({ tab: "mais", maisSub: "conteudo" })}>
+                    <span className="prototype-learning-icon">✦</span><span><strong>Náusea nas primeiras semanas</strong><small>O que observar e quando conversar com seu profissional.</small></span><span>›</span>
+                  </button>
+                </div>
+
                 <header className="today-greeting">
                   <div className="today-kicker">HOJE</div>
                   <div className="today-heading-row">
