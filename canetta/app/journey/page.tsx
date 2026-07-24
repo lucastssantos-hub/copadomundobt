@@ -1295,7 +1295,7 @@ export default function JourneyPage() {
   }
 
   return (
-    <div className="canetta-journey" style={stage}>
+    <div className="canetta-journey canetta-stage" style={stage}>
       <style>{`@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}} .j-in:focus,.j-in textarea:focus{outline:none;border-color:#0E6B5C}@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}`}</style>
 
       {st.toastMsg && (
@@ -1572,8 +1572,8 @@ export default function JourneyPage() {
 
             {/* HOJE */}
             {st.tab === "hoje" && (
-              <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="today-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="today-greeting" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ animation: "floaty 3.5s ease-in-out infinite" }}><MascotBadge /></div>
                   <div><div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>{greetingName}</div><div style={{ fontSize: 12.5, color: "#596E68" }}>{st.mascotNome} está por aqui hoje.</div></div>
                 </div>
@@ -1601,7 +1601,7 @@ export default function JourneyPage() {
                   </div>
                 )}
                 {st.aplicacoes.length > 0 && (
-                  <div style={{ ...cardWhite, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: "#EAF5F2", borderColor: "#CBE3DC" }}>
+                  <div className="today-next-step" style={{ ...cardWhite, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, background: "#EAF5F2", borderColor: "#CBE3DC" }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 11, fontWeight: 850, letterSpacing: "0.04em", color: "#0E6B5C" }}>PRÓXIMO PASSO</div>
                       <div style={{ fontSize: 15, fontWeight: 850, color: "#16302B", marginTop: 3 }}>Como você está hoje?</div>
@@ -1610,7 +1610,7 @@ export default function JourneyPage() {
                     <button type="button" onClick={() => startFlow(st.pesos.length ? "rotina" : "peso")} style={{ flexShrink: 0, padding: "10px 13px", background: "#0E6B5C", color: "#fff", border: "none", borderRadius: 12, fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{st.pesos.length ? "Fazer check-in" : "Registrar peso"}</button>
                   </div>
                 )}
-                <div style={{ background: "#0E6B5C", borderRadius: 18, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="today-next-dose" style={{ background: "#0E6B5C", borderRadius: 18, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#BEE0D6", letterSpacing: "0.3px" }}>PRÓXIMA DOSE</div>
                   {st.aplicacoes.length ? (
                     <>
@@ -1709,7 +1709,7 @@ export default function JourneyPage() {
 
             {/* JORNADA */}
             {st.tab === "diario" && (
-              <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="journey-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Jornada</div>
                   <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Uma linha do tempo dos registros que você escolheu guardar.</div>
@@ -1814,7 +1814,7 @@ export default function JourneyPage() {
 
             {/* CONSULTA */}
             {st.tab === "consulta" && (
-              <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="consultation-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Consulta</div>
                   <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Organize fatos e perguntas para conversar com seu profissional.</div>
@@ -1882,7 +1882,7 @@ export default function JourneyPage() {
 
             {/* TREINO */}
             {st.tab === "treino" && (
-              <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="training-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Meu treino</div>
                   <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Plano semanal sugerido pela IA, biblioteca e histórico de movimento.</div>
@@ -2192,7 +2192,7 @@ export default function JourneyPage() {
 
             {/* MAIS */}
             {st.tab === "mais" && (
-              <div style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="more-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   {st.maisSub !== "menu" && <button onClick={() => set({ maisSub: "menu" })} style={{ ...closeX, padding: 0 }}>←</button>}
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>{st.maisSub === "menu" ? "Mais" : st.maisSub === "conteudo" ? "Conteúdo educativo" : "Perfil & ajustes"}</div>

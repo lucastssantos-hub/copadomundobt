@@ -1,14 +1,18 @@
 :root {
-  --brand: #0e6b5c;
-  --brand-deep: #0a4e43;
-  --mint: #22b39a;
-  --apricot: #ff9e7d;
-  --paper: #f4f6f3;
+  /* Canetta redesign tokens — semantic aliases keep existing flows intact. */
+  --brand: #1e5f4e;
+  --brand-deep: #123a2f;
+  --mint: #4f9a82;
+  --apricot: #e08a5b;
+  --paper: #f7f8f6;
   --surface: #ffffff;
-  --ink: #16302b;
-  --ink-soft: #4c635d;
-  --line: #e2e7e2;
-  --line-soft: #edf0ec;
+  --ink: #17201c;
+  --ink-soft: #4b6259;
+  --line: #dfe6e1;
+  --line-soft: #edf1ee;
+  --success: #2e7d5b;
+  --warning: #e08a5b;
+  --error: #c0492f;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -75,6 +79,96 @@ a:focus-visible {
 
 .canetta-journey {
   isolation: isolate;
+}
+
+.canetta-journey.canetta-stage {
+  background: var(--paper) !important;
+  color: var(--ink);
+}
+
+.canetta-journey .bottom-nav {
+  background: var(--surface) !important;
+  border-top-color: var(--line) !important;
+  box-shadow: 0 -8px 24px rgba(18, 58, 47, 0.06);
+}
+
+.canetta-journey .bottom-nav button[aria-current="page"] {
+  background: #e5f0eb !important;
+}
+
+.canetta-journey .bottom-nav button[aria-current="page"] span {
+  color: var(--brand) !important;
+}
+
+.canetta-journey .today-screen {
+  padding: 24px 20px 0 !important;
+  gap: 18px !important;
+}
+
+.canetta-journey .today-greeting {
+  padding: 2px 2px 4px;
+}
+
+.canetta-journey .today-next-step {
+  border-color: #c9ded6 !important;
+  background: #e8f1ed !important;
+}
+
+.canetta-journey .today-next-dose {
+  background: var(--brand-deep) !important;
+  border-radius: 14px !important;
+}
+
+.canetta-journey .journey-screen,
+.canetta-journey .consultation-screen,
+.canetta-journey .training-screen,
+.canetta-journey .more-screen {
+  padding: 24px 20px 0 !important;
+  gap: 16px !important;
+}
+
+.canetta-journey .journey-screen > div:first-child,
+.canetta-journey .consultation-screen > div:first-child,
+.canetta-journey .training-screen > div:first-child,
+.canetta-journey .more-screen > div:first-child {
+  padding: 2px 2px 4px;
+}
+
+.canetta-journey .journey-screen button[aria-pressed="true"],
+.canetta-journey .consultation-screen button[aria-pressed="true"],
+.canetta-journey .training-screen button[aria-pressed="true"] {
+  color: var(--brand) !important;
+  box-shadow: 0 1px 3px rgba(18, 58, 47, 0.08);
+}
+
+.canetta-journey .journey-screen button[aria-pressed="false"],
+.canetta-journey .consultation-screen button[aria-pressed="false"],
+.canetta-journey .training-screen button[aria-pressed="false"] {
+  color: var(--ink-soft) !important;
+}
+
+.canetta-journey .more-screen > button,
+.canetta-journey .more-screen form button {
+  border-radius: 12px !important;
+}
+
+.canetta-journey .today-next-step {
+  flex-wrap: wrap;
+}
+
+.canetta-journey .today-next-step > button {
+  flex: 1 1 128px;
+}
+
+@media (max-width: 360px) {
+  .canetta-journey .today-screen,
+  .canetta-journey .journey-screen,
+  .canetta-journey .consultation-screen,
+  .canetta-journey .training-screen,
+  .canetta-journey .more-screen {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
 }
 
 .canetta-journey .bottom-nav {
@@ -326,6 +420,7 @@ a {
 .auth-submit {
   width: 100%;
   margin-top: 2px;
+  background: var(--brand-deep) !important;
 }
 
 .auth-privacy {
@@ -335,6 +430,17 @@ a {
   font-size: 12px;
   line-height: 1.45;
   text-align: center;
+}
+
+.shell:has(.auth-page) .phone {
+  border-radius: 18px;
+  box-shadow: 0 20px 48px -34px rgba(18, 58, 47, 0.36);
+}
+
+.canetta-journey .sheet-panel {
+  background: var(--paper) !important;
+  border-radius: 16px 16px 0 0 !important;
+  box-shadow: 0 -8px 24px rgba(18, 58, 47, 0.14) !important;
 }
 
 @media (min-width: 700px) {
