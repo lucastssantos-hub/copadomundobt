@@ -116,6 +116,25 @@ export async function saveApplicationAction(input: { medication: string; dose: s
   return error ? { synced: false as const } : { synced: true as const, id: data.id, appliedAt: data.applied_at };
 }
 
+const JOURNEY_TABLES = {
+  aplicacao: "canetta_dose_applications",
+  doseNaoAplicada: "canetta_missed_doses",
+  sintoma: "canetta_side_effects",
+  peso: "canetta_weight_entries",
+  rotina: "canetta_routine_entries",
+  medida: "canetta_body_measurements",
+  nutricao: "canetta_nutrition_entries",
+  treino: "canetta_workout_logs",
+  pergunta: "canetta_questions"
+} as const;
+
+export async function deleteJourneyEntryAction(kind: keyof typeof JOURNEY_TABLES, id: string) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase || !id) return { deleted: false as const, authenticated: false as const };
+  const { error } = await supabase.from(JOURNEY_TABLES[kind]).delete().eq("id", id).eq("user_id", user.id);
+  return { deleted: !error } as const;
+}
+
 export async function saveMissedDoseAction(input: { medication: string; dose: string; reason?: string; note?: string; scheduledFor?: string }) {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { synced: false as const };

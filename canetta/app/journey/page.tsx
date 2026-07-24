@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import {
   type AiWorkoutPlanRow,
   deleteMyAccountAction,
+  deleteJourneyEntryAction,
   disablePushSubscriptionAction,
   exportMyDataAction,
   type ExerciseCatalogItem,
@@ -1031,6 +1032,32 @@ export default function JourneyPage() {
     window.location.assign("/auth?deleted=1");
   };
 
+  const deleteJourneyEvent = async (event: JourneyEvent) => {
+    if (!window.confirm("Excluir este registro? Essa ação não pode ser desfeita.")) return;
+    if (event.id) {
+      const result = await deleteJourneyEntryAction(event.kind, event.id);
+      if (!result.deleted) { toast("Não foi possível excluir o registro agora."); return; }
+    }
+    const remove = <T extends { id?: string }>(items: T[]) => items.filter((item) => {
+      if (event.id) return item.id !== event.id;
+      const candidate = item as T & { data?: Date | string; raw?: Date };
+      const date = candidate.raw ?? (candidate.data instanceof Date ? candidate.data : undefined);
+      return date?.getTime() !== event.timestamp;
+    });
+    const next: Partial<AppState> = {};
+    if (event.kind === "aplicacao") next.aplicacoes = remove(st.aplicacoes);
+    if (event.kind === "doseNaoAplicada") next.dosesNaoAplicadas = remove(st.dosesNaoAplicadas);
+    if (event.kind === "sintoma") next.sintomas = remove(st.sintomas);
+    if (event.kind === "peso") next.pesos = remove(st.pesos);
+    if (event.kind === "rotina") next.rotinas = remove(st.rotinas);
+    if (event.kind === "medida") next.medidas = remove(st.medidas);
+    if (event.kind === "nutricao") next.nutricao = remove(st.nutricao);
+    if (event.kind === "treino") next.treinos = remove(st.treinos);
+    if (event.kind === "pergunta") next.perguntas = remove(st.perguntas);
+    set(next);
+    toast("Registro excluído.");
+  };
+
   // derivados
   const freqDays = ({ "Diária": 1, "Semanal": 7, "Quinzenal": 14, "Mensal": 30 } as Record<string, number>)[st.freqLabel] || 7;
   const expectedWorkoutCount = aiTraining?.days_per_week ?? 3;
@@ -1041,18 +1068,19 @@ export default function JourneyPage() {
     return fmtDate(n) + ", mesmo horário registrado";
   }, [st.aplicacoes, freqDays]);
 
+  type JourneyEvent = { kind: "aplicacao" | "doseNaoAplicada" | "sintoma" | "peso" | "rotina" | "medida" | "nutricao" | "treino" | "pergunta"; id?: string; icon: string; label: string; data: string; t: Date; timestamp: number };
   const events = useMemo(() => {
     const evs = [
-      ...st.aplicacoes.map((a) => ({ icon: "AP", label: "Aplicação · " + st.medicamento, data: a.dataHora, t: a.data })),
-      ...st.dosesNaoAplicadas.map((a) => ({ icon: "○", label: "Dose não aplicada · " + a.motivo, data: a.dataHora, t: a.data })),
-      ...st.sintomas.map((a) => ({ icon: "SX", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data })),
-      ...st.pesos.map((a) => ({ icon: "KG", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw })),
-      ...st.rotinas.map((a) => ({ icon: "RT", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data })),
-      ...st.medidas.map((a) => ({ icon: "CM", label: "Medidas corporais", data: fmtDate(a.data), t: a.data })),
-      ...st.nutricao.map((a) => ({ icon: "NU", label: "Alimentação/água", data: fmtDate(a.data), t: a.data })),
-      ...st.treinos.map((a) => ({ icon: "TR", label: "Treino · " + a.exerciseName, data: fmtDate(a.data), t: a.data })),
-      ...st.perguntas.map((a) => ({ icon: "?", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data })),
-    ];
+      ...st.aplicacoes.map((a) => ({ kind: "aplicacao" as const, id: a.id, icon: "AP", label: "Aplicação · " + st.medicamento, data: a.dataHora, t: a.data, timestamp: a.data.getTime() })),
+      ...st.dosesNaoAplicadas.map((a) => ({ kind: "doseNaoAplicada" as const, id: a.id, icon: "○", label: "Dose não aplicada · " + a.motivo, data: a.dataHora, t: a.data, timestamp: a.data.getTime() })),
+      ...st.sintomas.map((a) => ({ kind: "sintoma" as const, id: a.id, icon: "SX", label: "Sintoma · " + a.tipo, data: fmtDate(a.data), t: a.data, timestamp: a.data.getTime() })),
+      ...st.pesos.map((a) => ({ kind: "peso" as const, id: a.id, icon: "KG", label: "Peso · " + a.kg + " kg", data: a.data, t: a.raw, timestamp: a.raw.getTime() })),
+      ...st.rotinas.map((a) => ({ kind: "rotina" as const, id: a.id, icon: "RT", label: "Rotina & hábitos", data: fmtDate(a.data), t: a.data, timestamp: a.data.getTime() })),
+      ...st.medidas.map((a) => ({ kind: "medida" as const, id: a.id, icon: "CM", label: "Medidas corporais", data: fmtDate(a.data), t: a.data, timestamp: a.data.getTime() })),
+      ...st.nutricao.map((a) => ({ kind: "nutricao" as const, id: a.id, icon: "NU", label: "Alimentação/água", data: fmtDate(a.data), t: a.data, timestamp: a.data.getTime() })),
+      ...st.treinos.map((a) => ({ kind: "treino" as const, id: a.id, icon: "TR", label: "Treino · " + a.exerciseName, data: fmtDate(a.data), t: a.data, timestamp: a.data.getTime() })),
+      ...st.perguntas.map((a) => ({ kind: "pergunta" as const, id: a.id, icon: "?", label: "Pergunta anotada", data: fmtDate(a.data), t: a.data, timestamp: a.data.getTime() })),
+    ] satisfies JourneyEvent[];
     return evs.sort((x, y) => y.t.getTime() - x.t.getTime());
   }, [st.aplicacoes, st.dosesNaoAplicadas, st.sintomas, st.pesos, st.rotinas, st.medidas, st.nutricao, st.treinos, st.perguntas, st.medicamento]);
 
@@ -1696,10 +1724,11 @@ export default function JourneyPage() {
 
                 {st.diarioSub === "registros" && (events.length ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {events.map((ev, k) => (
-                      <div key={k} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "13px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
+                    {events.map((ev) => (
+                      <div key={`${ev.kind}-${ev.id || ev.timestamp}`} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "13px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
                         <span style={{ fontSize: 18 }}>{ev.icon}</span>
-                        <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{ev.label}</div><div style={{ fontSize: 11.5, color: "#596E68" }}>{ev.data}</div></div>
+                        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{ev.label}</div><div style={{ fontSize: 11.5, color: "#596E68" }}>{ev.data}</div></div>
+                        <button type="button" aria-label={`Excluir ${ev.label}`} onClick={() => deleteJourneyEvent(ev)} style={{ minHeight: 36, padding: "6px 8px", border: "none", background: "transparent", color: "#8A493A", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Excluir</button>
                       </div>
                     ))}
                   </div>
