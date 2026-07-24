@@ -1,15 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Spectral:wght@400;500;600&display=swap');
+
 :root {
   /* Canetta redesign tokens — semantic aliases keep existing flows intact. */
   --brand: #1e5f4e;
   --brand-deep: #123a2f;
-  --mint: #4f9a82;
+  --mint: #dce7df;
   --apricot: #e08a5b;
-  --paper: #f7f8f6;
+  --paper: #f4f1ea;
   --surface: #ffffff;
   --ink: #17201c;
-  --ink-soft: #4b6259;
-  --line: #dfe6e1;
-  --line-soft: #edf1ee;
+  --ink-soft: #4c5651;
+  --line: #d6d0c4;
+  --line-soft: #e9e5dc;
   --success: #2e7d5b;
   --warning: #e08a5b;
   --error: #c0492f;
@@ -45,9 +47,17 @@ body {
 
 body {
   margin: 0;
-  background: var(--paper);
+  background: #e9e4da;
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.title,
+.title-sm {
+  font-family: "Spectral", Georgia, serif;
 }
 
 button,
@@ -84,6 +94,13 @@ a:focus-visible {
 .canetta-journey.canetta-stage {
   background: var(--paper) !important;
   color: var(--ink);
+  font-family: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important;
+}
+
+.canetta-journey.canetta-stage h1,
+.canetta-journey.canetta-stage h2,
+.canetta-journey.canetta-stage h3 {
+  font-family: "Spectral", Georgia, serif !important;
 }
 
 .canetta-journey .bottom-nav {
@@ -334,14 +351,15 @@ a {
   display: flex;
   justify-content: center;
   padding: 24px 14px;
+  background: #e9e4da;
 }
 
 .phone {
   width: min(100%, 430px);
   min-height: calc(100vh - 48px);
-  background: var(--surface);
+  background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 26px;
+  border-radius: 20px;
   box-shadow: 0 24px 70px -48px rgba(10, 38, 32, 0.42);
   overflow: hidden;
 }
