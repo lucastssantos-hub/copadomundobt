@@ -1573,11 +1573,16 @@ export default function JourneyPage() {
             {/* HOJE */}
             {st.tab === "hoje" && (
               <div className="today-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div className="today-greeting" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ animation: "floaty 3.5s ease-in-out infinite" }}><MascotBadge /></div>
-                  <div><div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>{greetingName}</div><div style={{ fontSize: 12.5, color: "#596E68" }}>{st.mascotNome} está por aqui hoje.</div></div>
-                </div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "#596E68", marginTop: -8 }}>{syncLabel}</div>
+                <header className="today-greeting">
+                  <div className="today-kicker">HOJE</div>
+                  <div className="today-heading-row">
+                    <div>
+                      <h1>Como você está hoje?</h1>
+                      <p>{greetingName} · {syncLabel}</p>
+                    </div>
+                    <div className="today-mascot" aria-hidden><MascotBadge size={44} /></div>
+                  </div>
+                </header>
                 {!st.aplicacoes.length && (
                   <div className="today-welcome" style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 14, background: "#FFFDF8" }}>
                     <div>
