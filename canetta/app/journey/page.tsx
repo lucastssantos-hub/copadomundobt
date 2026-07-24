@@ -229,6 +229,7 @@ function chipStyle(sel: boolean, radius = 12): CSSProperties {
 export default function JourneyPage() {
   const [st, setStRaw] = useState<AppState>(INITIAL);
   const [ready, setReady] = useState(false);
+  const [clockReady, setClockReady] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -296,6 +297,10 @@ export default function JourneyPage() {
     setStRaw((current) => ({ ...current, toastMsg: msg }));
     toastTimer.current = setTimeout(() => setStRaw((current) => ({ ...current, toastMsg: "" })), 1800);
   }, []);
+
+  // Datas dependentes do fuso/localidade só entram depois da hidratação.
+  // Isso evita que o servidor e o navegador produzam rótulos diferentes no primeiro render.
+  useEffect(() => setClockReady(true), []);
 
   useEffect(() => {
     try {
@@ -1056,7 +1061,8 @@ export default function JourneyPage() {
   const pesoAtual = st.pesos.length ? st.pesos[st.pesos.length - 1].kg : null;
   const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
   const adherencePct = expectedDoses ? Math.round((st.aplicacoes.length / expectedDoses) * 100) : null;
-  const weekStart = startOfWeek(new Date());
+  const now = clockReady ? new Date() : new Date(0);
+  const weekStart = startOfWeek(now);
   const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
   const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
   const weeklyPlanned = Math.max(1, Math.round(7 / Math.max(1, freqDays)));
@@ -1067,12 +1073,12 @@ export default function JourneyPage() {
     ...st.dosesNaoAplicadas.map((item) => ({ status: "nao_aplicada" as const, date: item.data, label: item.dataHora, local: "--", detail: `○ ${item.motivo}` }))
   ]).sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 3), [st.aplicacoes, st.dosesNaoAplicadas]);
   const lastSevenDays = useMemo(() => Array.from({ length: 7 }, (_, index) => {
-    const date = startOfDay(new Date());
+    const date = startOfDay(now);
     date.setDate(date.getDate() - (6 - index));
     const applied = st.aplicacoes.some((item) => sameDay(item.data, date));
     const missed = st.dosesNaoAplicadas.some((item) => sameDay(item.data, date));
     return { date, applied, missed, label: date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "") };
-  }), [st.aplicacoes, st.dosesNaoAplicadas]);
+  }), [now, st.aplicacoes, st.dosesNaoAplicadas]);
   const symptomDailyCount = (rotina: Rotina) => [
     rotina.nausea,
     rotina.vomitos,
@@ -1119,7 +1125,7 @@ export default function JourneyPage() {
     if (!query) return exerciseCatalog.slice(0, 12);
     return exerciseCatalog.filter((item) => [item.name, item.body_part, item.equipment, item.target_muscle, item.muscle_group].filter(Boolean).join(" ").toLowerCase().includes(query)).slice(0, 12);
   }, [exerciseCatalog, st.exerciseSearch]);
-  const workoutWeekStart = startOfWeek(new Date());
+  const workoutWeekStart = startOfWeek(now);
   const weeklyWorkouts = st.treinos.filter((item) => item.data >= workoutWeekStart).length;
   const nutritionWeekCount = st.nutricao.filter((item) => item.data >= workoutWeekStart).length;
   const nutritionGoalTarget = st.nutritionGoal === "diaria" ? 7 : st.nutritionGoal === "tres_por_semana" ? 3 : 0;

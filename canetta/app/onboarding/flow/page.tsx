@@ -383,12 +383,14 @@ export default function OnboardingFlowPage() {
           <div style={{ fontSize: 22, fontWeight: 800, color: "#16302B", lineHeight: 1.3, marginTop: 8 }}>Espelho dos seus registros, e sob seu controle.</div>
           <div style={{ fontSize: 14, color: "#4B5F59", lineHeight: 1.6, marginTop: 12 }}>O Canetta não diagnostica, não prescreve e não recomenda dose, alimento, treino ou mudança de tratamento. Seus dados são privados e você decide o que registrar.</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 22 }}>
-            {["Termos de uso", "Política de privacidade (LGPD)"].map((label) => (
-              <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16 }}>
-                <span style={{ fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>{label}</span>
-                <span style={{ color: "#8DA9A2", fontSize: 18 }}>›</span>
-              </div>
-            ))}
+            <details style={{ padding: "16px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16 }}>
+              <summary style={{ cursor: "pointer", fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>Termos de uso</summary>
+              <p style={{ margin: "12px 0 0", fontSize: 13, color: "#4B5F59", lineHeight: 1.55 }}>O Canetta organiza registros informados por você para acompanhamento e conversa com profissionais. Ele não diagnostica, não prescreve, não altera medicamentos e não substitui atendimento profissional. Você pode exportar ou apagar seus registros nas configurações.</p>
+            </details>
+            <details style={{ padding: "16px 18px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16 }}>
+              <summary style={{ cursor: "pointer", fontSize: 14.5, fontWeight: 700, color: "#16302B" }}>Política de privacidade (LGPD)</summary>
+              <p style={{ margin: "12px 0 0", fontSize: 13, color: "#4B5F59", lineHeight: 1.55 }}>Seus registros de saúde são usados para exibir sua jornada, gerar exportações e, quando você entra em uma conta, sincronizar os dados com segurança. Não compartilhe sua senha. Você pode solicitar exportação ou exclusão da conta em Perfil &amp; ajustes.</p>
+            </details>
           </div>
           <div style={spacer} />
           <button onClick={next} style={primaryBtn}>Aceitar e continuar</button>
