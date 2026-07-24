@@ -98,11 +98,11 @@ export async function loadJourneyAction(onboarding?: OnboardingPayload) {
   };
 }
 
-export async function saveApplicationAction(input: { medication: string; dose: string; doseUnit?: string; route?: string; site?: string; note?: string; appliedAt?: string; scheduledFor?: string }) {
+export async function saveApplicationAction(input: { id?: string; medication: string; dose: string; doseUnit?: string; route?: string; site?: string; note?: string; appliedAt?: string; scheduledFor?: string }) {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { synced: false as const };
   const appliedAt = input.appliedAt && !Number.isNaN(Date.parse(input.appliedAt)) ? input.appliedAt : new Date().toISOString();
-  const { data, error } = await supabase.from("canetta_dose_applications").insert({
+  const values = {
     user_id: user.id,
     medication: input.medication || null,
     dose: input.dose || null,
@@ -112,7 +112,11 @@ export async function saveApplicationAction(input: { medication: string; dose: s
     note: input.note?.trim() || null,
     applied_at: appliedAt,
     scheduled_for: input.scheduledFor && !Number.isNaN(Date.parse(input.scheduledFor)) ? input.scheduledFor : null
-  }).select("id, applied_at").single();
+  };
+  const query = input.id
+    ? supabase.from("canetta_dose_applications").update(values).eq("id", input.id).eq("user_id", user.id)
+    : supabase.from("canetta_dose_applications").insert(values);
+  const { data, error } = await query.select("id, applied_at").single();
   return error ? { synced: false as const } : { synced: true as const, id: data.id, appliedAt: data.applied_at };
 }
 

@@ -46,6 +46,8 @@ type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "medidas" | "n
 type RegisterStep = "form" | "missed" | "saved" | "missedSaved" | "checkin";
 
 interface Draft {
+  applicationId?: string;
+  applicationTimestamp?: number;
   dataHora?: string; obs?: string; nota?: string; contexto?: string; pergunta?: string;
   local?: string; tipo?: string; duracao?: string; movimento?: string; motivo?: string;
   sono?: string; fome?: string; intensidade?: number; pesoKg?: number; agua?: number;
@@ -643,10 +645,12 @@ export default function JourneyPage() {
     const d = st.draft;
     setBusyAction("aplicacao");
     const localDate = fromDatetimeLocal(d.dataHora);
-    const result = await saveApplicationAction({ medication: st.medicamento, dose: st.dose, site: d.local, note: d.obs, appliedAt: localDate.toISOString() });
+    const result = await saveApplicationAction({ id: d.applicationId, medication: st.medicamento, dose: st.dose, site: d.local, note: d.obs, appliedAt: localDate.toISOString() });
     const recordedAt = result.synced ? new Date(result.appliedAt) : localDate;
     const entry: Aplicacao = { id: result.synced ? result.id : undefined, dataHora: fmtDateTime(recordedAt), local: d.local || "Não informado", obs: d.obs || "", data: recordedAt };
-    set({ aplicacoes: [...st.aplicacoes, entry], registerStep: "saved" });
+    const editingApplication = d.applicationId || d.applicationTimestamp;
+    const aplicacoes = editingApplication ? st.aplicacoes.map((item) => d.applicationId ? (item.id === d.applicationId ? entry : item) : (item.data.getTime() === d.applicationTimestamp ? entry : item)) : [...st.aplicacoes, entry];
+    set({ aplicacoes, registerStep: "saved" });
     setBusyAction(null);
     if (!result.synced && authenticated) toast("Registro salvo no aparelho; sincronização pendente.");
   };
@@ -1056,6 +1060,13 @@ export default function JourneyPage() {
     if (event.kind === "pergunta") next.perguntas = remove(st.perguntas);
     set(next);
     toast("Registro excluído.");
+  };
+
+  const editJourneyEvent = (event: JourneyEvent) => {
+    if (event.kind !== "aplicacao") return;
+    const item = st.aplicacoes.find((application) => event.id ? application.id === event.id : application.data.getTime() === event.timestamp);
+    if (!item) return;
+    set({ registerFlow: "aplicacao", registerStep: "form", sheetOpen: false, draft: { applicationId: item.id, applicationTimestamp: item.data.getTime(), dataHora: toDatetimeLocal(item.data), local: item.local, obs: item.obs } });
   };
 
   // derivados
@@ -1728,6 +1739,7 @@ export default function JourneyPage() {
                       <div key={`${ev.kind}-${ev.id || ev.timestamp}`} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "13px 16px", background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 14 }}>
                         <span style={{ fontSize: 18 }}>{ev.icon}</span>
                         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: 700, color: "#16302B" }}>{ev.label}</div><div style={{ fontSize: 11.5, color: "#596E68" }}>{ev.data}</div></div>
+                        {ev.kind === "aplicacao" && <button type="button" aria-label={`Editar ${ev.label}`} onClick={() => editJourneyEvent(ev)} style={{ minHeight: 36, padding: "6px 8px", border: "none", background: "transparent", color: "#0E6B5C", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Editar</button>}
                         <button type="button" aria-label={`Excluir ${ev.label}`} onClick={() => deleteJourneyEvent(ev)} style={{ minHeight: 36, padding: "6px 8px", border: "none", background: "transparent", color: "#8A493A", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Excluir</button>
                       </div>
                     ))}
