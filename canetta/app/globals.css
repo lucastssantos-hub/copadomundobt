@@ -152,6 +152,29 @@ a:focus-visible {
   border-radius: 12px !important;
 }
 
+.canetta-journey .workout-redesign {
+  padding-top: 2px;
+}
+
+.canetta-journey .workout-redesign [role="tablist"] button {
+  border-radius: 12px !important;
+}
+
+.canetta-journey .workout-session-card {
+  background: var(--brand-deep) !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+}
+
+.canetta-journey .workout-exercise-strip {
+  gap: 12px !important;
+  padding-bottom: 6px !important;
+}
+
+.canetta-journey .workout-exercise-strip > button {
+  flex-basis: 104px !important;
+}
+
 .canetta-journey .today-next-step {
   flex-wrap: wrap;
 }

@@ -157,7 +157,7 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
 
   return (
     <>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="workout-redesign" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: colors.ink }}>Meu treino</div>
@@ -186,7 +186,7 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
         )}
 
         {/* Cartão de dose: a decisão do dia num lugar só — check-in, estado e início da sessão. */}
-        <section style={{ background: colors.pine, borderRadius: 16, padding: "18px 18px 16px", color: colors.onDark }}>
+        <section className="workout-session-card" style={{ background: colors.pine, borderRadius: 16, padding: "18px 18px 16px", color: colors.onDark }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
             <div style={{ ...label, fontSize: 10, color: colors.onDarkSoft }}>Sessão {selectedDay + 1} de {plan.workouts.length} · semana de {weekLabel}</div>
             {checkinToday && (
@@ -253,7 +253,7 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
           <div style={{ ...label, color: colors.soft }}>Prévia dos exercícios</div>
           <div style={{ fontSize: 11, color: colors.muted }}>toque para abrir</div>
         </div>
-        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
+        <div className="workout-exercise-strip" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
           {exercises.map((exercise, index) => {
             const media = exercise.gif_url || exercise.image_url;
             return (
