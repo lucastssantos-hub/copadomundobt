@@ -487,25 +487,42 @@ a {
 
 @media (min-width: 700px) {
   .shell:has(.auth-page) .phone {
-    width: min(100%, 760px);
+    width: min(100%, 560px);
   }
 
   .auth-page {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-    align-items: start;
-    gap: 48px;
-    padding: 64px 56px;
+    display: block;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 56px 42px 64px;
   }
 
   .auth-intro {
-    max-width: 34ch;
-    padding-top: 48px;
+    max-width: 38ch;
+    margin: 0 auto;
+    padding-top: 0;
+    text-align: center;
   }
 
   .auth-flow {
-    margin-top: 0;
+    max-width: 420px;
+    margin: 30px auto 0;
   }
+}
+
+.auth-page .title {
+  color: var(--brand-deep);
+}
+
+.auth-page .auth-form-card {
+  border-color: #cdded7;
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.auth-page .auth-switch {
+  border-color: #d7e2dc;
+  background: #edf3ef;
 }
 
 .card {
