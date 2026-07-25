@@ -221,7 +221,6 @@ function IconGlyph({ name, size = 18 }: { name: string; size?: number }) {
     HO: "M4 11 12 4l8 7v8H4zM9 19v-5h6v5",
     JO: "M5 5h14M5 12h14M5 19h14",
     CO: "M4 6h16v12H4zM8 10h8m-8 4h5",
-    NU: "M8 4v5m8-5v5M6 9h12v3a6 6 0 0 1-12 0zM12 18v2",
     "…": "M6 12h.01M12 12h.01M18 12h.01"
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name] || paths["?"]} /></svg>;
