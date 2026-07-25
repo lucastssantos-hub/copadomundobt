@@ -257,6 +257,18 @@ export async function saveMealPhotoAction(formData: FormData) {
   return { synced: true as const, meal: { id: meal.data.id, loggedAt: meal.data.logged_at, storagePath: path } };
 }
 
+export async function confirmMealPhotoAction(input: { mealId: string; foodName: string; grams: number; kcalPer100g: number; proteinPer100g?: number; carbsPer100g?: number; fatPer100g?: number; fiberPer100g?: number }) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase || !input.mealId || !input.foodName.trim() || input.grams <= 0 || input.kcalPer100g < 0) return { synced: false as const };
+  const totals = roundNutritionTotals(calculateNutritionTotals([{ grams: input.grams, kcalPer100g: input.kcalPer100g, proteinPer100g: input.proteinPer100g, carbsPer100g: input.carbsPer100g, fatPer100g: input.fatPer100g, fiberPer100g: input.fiberPer100g }]));
+  const meal = await supabase.from("canetta_meal_entries").update({ meal_label: "Refeição por foto", review_status: "confirmada", estimate_basis: "foto_revisada", ...totals }).eq("id", input.mealId).eq("user_id", user.id).select("id, logged_at").single();
+  if (meal.error || !meal.data) return { synced: false as const };
+  await supabase.from("canetta_meal_foods").delete().eq("meal_id", input.mealId).eq("user_id", user.id);
+  const item = await supabase.from("canetta_meal_foods").insert({ meal_id: input.mealId, user_id: user.id, food_name: input.foodName.trim(), grams: input.grams, source: "revisao_manual", kcal_per_100g: input.kcalPer100g, protein_per_100g: input.proteinPer100g ?? null, carbs_per_100g: input.carbsPer100g ?? null, fat_per_100g: input.fatPer100g ?? null, fiber_per_100g: input.fiberPer100g ?? null, confidence_score: 1, sort_order: 0 });
+  if (item.error) return { synced: false as const };
+  return { synced: true as const, meal: { id: meal.data.id, loggedAt: meal.data.logged_at, totals } };
+}
+
 export async function savePersonalReportAction(input: { period: "7d" | "30d" | "all"; snapshot: Record<string, unknown> }) {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { saved: false as const };

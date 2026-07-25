@@ -31,6 +31,7 @@ import {
   saveNutritionEntryAction,
   saveMealEntryAction,
   saveMealPhotoAction,
+  confirmMealPhotoAction,
   savePersonalReportAction,
   saveTrainingProfileAction,
   saveTrainingReassessmentAction,
@@ -306,6 +307,7 @@ export default function JourneyPage() {
   const [mealCarbs, setMealCarbs] = useState("");
   const [mealFat, setMealFat] = useState("");
   const [mealFiber, setMealFiber] = useState("");
+  const [photoReviewId, setPhotoReviewId] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -669,6 +671,16 @@ export default function JourneyPage() {
     const totals = result.meal.totals;
     setMealEntries((entries) => [{ id: result.meal.id, label: mealName || "Refeição", calories: totals.calories, proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG, fiberG: totals.fiberG, loggedAt: new Date(result.meal.loggedAt) }, ...entries]);
     setMealName(""); setMealFood(""); setMealGrams(""); setMealKcal(""); setMealProtein(""); setMealCarbs(""); setMealFat(""); setMealFiber(""); setBusyAction(null); toast("Refeição salva com cálculo determinístico.");
+  };
+  const confirmPhotoReview = async () => {
+    const grams = Number(mealGrams); const kcal = Number(mealKcal);
+    if (!photoReviewId || !mealFood.trim() || !Number.isFinite(grams) || grams <= 0 || !Number.isFinite(kcal) || kcal < 0) { toast("Informe alimento, gramas e kcal por 100 g."); return; }
+    setBusyAction("photo-review");
+    const result = await confirmMealPhotoAction({ mealId: photoReviewId, foodName: mealFood, grams, kcalPer100g: kcal, proteinPer100g: Number(mealProtein) || 0, carbsPer100g: Number(mealCarbs) || 0, fatPer100g: Number(mealFat) || 0, fiberPer100g: Number(mealFiber) || 0 });
+    if (!result.synced) { setBusyAction(null); toast("Não foi possível confirmar essa foto."); return; }
+    const totals = result.meal.totals;
+    setMealEntries((entries) => entries.map((meal) => meal.id === photoReviewId ? { ...meal, label: "Refeição por foto · confirmada", calories: totals.calories, proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG, fiberG: totals.fiberG } : meal));
+    setPhotoReviewId(null); setMealFood(""); setMealGrams(""); setMealKcal(""); setMealProtein(""); setMealCarbs(""); setMealFat(""); setMealFiber(""); setBusyAction(null); toast("Foto revisada e refeição confirmada.");
   };
   const registerNutritionPhoto = async (file?: File) => {
     if (!file) return;
@@ -2021,9 +2033,10 @@ export default function JourneyPage() {
                 </section>
                 <section style={{ ...cardWhite }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Refeições recentes</div><span style={{ fontSize: 12, color: "#596E68" }}>{mealEntries.length} registro(s)</span></div>
-                  {mealEntries.length ? <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 12 }}>{mealEntries.slice(0, 5).map((meal) => <div key={meal.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingBottom: 9, borderBottom: "1px solid #E9E5DC" }}><div><div style={{ fontSize: 13, fontWeight: 800, color: "#16302B" }}>{meal.label}</div><div style={{ fontSize: 11.5, color: "#596E68", marginTop: 2 }}>{meal.loggedAt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {meal.proteinG.toFixed(1)} g proteína</div></div><strong style={{ color: "#0E6B5C", fontSize: 13 }}>{meal.calories.toFixed(0)} kcal</strong></div>)}</div> : <div style={{ fontSize: 12.5, color: "#596E68", marginTop: 10 }}>As refeições confirmadas aparecerão aqui.</div>}
+                  {mealEntries.length ? <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 12 }}>{mealEntries.slice(0, 5).map((meal) => <div key={meal.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingBottom: 9, borderBottom: "1px solid #E9E5DC" }}><div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 800, color: "#16302B" }}>{meal.label}</div><div style={{ fontSize: 11.5, color: "#596E68", marginTop: 2 }}>{meal.loggedAt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {meal.proteinG.toFixed(1)} g proteína</div>{meal.label.includes("revisão pendente") && <button type="button" onClick={() => { setPhotoReviewId(meal.id); setMealFood(""); setMealGrams(""); setMealKcal(""); }} style={{ marginTop: 6, border: "none", background: "transparent", padding: 0, color: "#0E6B5C", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Revisar foto</button>}</div><strong style={{ color: "#0E6B5C", fontSize: 13 }}>{meal.calories.toFixed(0)} kcal</strong></div>)}</div> : <div style={{ fontSize: 12.5, color: "#596E68", marginTop: 10 }}>As refeições confirmadas aparecerão aqui.</div>}
                   {mealEntries.length > 0 && <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 10 }}>Totais calculados a partir dos itens e porções informados.</div>}
                 </section>
+                {photoReviewId && <section style={{ ...cardWhite, background: "#FFF8F2", borderColor: "#E8C7B3" }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Revisar foto</div><div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 4 }}>Confirme pelo menos um alimento e sua porção antes de incluir a estimativa no resumo.</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}><input aria-label="Alimento identificado na foto" value={mealFood} onChange={(event) => setMealFood(event.target.value)} placeholder="Alimento" style={{ ...inputSt, padding: "11px 12px" }} /><input aria-label="Gramas do alimento da foto" type="number" value={mealGrams} onChange={(event) => setMealGrams(event.target.value)} placeholder="Gramas" style={{ ...inputSt, padding: "11px 12px" }} /><input aria-label="Calorias por 100 gramas do alimento da foto" type="number" value={mealKcal} onChange={(event) => setMealKcal(event.target.value)} placeholder="kcal/100 g" style={{ ...inputSt, padding: "11px 12px" }} /><input aria-label="Proteína por 100 gramas do alimento da foto" type="number" value={mealProtein} onChange={(event) => setMealProtein(event.target.value)} placeholder="Prot. g/100" style={{ ...inputSt, padding: "11px 12px" }} /></div><div style={{ display: "flex", gap: 8, marginTop: 12 }}><button type="button" onClick={confirmPhotoReview} disabled={busyAction === "photo-review"} style={{ ...primaryBtn, padding: 12, fontSize: 13, opacity: busyAction === "photo-review" ? 0.6 : 1 }}>{busyAction === "photo-review" ? "Confirmando…" : "Confirmar revisão"}</button><button type="button" onClick={() => setPhotoReviewId(null)} style={{ flex: 1, border: "1.5px solid #D7E1DC", borderRadius: 14, background: "#fff", color: "#0E6B5C", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Cancelar</button></div></section>}
                 <section style={{ ...cardWhite, background: "#FFFDF8" }}><div style={{ fontSize: 12, fontWeight: 800, color: "#596E68", letterSpacing: "0.05em", textTransform: "uppercase" }}>Check-in nutricional</div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B", marginTop: 5 }}>Tolerância, proteína, hidratação e força</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 5 }}>Use o check-in em cascata para registrar como sua alimentação está sendo tolerada no tratamento.</div><button type="button" onClick={() => startFlow("nutricao")} style={{ ...primaryBtn, padding: 12, fontSize: 13.5, marginTop: 12 }}>Abrir check-in nutricional</button></section>
               </div>
             )}
