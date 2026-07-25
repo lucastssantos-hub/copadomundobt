@@ -275,7 +275,7 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
             return (
               <button key={`${exercise.name}-check-${index}`} type="button" onClick={() => startExecution(selectedDay, index)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", border: "none", borderBottom: index === exercises.length - 1 ? "none" : `1px solid ${colors.line}`, background: "transparent", textAlign: "left", cursor: "pointer" }}>
                 <span style={{ width: 22, height: 22, borderRadius: "50%", border: `1.5px solid ${done ? colors.brand : colors.line}`, background: done ? colors.brand : colors.surface, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{done ? "✓" : ""}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: colors.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exerciseLabel(exercise)}</span>
+                <span className="workout-exercise-name" style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: colors.ink }}>{exerciseLabel(exercise)}</span>
                 <span style={{ ...tabular, fontSize: 12, fontWeight: 800, color: done ? colors.brand : colors.soft }}>{count}<span style={{ fontWeight: 600, color: colors.muted }}>/{exercise.sets}</span></span>
               </button>
             );

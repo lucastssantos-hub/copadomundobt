@@ -1926,10 +1926,12 @@ export default function JourneyPage() {
             {/* TREINO */}
             {st.tab === "treino" && (
               <div className="training-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Meu treino</div>
-                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Plano semanal sugerido pela IA, biblioteca e histórico de movimento.</div>
-                </div>
+                {st.treinoSub !== "plano" && (
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Meu treino</div>
+                    <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Plano semanal sugerido pela IA, biblioteca e histórico de movimento.</div>
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 6, background: "#E9EDE9", padding: 4, borderRadius: 14 }}>
                   {[["plano", "Plano IA"], ["biblioteca", "Biblioteca"], ["historico", "Histórico"]].map(([k, label]) => (
                     <button key={k} type="button" aria-pressed={st.treinoSub === k} onClick={() => set({ treinoSub: k })} style={{ flex: 1, textAlign: "center", padding: "9px 2px", border: "none", background: st.treinoSub === k ? "#fff" : "transparent", color: st.treinoSub === k ? "#0E6B5C" : "#596E68", borderRadius: 11, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{label}</button>
@@ -2123,7 +2125,7 @@ export default function JourneyPage() {
                                 )}
                                 <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>{exercise.name_pt || exercise.name}</div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B", minWidth: 0, overflowWrap: "anywhere" }}>{exercise.name_pt || exercise.name}</div>
                                     <div style={{ fontSize: 12, fontWeight: 700, color: "#596E68", whiteSpace: "nowrap" }}>{exercise.sets} × {exercise.reps}</div>
                                   </div>
                                   <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.45 }}>{exercise.why}</div>
@@ -2170,7 +2172,6 @@ export default function JourneyPage() {
                       </div>
                     )}
                     {aiPlanError && <div id="ai-plan-error" role="alert" aria-live="assertive" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontSize: 12.5, color: "#A3552B", textAlign: "center" }}><span>{aiPlanError}</span>{!aiPlanBusy && <button type="button" onClick={generateAiPlan} style={{ minHeight: 44, padding: "8px 14px", borderRadius: 12, border: "1.5px solid #D8B4A8", background: "#FFF7F4", color: "#8A493A", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>Tentar novamente</button>}</div>}
-                    <div style={{ fontSize: 11.5, color: "#596E68", lineHeight: 1.5, padding: "0 4px" }}>Orientação educacional de movimento gerada por IA a partir dos seus registros — não é prescrição médica nem treinamento individualizado supervisionado, e não substitui avaliação do seu médico, nutricionista ou educador físico. Em caso de vômitos persistentes, dor intensa, tontura ou desidratação, pause o treino e procure atendimento.</div>
                   </>
                 )}
 

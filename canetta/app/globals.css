@@ -234,6 +234,12 @@ a:focus-visible {
   flex-basis: 104px !important;
 }
 
+.canetta-journey .workout-exercise-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
 .canetta-journey .today-next-step {
   flex-wrap: wrap;
 }
