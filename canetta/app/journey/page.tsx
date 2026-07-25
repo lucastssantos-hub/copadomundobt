@@ -1172,6 +1172,11 @@ export default function JourneyPage() {
   const nutritionPhotoCount = st.nutritionPhotoDate === nutritionTodayKey ? st.nutritionPhotoCount : 0;
   const mealCaloriesToday = mealEntries.filter((meal) => meal.loggedAt.toISOString().slice(0, 10) === nutritionTodayKey).reduce((sum, meal) => sum + meal.calories, 0);
   const mealProteinToday = mealEntries.filter((meal) => meal.loggedAt.toISOString().slice(0, 10) === nutritionTodayKey).reduce((sum, meal) => sum + meal.proteinG, 0);
+  const mealsToday = mealEntries.filter((meal) => meal.loggedAt.toISOString().slice(0, 10) === nutritionTodayKey);
+  const mealCarbsToday = mealsToday.reduce((sum, meal) => sum + meal.carbsG, 0);
+  const mealFatToday = mealsToday.reduce((sum, meal) => sum + meal.fatG, 0);
+  const mealFiberToday = mealsToday.reduce((sum, meal) => sum + meal.fiberG, 0);
+  const waterToday = st.nutricao.filter((item) => item.data.toISOString().slice(0, 10) === nutritionTodayKey).reduce((sum, item) => sum + Number(item.agua || 0), 0);
   const weekStart = startOfWeek(now);
   const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
   const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
@@ -2001,6 +2006,14 @@ export default function JourneyPage() {
                   <div style={{ fontSize: 22, fontWeight: 850, color: "#16302B" }}>Nutrição</div>
                   <div style={{ fontSize: 13, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Registre o que come e bebe para acompanhar seu dia com mais clareza.</div>
                 </div>
+                <section style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Resumo de hoje</div><span style={{ fontSize: 11.5, color: "#596E68" }}>{mealsToday.length} refeição(ões)</span></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 13 }}>
+                    {[["Proteína", mealProteinToday, "g"], ["Carboidrato", mealCarbsToday, "g"], ["Gordura", mealFatToday, "g"], ["Fibra", mealFiberToday, "g"]].map(([label, value, unit]) => <div key={String(label)} style={{ padding: "9px 7px", borderRadius: 11, background: "#fff", border: "1px solid #E2E7E2" }}><div style={{ fontSize: 10, color: "#596E68", lineHeight: 1.2 }}>{label}</div><div style={{ fontSize: 14, fontWeight: 850, color: "#16302B", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{Number(value).toFixed(1)}<small style={{ fontSize: 10, fontWeight: 700, color: "#596E68" }}> {unit}</small></div></div>)}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 12, fontSize: 12, color: "#596E68" }}><span>Água registrada</span><strong style={{ color: "#0E6B5C" }}>{waterToday} copo(s)</strong></div>
+                  {!mealsToday.length && <div style={{ marginTop: 11, padding: "9px 10px", borderRadius: 10, background: "#FFF8F2", color: "#75443C", fontSize: 11.5, lineHeight: 1.4 }}>Poucos dados para interpretar seu dia. Comece registrando uma refeição.</div>}
+                </section>
                 <section style={{ ...cardWhite, background: "#123A2F", color: "#fff", borderColor: "#123A2F" }}>
                   <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#BEE0D6", textTransform: "uppercase" }}>Contador de calorias</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}><strong style={{ fontSize: 40, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mealCaloriesToday || nutritionCaloriesToday}</strong><span style={{ color: "#DFF0EA", fontSize: 14 }}>kcal registradas hoje</span></div>
