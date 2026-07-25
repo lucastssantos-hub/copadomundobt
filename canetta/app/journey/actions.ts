@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { configureWebPush, getVapidPublicKey } from "@/lib/push";
 import type { OnboardingPayload } from "@/app/onboarding/flow/actions";
+import { calculateNutritionTotals, roundNutritionTotals, type NutritionFood } from "@/lib/nutrition/calculator";
 
 export type ExerciseCatalogItem = {
   external_id: string;
@@ -21,6 +22,8 @@ export type ExerciseCatalogItem = {
 
 export type BodyMeasurementRow = { id: string; waist_cm: number | null; hip_cm: number | null; note: string | null; recorded_at: string };
 export type NutritionEntryRow = { id: string; meal_label: string | null; protein_logged: boolean | null; water_cups: number | null; note: string | null; meals_tolerated?: string | null; intake_adequacy?: string | null; hydration_status?: string | null; weakness_status?: string | null; professional_target?: string | null; protein_target_grams?: number | null; protein_target_source?: string | null; recorded_at: string };
+export type MealFoodRow = NutritionFood & { id: string; food_name: string; grams: number | null; source: string; confidence_score: number | null };
+export type MealEntryRow = { id: string; meal_label: string | null; logged_at: string; note: string | null; estimate_basis: string; confidence_score: number | null; review_status: string; calories: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null; fiber_g: number | null; foods: MealFoodRow[] };
 
 async function currentSession() {
   try {
@@ -206,6 +209,30 @@ export async function saveNutritionEntryAction(input: { mealLabel?: string; prot
   const proteinTarget = input.proteinTargetGrams == null ? null : Math.max(0, Math.min(500, Math.round(input.proteinTargetGrams)));
   const { data, error } = await supabase.from("canetta_nutrition_entries").insert({ user_id: user.id, meal_label: input.mealLabel?.trim() || null, protein_logged: input.proteinLogged == null ? null : !!input.proteinLogged, water_cups: water, note: input.note?.trim() || null, meals_tolerated: input.mealsTolerated || null, intake_adequacy: input.intakeAdequacy || null, hydration_status: input.hydrationStatus || null, weakness_status: input.weaknessStatus || null, professional_target: input.professionalTarget || null, protein_target_grams: proteinTarget, protein_target_source: input.proteinTargetSource || null }).select("id, meal_label, protein_logged, water_cups, note, meals_tolerated, intake_adequacy, hydration_status, weakness_status, professional_target, protein_target_grams, protein_target_source, recorded_at").single();
   return error ? { synced: false as const } : { synced: true as const, nutrition: data };
+}
+
+export async function loadMealEntriesAction() {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase) return { synced: false as const, meals: [] as MealEntryRow[] };
+  const { data, error } = await supabase.from("canetta_meal_entries").select("id, meal_label, logged_at, note, estimate_basis, confidence_score, review_status, calories, protein_g, carbs_g, fat_g, fiber_g, canetta_meal_foods(id, food_name, grams, source, confidence_score, kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g)").eq("user_id", user.id).order("logged_at", { ascending: false }).limit(50);
+  if (error) return { synced: false as const, meals: [] as MealEntryRow[] };
+  return { synced: true as const, meals: (data ?? []).map((meal) => ({ ...meal, foods: (meal.canetta_meal_foods ?? []).map((food) => ({ ...food, grams: food.grams == null ? null : Number(food.grams), kcalPer100g: food.kcal_per_100g, proteinPer100g: food.protein_per_100g, carbsPer100g: food.carbs_per_100g, fatPer100g: food.fat_per_100g, fiberPer100g: food.fiber_per_100g })) })) as unknown as MealEntryRow[] };
+}
+
+export async function saveMealEntryAction(input: { mealLabel?: string; note?: string; estimateBasis?: "foto" | "foto_revisada" | "pesos_informados" | "manual"; confidenceScore?: number; reviewStatus?: "revisao_pendente" | "revisada" | "confirmada"; foods: Array<{ foodName: string; grams: number; source?: string; sourceVersion?: string; kcalPer100g?: number; proteinPer100g?: number; carbsPer100g?: number; fatPer100g?: number; fiberPer100g?: number; confidenceScore?: number }> }) {
+  const { supabase, user } = await currentSession();
+  if (!user || !supabase || !input.foods.length) return { synced: false as const };
+  const foods = input.foods.map((food) => ({ grams: food.grams, kcalPer100g: food.kcalPer100g, proteinPer100g: food.proteinPer100g, carbsPer100g: food.carbsPer100g, fatPer100g: food.fatPer100g, fiberPer100g: food.fiberPer100g }));
+  const totals = roundNutritionTotals(calculateNutritionTotals(foods));
+  const meal = await supabase.from("canetta_meal_entries").insert({ user_id: user.id, meal_label: input.mealLabel?.trim() || null, note: input.note?.trim() || null, estimate_basis: input.estimateBasis || "manual", confidence_score: input.confidenceScore ?? null, review_status: input.reviewStatus || "confirmada", ...totals }).select("id, logged_at").single();
+  if (meal.error || !meal.data) return { synced: false as const };
+  const itemRows = input.foods.map((food, index) => ({ meal_id: meal.data.id, user_id: user.id, food_name: food.foodName.trim(), grams: food.grams, source: food.source || "manual", source_version: food.sourceVersion || null, kcal_per_100g: food.kcalPer100g ?? null, protein_per_100g: food.proteinPer100g ?? null, carbs_per_100g: food.carbsPer100g ?? null, fat_per_100g: food.fatPer100g ?? null, fiber_per_100g: food.fiberPer100g ?? null, confidence_score: food.confidenceScore ?? null, sort_order: index }));
+  const items = await supabase.from("canetta_meal_foods").insert(itemRows);
+  if (items.error) {
+    await supabase.from("canetta_meal_entries").delete().eq("id", meal.data.id).eq("user_id", user.id);
+    return { synced: false as const };
+  }
+  return { synced: true as const, meal: { id: meal.data.id, loggedAt: meal.data.logged_at, totals } };
 }
 
 export async function savePersonalReportAction(input: { period: "7d" | "30d" | "all"; snapshot: Record<string, unknown> }) {

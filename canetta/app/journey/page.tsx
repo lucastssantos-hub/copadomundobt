@@ -15,6 +15,7 @@ import {
   generateAiWorkoutPlanAction,
   getPushPublicKeyAction,
   loadAiWorkoutPlanAction,
+  loadMealEntriesAction,
   loadJourneyAction,
   saveApplicationAction,
   saveMissedDoseAction,
@@ -28,6 +29,7 @@ import {
   saveSymptomAction,
   saveBodyMeasurementAction,
   saveNutritionEntryAction,
+  saveMealEntryAction,
   savePersonalReportAction,
   saveTrainingProfileAction,
   saveTrainingReassessmentAction,
@@ -66,6 +68,7 @@ interface Peso { id?: string; kg: number; data: string; raw: Date; }
 interface Rotina extends Draft { id?: string; photo?: boolean; data: Date; }
 interface Medida { id?: string; cinturaCm?: number | null; quadrilCm?: number | null; nota?: string | null; data: Date; }
 interface Nutricao { id?: string; refeicao?: string | null; proteina?: boolean | null; agua?: number | null; nota?: string | null; refeicoesToleradas?: string | null; ingestaoHabitual?: string | null; hidratacaoStatus?: string | null; fraqueza?: string | null; metaProfissional?: string | null; metaProteinaGramas?: number | null; metaProteinaFonte?: string | null; data: Date; }
+interface MealEntry { id: string; label: string; calories: number; proteinG: number; carbsG: number; fatG: number; fiberG: number; loggedAt: Date; }
 interface Pergunta { id?: string; texto: string; data: Date; }
 interface Treino { id?: string; exerciseExternalId?: string; exerciseName: string; bodyPart?: string; equipment?: string; setsCompleted?: number; repsCompleted?: string; difficultyFelt?: string; note?: string; data: Date; }
 
@@ -293,6 +296,15 @@ export default function JourneyPage() {
   const [reassessmentDraft, setReassessmentDraft] = useState({ anchorStrength: "", functionLevel: "", painLevel: "", adherence: "", medicationChange: false, note: "" });
   const [mediaPreview, setMediaPreview] = useState<{ url: string; name: string } | null>(null);
   const [calorieInput, setCalorieInput] = useState("");
+  const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
+  const [mealName, setMealName] = useState("");
+  const [mealFood, setMealFood] = useState("");
+  const [mealGrams, setMealGrams] = useState("");
+  const [mealKcal, setMealKcal] = useState("");
+  const [mealProtein, setMealProtein] = useState("");
+  const [mealCarbs, setMealCarbs] = useState("");
+  const [mealFat, setMealFat] = useState("");
+  const [mealFiber, setMealFiber] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -409,6 +421,14 @@ export default function JourneyPage() {
     }).catch(() => toast("Não foi possível sincronizar agora."))
       .finally(() => setAuthChecked(true));
   }, [ready, toast]);
+
+  useEffect(() => {
+    if (!ready || !authenticated) return;
+    loadMealEntriesAction().then((result) => {
+      if (!result.synced) return;
+      setMealEntries(result.meals.map((meal) => ({ id: meal.id, label: meal.meal_label || "Refeição", calories: Number(meal.calories || 0), proteinG: Number(meal.protein_g || 0), carbsG: Number(meal.carbs_g || 0), fatG: Number(meal.fat_g || 0), fiberG: Number(meal.fiber_g || 0), loggedAt: new Date(meal.logged_at) })));
+    }).catch(() => {});
+  }, [ready, authenticated]);
 
   useEffect(() => {
     if (!ready) return;
@@ -636,6 +656,18 @@ export default function JourneyPage() {
     set({ nutritionCaloriesToday: nutritionCaloriesToday + Math.round(calories), nutritionCaloriesDate: nutritionTodayKey });
     setCalorieInput("");
     toast(`${Math.round(calories)} kcal registradas.`);
+  };
+  const saveManualMeal = async () => {
+    const grams = Number(mealGrams); const kcal = Number(mealKcal);
+    if (!mealFood.trim() || !Number.isFinite(grams) || grams <= 0 || !Number.isFinite(kcal) || kcal < 0) {
+      toast("Informe alimento, gramas e kcal por 100 g."); return;
+    }
+    setBusyAction("meal-save");
+    const result = await saveMealEntryAction({ mealLabel: mealName || "Refeição", estimateBasis: "manual", reviewStatus: "confirmada", foods: [{ foodName: mealFood, grams, kcalPer100g: kcal, proteinPer100g: Number(mealProtein) || 0, carbsPer100g: Number(mealCarbs) || 0, fatPer100g: Number(mealFat) || 0, fiberPer100g: Number(mealFiber) || 0 }] });
+    if (!result.synced) { setBusyAction(null); toast("Não foi possível salvar a refeição. Verifique a migração nutricional."); return; }
+    const totals = result.meal.totals;
+    setMealEntries((entries) => [{ id: result.meal.id, label: mealName || "Refeição", calories: totals.calories, proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG, fiberG: totals.fiberG, loggedAt: new Date(result.meal.loggedAt) }, ...entries]);
+    setMealName(""); setMealFood(""); setMealGrams(""); setMealKcal(""); setMealProtein(""); setMealCarbs(""); setMealFat(""); setMealFiber(""); setBusyAction(null); toast("Refeição salva com cálculo determinístico.");
   };
   const registerNutritionPhoto = async (file?: File) => {
     if (!file) return;
@@ -1122,6 +1154,8 @@ export default function JourneyPage() {
   const nutritionTodayKey = now.getTime() ? now.toISOString().slice(0, 10) : "";
   const nutritionCaloriesToday = st.nutritionCaloriesDate === nutritionTodayKey ? st.nutritionCaloriesToday : 0;
   const nutritionPhotoCount = st.nutritionPhotoDate === nutritionTodayKey ? st.nutritionPhotoCount : 0;
+  const mealCaloriesToday = mealEntries.filter((meal) => meal.loggedAt.toISOString().slice(0, 10) === nutritionTodayKey).reduce((sum, meal) => sum + meal.calories, 0);
+  const mealProteinToday = mealEntries.filter((meal) => meal.loggedAt.toISOString().slice(0, 10) === nutritionTodayKey).reduce((sum, meal) => sum + meal.proteinG, 0);
   const weekStart = startOfWeek(now);
   const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
   const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
@@ -1953,9 +1987,24 @@ export default function JourneyPage() {
                 </div>
                 <section style={{ ...cardWhite, background: "#123A2F", color: "#fff", borderColor: "#123A2F" }}>
                   <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#BEE0D6", textTransform: "uppercase" }}>Contador de calorias</div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}><strong style={{ fontSize: 40, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{nutritionCaloriesToday}</strong><span style={{ color: "#DFF0EA", fontSize: 14 }}>kcal registradas hoje</span></div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}><strong style={{ fontSize: 40, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mealCaloriesToday || nutritionCaloriesToday}</strong><span style={{ color: "#DFF0EA", fontSize: 14 }}>kcal registradas hoje</span></div>
                   <div style={{ fontSize: 11.5, color: "#BEE0D6", lineHeight: 1.4, marginTop: 10 }}>A meta é opcional e só deve ser usada se já foi combinada com seu profissional.</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 14 }}><input aria-label="Calorias da refeição" inputMode="numeric" type="number" min={1} max={10000} value={calorieInput} onChange={(event) => setCalorieInput(event.target.value)} placeholder="kcal" style={{ ...inputSt, flex: 1, minWidth: 0, background: "#fff", color: "#16302B", border: "none", padding: "11px 12px" }} /><button type="button" onClick={addNutritionCalories} style={{ padding: "10px 13px", border: "none", borderRadius: 12, background: "#E08A5B", color: "#17201C", fontSize: 12.5, fontWeight: 850, cursor: "pointer" }}>Adicionar</button></div>
+                </section>
+                <section style={{ ...cardWhite }}>
+                  <div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Adicionar refeição manual</div>
+                  <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 3 }}>Os valores vêm da informação que você confirmar. O cálculo é feito pelo Canetta.</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+                    <input aria-label="Nome da refeição" value={mealName} onChange={(event) => setMealName(event.target.value)} placeholder="Ex.: Almoço" style={{ ...inputSt, gridColumn: "1 / -1", padding: "11px 12px" }} />
+                    <input aria-label="Alimento" value={mealFood} onChange={(event) => setMealFood(event.target.value)} placeholder="Alimento" style={{ ...inputSt, padding: "11px 12px" }} />
+                    <input aria-label="Gramas" inputMode="numeric" type="number" value={mealGrams} onChange={(event) => setMealGrams(event.target.value)} placeholder="Gramas" style={{ ...inputSt, padding: "11px 12px" }} />
+                    <input aria-label="Calorias por 100 gramas" inputMode="numeric" type="number" value={mealKcal} onChange={(event) => setMealKcal(event.target.value)} placeholder="kcal/100 g" style={{ ...inputSt, padding: "11px 12px" }} />
+                    <input aria-label="Proteína por 100 gramas" inputMode="numeric" type="number" value={mealProtein} onChange={(event) => setMealProtein(event.target.value)} placeholder="Prot. g/100" style={{ ...inputSt, padding: "11px 12px" }} />
+                    <input aria-label="Carboidratos por 100 gramas" inputMode="numeric" type="number" value={mealCarbs} onChange={(event) => setMealCarbs(event.target.value)} placeholder="Carb. g/100" style={{ ...inputSt, padding: "11px 12px" }} />
+                    <input aria-label="Gordura por 100 gramas" inputMode="numeric" type="number" value={mealFat} onChange={(event) => setMealFat(event.target.value)} placeholder="Gord. g/100" style={{ ...inputSt, padding: "11px 12px" }} />
+                    <input aria-label="Fibra por 100 gramas" inputMode="numeric" type="number" value={mealFiber} onChange={(event) => setMealFiber(event.target.value)} placeholder="Fibra g/100" style={{ ...inputSt, padding: "11px 12px" }} />
+                  </div>
+                  <button type="button" disabled={busyAction === "meal-save"} onClick={saveManualMeal} style={{ ...primaryBtn, padding: 12, fontSize: 13.5, marginTop: 12, opacity: busyAction === "meal-save" ? 0.6 : 1 }}>{busyAction === "meal-save" ? "Salvando…" : "Salvar refeição"}</button>
                 </section>
                 <section style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Meta diária (opcional)</div><div style={{ fontSize: 12, color: "#596E68", marginTop: 3 }}>Use somente uma meta definida com seu profissional.</div></div><div style={{ fontSize: 14, fontWeight: 850, color: "#0E6B5C" }}>{st.nutritionCalorieTarget ? `${st.nutritionCalorieTarget} kcal` : "Sem meta"}</div></div>
@@ -1965,6 +2014,11 @@ export default function JourneyPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Registrar por foto</div><div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 3 }}>{nutritionPhotoCount} foto(s) registrada(s) hoje</div></div><span style={{ fontSize: 24 }}>📷</span></div>
                   <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45 }}>Fotografe sua refeição para manter um registro visual. O Canetta não estima calorias automaticamente.</div>
                   <label style={{ width: "100%", padding: "12px 14px", borderRadius: 13, background: "#0E6B5C", color: "#fff", fontSize: 13, fontWeight: 850, textAlign: "center", cursor: "pointer" }}>{busyAction === "nutrition-photo" ? "Registrando…" : "Tirar ou escolher foto"}<input aria-label="Tirar ou escolher foto da refeição" type="file" accept="image/*" capture="environment" disabled={busyAction === "nutrition-photo"} onChange={(event) => { void registerNutritionPhoto(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ display: "none" }} /></label>
+                </section>
+                <section style={{ ...cardWhite }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Refeições recentes</div><span style={{ fontSize: 12, color: "#596E68" }}>{mealEntries.length} registro(s)</span></div>
+                  {mealEntries.length ? <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 12 }}>{mealEntries.slice(0, 5).map((meal) => <div key={meal.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingBottom: 9, borderBottom: "1px solid #E9E5DC" }}><div><div style={{ fontSize: 13, fontWeight: 800, color: "#16302B" }}>{meal.label}</div><div style={{ fontSize: 11.5, color: "#596E68", marginTop: 2 }}>{meal.loggedAt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {meal.proteinG.toFixed(1)} g proteína</div></div><strong style={{ color: "#0E6B5C", fontSize: 13 }}>{meal.calories.toFixed(0)} kcal</strong></div>)}</div> : <div style={{ fontSize: 12.5, color: "#596E68", marginTop: 10 }}>As refeições confirmadas aparecerão aqui.</div>}
+                  {mealEntries.length > 0 && <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 10 }}>Totais calculados a partir dos itens e porções informados.</div>}
                 </section>
                 <section style={{ ...cardWhite, background: "#FFFDF8" }}><div style={{ fontSize: 12, fontWeight: 800, color: "#596E68", letterSpacing: "0.05em", textTransform: "uppercase" }}>Check-in nutricional</div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B", marginTop: 5 }}>Tolerância, proteína, hidratação e força</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 5 }}>Use o check-in em cascata para registrar como sua alimentação está sendo tolerada no tratamento.</div><button type="button" onClick={() => startFlow("nutricao")} style={{ ...primaryBtn, padding: 12, fontSize: 13.5, marginTop: 12 }}>Abrir check-in nutricional</button></section>
               </div>
