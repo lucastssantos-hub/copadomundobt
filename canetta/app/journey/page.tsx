@@ -41,7 +41,7 @@ import { CONDITIONS, PAIN_REGIONS, RED_FLAGS, evaluateSessionCheckin, type Anamn
 import { signOutAction } from "@/app/auth/actions";
 import WorkoutRedesign from "./WorkoutRedesign";
 
-type Tab = "hoje" | "diario" | "consulta" | "treino" | "mais";
+type Tab = "hoje" | "diario" | "consulta" | "treino" | "nutricao" | "mais";
 type RegisterFlow = "aplicacao" | "sintoma" | "peso" | "rotina" | "medidas" | "nutricao" | "pergunta" | "treino" | null;
 type RegisterStep = "form" | "missed" | "saved" | "missedSaved" | "checkin";
 
@@ -74,6 +74,7 @@ interface AppState {
   objetivo: string; faseAtual: string; lembretesOn: boolean; reminderWeekday: number; reminderTime: string;
   tab: Tab; diarioSub: string; consultaSub: string; treinoSub: string; maisSub: string; periodo: string; exerciseSearch: string;
   nutritionGoal: "diaria" | "tres_por_semana" | "livre";
+  nutritionCaloriesToday: number; nutritionCaloriesDate: string; nutritionCalorieTarget: number; nutritionPhotoCount: number; nutritionPhotoDate: string;
   sheetOpen: boolean; registerFlow: RegisterFlow; registerStep: RegisterStep; nutritionStep: number; draft: Draft;
   aplicacoes: Aplicacao[]; dosesNaoAplicadas: DoseNaoAplicada[]; sintomas: Sintoma[]; pesos: Peso[]; rotinas: Rotina[]; medidas: Medida[]; nutricao: Nutricao[];
   perguntas: Pergunta[]; treinos: Treino[]; exercises: ExerciseCatalogItem[]; toastMsg: string;
@@ -82,7 +83,7 @@ interface AppState {
 const INITIAL: AppState = {
   nome: "você", mascotNome: "Canetta", medicamento: "Medicamento", dose: "Dose atual", freqLabel: "Semanal",
   objetivo: "Organizar meus registros", faseAtual: "Primeiro mês", lembretesOn: false, reminderWeekday: -1, reminderTime: "",
-  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "", nutritionGoal: "livre", nutritionStep: 0,
+  tab: "hoje", diarioSub: "registros", consultaSub: "resumo", treinoSub: "plano", maisSub: "menu", periodo: "Últimos 7 dias", exerciseSearch: "", nutritionGoal: "livre", nutritionCaloriesToday: 0, nutritionCaloriesDate: "", nutritionCalorieTarget: 0, nutritionPhotoCount: 0, nutritionPhotoDate: "", nutritionStep: 0,
   sheetOpen: false, registerFlow: null, registerStep: "form", draft: {},
   aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], medidas: [], nutricao: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
@@ -220,6 +221,7 @@ function IconGlyph({ name, size = 18 }: { name: string; size?: number }) {
     HO: "M4 11 12 4l8 7v8H4zM9 19v-5h6v5",
     JO: "M5 5h14M5 12h14M5 19h14",
     CO: "M4 6h16v12H4zM8 10h8m-8 4h5",
+    NU: "M8 4v5m8-5v5M6 9h12v3a6 6 0 0 1-12 0zM12 18v2",
     "…": "M6 12h.01M12 12h.01M18 12h.01"
   };
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name] || paths["?"]} /></svg>;
@@ -291,6 +293,7 @@ export default function JourneyPage() {
   const [reassessmentBusy, setReassessmentBusy] = useState(false);
   const [reassessmentDraft, setReassessmentDraft] = useState({ anchorStrength: "", functionLevel: "", painLevel: "", adherence: "", medicationChange: false, note: "" });
   const [mediaPreview, setMediaPreview] = useState<{ url: string; name: string } | null>(null);
+  const [calorieInput, setCalorieInput] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteLoaded = useRef(false);
   const set = (p: Partial<AppState>) => setStRaw((s) => ({ ...s, ...p }));
@@ -628,6 +631,22 @@ export default function JourneyPage() {
   // navegação
   const setTab = (tab: Tab) => set({ tab, sheetOpen: false });
   const startFlow = (type: RegisterFlow) => set({ sheetOpen: false, registerFlow: type, registerStep: "form", nutritionStep: 0, draft: type === "aplicacao" ? { dataHora: toDatetimeLocal(new Date()) } : {} });
+  const addNutritionCalories = () => {
+    const calories = Number(calorieInput);
+    if (!Number.isFinite(calories) || calories <= 0) return;
+    set({ nutritionCaloriesToday: nutritionCaloriesToday + Math.round(calories), nutritionCaloriesDate: nutritionTodayKey });
+    setCalorieInput("");
+    toast(`${Math.round(calories)} kcal registradas.`);
+  };
+  const registerNutritionPhoto = async (file?: File) => {
+    if (!file) return;
+    setBusyAction("nutrition-photo");
+    const result = await saveRoutineAction({ photo: true, note: `Foto de alimentação: ${file.name}` });
+    const recordedAt = result.synced ? new Date(result.recordedAt) : new Date();
+    set({ nutritionPhotoCount: nutritionPhotoCount + 1, nutritionPhotoDate: nutritionTodayKey, rotinas: [...st.rotinas, { photo: true, nota: `Foto de alimentação: ${file.name}`, id: result.synced ? result.id : undefined, data: recordedAt }] });
+    setBusyAction(null);
+    toast("Foto da refeição registrada.");
+  };
 
   useEffect(() => {
     if (!st.registerFlow) return;
@@ -1101,6 +1120,9 @@ export default function JourneyPage() {
   const expectedDoses = st.aplicacoes.length + st.dosesNaoAplicadas.length;
   const adherencePct = expectedDoses ? Math.round((st.aplicacoes.length / expectedDoses) * 100) : null;
   const now = useMemo(() => clockReady ? new Date() : new Date(0), [clockReady]);
+  const nutritionTodayKey = now.getTime() ? now.toISOString().slice(0, 10) : "";
+  const nutritionCaloriesToday = st.nutritionCaloriesDate === nutritionTodayKey ? st.nutritionCaloriesToday : 0;
+  const nutritionPhotoCount = st.nutritionPhotoDate === nutritionTodayKey ? st.nutritionPhotoCount : 0;
   const weekStart = startOfWeek(now);
   const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
   const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
@@ -1606,20 +1628,6 @@ export default function JourneyPage() {
                     <button type="button" onClick={() => set({ tab: "treino" })}><span className="prototype-timeline-dot prototype-dot-green" /><span><strong>Movimento</strong><small>Veja seu treino de hoje</small></span><time>›</time></button>
                   </section>
 
-                  <section className="prototype-nutrition-card" aria-labelledby="nutrition-card-title">
-                    <div className="prototype-nutrition-head">
-                      <div>
-                        <span className="prototype-label">Acompanhamento nutricional</span>
-                        <h2 id="nutrition-card-title">Comer e beber o suficiente para hoje?</h2>
-                      </div>
-                      <span className="prototype-nutrition-count">{nutritionGoalTarget ? `${Math.min(nutritionWeekCount, nutritionGoalTarget)}/${nutritionGoalTarget}` : nutritionWeekCount}</span>
-                    </div>
-                    <p>Registre tolerância, proteína, hidratação e força. O Canetta organiza sinais para você acompanhar com seu profissional.</p>
-                    {nutritionGoalTarget > 0 && <div className="prototype-nutrition-progress" aria-label={`${Math.min(100, (nutritionWeekCount / nutritionGoalTarget) * 100)}% da meta de registros`}><span style={{ width: `${Math.min(100, (nutritionWeekCount / nutritionGoalTarget) * 100)}%` }} /></div>}
-                    <div className="prototype-nutrition-meta">Meta atual: {nutritionGoalLabel}</div>
-                    <button type="button" onClick={() => startFlow("nutricao")}>Fazer check-in nutricional <span>›</span></button>
-                  </section>
-
                   <button type="button" className="prototype-learning-card" onClick={() => set({ tab: "mais", maisSub: "conteudo" })}>
                     <span className="prototype-learning-icon">✦</span><span><strong>Náusea nas primeiras semanas</strong><small>O que observar e quando conversar com seu profissional.</small></span><span>›</span>
                   </button>
@@ -1934,6 +1942,32 @@ export default function JourneyPage() {
                     <div style={{ fontSize: 12, color: "#596E68", marginTop: 12, lineHeight: 1.5 }}>As condutas de cada fase são definidas com seu médico. O Canetta apenas organiza seus registros por período.</div>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* NUTRIÇÃO */}
+            {st.tab === "nutricao" && (
+              <div className="nutrition-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 850, color: "#16302B" }}>Nutrição</div>
+                  <div style={{ fontSize: 13, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Registre o que come e bebe para acompanhar seu dia com mais clareza.</div>
+                </div>
+                <section style={{ ...cardWhite, background: "#123A2F", color: "#fff", borderColor: "#123A2F" }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#BEE0D6", textTransform: "uppercase" }}>Contador de calorias</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}><strong style={{ fontSize: 40, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{nutritionCaloriesToday}</strong><span style={{ color: "#DFF0EA", fontSize: 14 }}>kcal registradas hoje</span></div>
+                  <div style={{ fontSize: 11.5, color: "#BEE0D6", lineHeight: 1.4, marginTop: 10 }}>A meta é opcional e só deve ser usada se já foi combinada com seu profissional.</div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 14 }}><input aria-label="Calorias da refeição" inputMode="numeric" type="number" min={1} max={10000} value={calorieInput} onChange={(event) => setCalorieInput(event.target.value)} placeholder="kcal" style={{ ...inputSt, flex: 1, minWidth: 0, background: "#fff", color: "#16302B", border: "none", padding: "11px 12px" }} /><button type="button" onClick={addNutritionCalories} style={{ padding: "10px 13px", border: "none", borderRadius: 12, background: "#E08A5B", color: "#17201C", fontSize: 12.5, fontWeight: 850, cursor: "pointer" }}>Adicionar</button></div>
+                </section>
+                <section style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Meta diária (opcional)</div><div style={{ fontSize: 12, color: "#596E68", marginTop: 3 }}>Use somente uma meta definida com seu profissional.</div></div><div style={{ fontSize: 14, fontWeight: 850, color: "#0E6B5C" }}>{st.nutritionCalorieTarget ? `${st.nutritionCalorieTarget} kcal` : "Sem meta"}</div></div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}><input aria-label="Meta diária de calorias" inputMode="numeric" type="number" min={0} max={10000} value={st.nutritionCalorieTarget || ""} onChange={(event) => set({ nutritionCalorieTarget: Math.max(0, Number(event.target.value) || 0) })} placeholder="Ex.: 1800" style={{ ...inputSt, flex: 1, minWidth: 0, padding: "11px 12px" }} /><button type="button" onClick={() => set({ nutritionCalorieTarget: 0 })} style={{ padding: "10px 12px", border: "1.5px solid #D7E1DC", borderRadius: 12, background: "#fff", color: "#0E6B5C", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Limpar</button></div>
+                </section>
+                <section style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Registrar por foto</div><div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 3 }}>{nutritionPhotoCount} foto(s) registrada(s) hoje</div></div><span style={{ fontSize: 24 }}>📷</span></div>
+                  <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45 }}>Fotografe sua refeição para manter um registro visual. O Canetta não estima calorias automaticamente.</div>
+                  <label style={{ width: "100%", padding: "12px 14px", borderRadius: 13, background: "#0E6B5C", color: "#fff", fontSize: 13, fontWeight: 850, textAlign: "center", cursor: "pointer" }}>{busyAction === "nutrition-photo" ? "Registrando…" : "Tirar ou escolher foto"}<input aria-label="Tirar ou escolher foto da refeição" type="file" accept="image/*" capture="environment" disabled={busyAction === "nutrition-photo"} onChange={(event) => { void registerNutritionPhoto(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ display: "none" }} /></label>
+                </section>
+                <section style={{ ...cardWhite, background: "#FFFDF8" }}><div style={{ fontSize: 12, fontWeight: 800, color: "#596E68", letterSpacing: "0.05em", textTransform: "uppercase" }}>Check-in nutricional</div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B", marginTop: 5 }}>Tolerância, proteína, hidratação e força</div><div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45, marginTop: 5 }}>Use o check-in em cascata para registrar como sua alimentação está sendo tolerada no tratamento.</div><button type="button" onClick={() => startFlow("nutricao")} style={{ ...primaryBtn, padding: 12, fontSize: 13.5, marginTop: 12 }}>Abrir check-in nutricional</button></section>
               </div>
             )}
 
@@ -2336,7 +2370,7 @@ export default function JourneyPage() {
 
           {/* TAB BAR */}
           <div className="bottom-nav" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
-            {([["hoje", "HO", "Hoje"], ["diario", "JO", "Jornada"], ["consulta", "CO", "Consulta"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
+            {([["hoje", "HO", "Hoje"], ["diario", "JO", "Jornada"], ["consulta", "CO", "Consulta"], ["nutricao", "NU", "Nutrição"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
               <button key={key} type="button" aria-label={`Abrir ${label}`} aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 64, padding: "5px 4px", background: st.tab === key ? "#EAF5F2" : "transparent", border: "none", borderRadius: 12 }}>
                 <span style={{ minWidth: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: st.tab === key ? "#0E6B5C" : "#596E68" }}><IconGlyph name={icon} size={18} /></span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
               </button>

@@ -117,6 +117,12 @@ a:focus-visible {
   color: var(--brand) !important;
 }
 
+.canetta-journey .bottom-nav > button:not([aria-label="Novo registro"]) {
+  width: 54px !important;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
 .canetta-journey .today-screen {
   padding: 24px 20px 0 !important;
   gap: 18px !important;
@@ -246,81 +252,6 @@ a:focus-visible {
 
 .canetta-journey .today-next-step > button {
   flex: 1 1 128px;
-}
-
-.canetta-journey .prototype-nutrition-card {
-  border: 1px solid #cfe0d7;
-  border-radius: 18px;
-  background: #f8fbf8;
-  padding: 18px;
-}
-
-.canetta-journey .prototype-nutrition-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.canetta-journey .prototype-nutrition-card h2 {
-  margin: 7px 0 0;
-  color: var(--ink);
-  font-family: "Hanken Grotesk", sans-serif;
-  font-size: 17px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.canetta-journey .prototype-nutrition-card p {
-  margin: 11px 0 0;
-  color: var(--ink-soft);
-  font-size: 12.5px;
-  line-height: 1.45;
-}
-
-.canetta-journey .prototype-nutrition-count {
-  flex: 0 0 auto;
-  color: var(--brand);
-  font-size: 16px;
-  font-weight: 850;
-  font-variant-numeric: tabular-nums;
-}
-
-.canetta-journey .prototype-nutrition-progress {
-  height: 7px;
-  margin-top: 14px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: #e2ebe5;
-}
-
-.canetta-journey .prototype-nutrition-progress span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--brand);
-}
-
-.canetta-journey .prototype-nutrition-meta {
-  margin-top: 8px;
-  color: var(--ink-soft);
-  font-size: 11px;
-}
-
-.canetta-journey .prototype-nutrition-card > button {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 14px;
-  padding: 11px 13px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--brand);
-  color: #fff;
-  font-size: 12.5px;
-  font-weight: 800;
-  cursor: pointer;
 }
 
 /* Hoje — hierarchy from the redesign handoff, keeping every existing action. */
@@ -574,6 +505,7 @@ a:focus-visible {
   .canetta-journey .today-screen,
   .canetta-journey .journey-screen,
   .canetta-journey .consultation-screen,
+  .canetta-journey .nutrition-screen,
   .canetta-journey .training-screen,
   .canetta-journey .more-screen {
     padding-left: 16px !important;
