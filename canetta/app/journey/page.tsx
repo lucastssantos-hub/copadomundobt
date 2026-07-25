@@ -30,6 +30,7 @@ import {
   saveBodyMeasurementAction,
   saveNutritionEntryAction,
   saveMealEntryAction,
+  saveMealPhotoAction,
   savePersonalReportAction,
   saveTrainingProfileAction,
   saveTrainingReassessmentAction,
@@ -672,9 +673,12 @@ export default function JourneyPage() {
   const registerNutritionPhoto = async (file?: File) => {
     if (!file) return;
     setBusyAction("nutrition-photo");
-    const result = await saveRoutineAction({ photo: true, note: `Foto de alimentação: ${file.name}` });
-    const recordedAt = result.synced ? new Date(result.recordedAt) : new Date();
-    set({ nutritionPhotoCount: nutritionPhotoCount + 1, nutritionPhotoDate: nutritionTodayKey, rotinas: [...st.rotinas, { photo: true, nota: `Foto de alimentação: ${file.name}`, id: result.synced ? result.id : undefined, data: recordedAt }] });
+    const formData = new FormData(); formData.append("photo", file);
+    const result = await saveMealPhotoAction(formData);
+    if (!result.synced) { setBusyAction(null); toast("Não foi possível salvar a foto. Tente novamente."); return; }
+    const recordedAt = new Date(result.meal.loggedAt);
+    set({ nutritionPhotoCount: nutritionPhotoCount + 1, nutritionPhotoDate: nutritionTodayKey });
+    setMealEntries((entries) => [{ id: result.meal.id, label: "Refeição por foto · revisão pendente", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, loggedAt: recordedAt }, ...entries]);
     setBusyAction(null);
     toast("Foto da refeição registrada.");
   };

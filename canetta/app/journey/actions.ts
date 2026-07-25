@@ -235,6 +235,28 @@ export async function saveMealEntryAction(input: { mealLabel?: string; note?: st
   return { synced: true as const, meal: { id: meal.data.id, loggedAt: meal.data.logged_at, totals } };
 }
 
+export async function saveMealPhotoAction(formData: FormData) {
+  const { supabase, user } = await currentSession();
+  const file = formData.get("photo");
+  if (!user || !supabase || !(file instanceof File) || !file.type.startsWith("image/")) return { synced: false as const };
+  const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+  const upload = await supabase.storage.from("canetta-meal-photos").upload(path, file, { contentType: file.type, upsert: false });
+  if (upload.error) return { synced: false as const };
+  const meal = await supabase.from("canetta_meal_entries").insert({ user_id: user.id, meal_label: "Refeição por foto", estimate_basis: "foto", review_status: "revisao_pendente" }).select("id, logged_at").single();
+  if (meal.error || !meal.data) {
+    await supabase.storage.from("canetta-meal-photos").remove([path]);
+    return { synced: false as const };
+  }
+  const photo = await supabase.from("canetta_meal_photos").insert({ meal_id: meal.data.id, user_id: user.id, storage_path: path });
+  if (photo.error) {
+    await supabase.from("canetta_meal_entries").delete().eq("id", meal.data.id).eq("user_id", user.id);
+    await supabase.storage.from("canetta-meal-photos").remove([path]);
+    return { synced: false as const };
+  }
+  return { synced: true as const, meal: { id: meal.data.id, loggedAt: meal.data.logged_at, storagePath: path } };
+}
+
 export async function savePersonalReportAction(input: { period: "7d" | "30d" | "all"; snapshot: Record<string, unknown> }) {
   const { supabase, user } = await currentSession();
   if (!user || !supabase) return { saved: false as const };
