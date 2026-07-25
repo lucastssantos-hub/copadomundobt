@@ -63,7 +63,7 @@ interface Aplicacao { id?: string; dataHora: string; local: string; obs: string;
 interface DoseNaoAplicada { id?: string; dataHora: string; motivo: string; nota?: string; data: Date; }
 interface Sintoma { id?: string; tipo: string; intensidade: number; duracao?: string; contexto?: string; nota?: string; data: Date; }
 interface Peso { id?: string; kg: number; data: string; raw: Date; }
-interface Rotina extends Draft { id?: string; data: Date; }
+interface Rotina extends Draft { id?: string; photo?: boolean; data: Date; }
 interface Medida { id?: string; cinturaCm?: number | null; quadrilCm?: number | null; nota?: string | null; data: Date; }
 interface Nutricao { id?: string; refeicao?: string | null; proteina?: boolean | null; agua?: number | null; nota?: string | null; refeicoesToleradas?: string | null; ingestaoHabitual?: string | null; hidratacaoStatus?: string | null; fraqueza?: string | null; metaProfissional?: string | null; metaProteinaGramas?: number | null; metaProteinaFonte?: string | null; data: Date; }
 interface Pergunta { id?: string; texto: string; data: Date; }
