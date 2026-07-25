@@ -1169,7 +1169,6 @@ export default function JourneyPage() {
   const nutritionWeekCount = st.nutricao.filter((item) => item.data >= workoutWeekStart).length;
   const nutritionGoalTarget = st.nutritionGoal === "diaria" ? 7 : st.nutritionGoal === "tres_por_semana" ? 3 : 0;
   const nutritionGoalLabel = st.nutritionGoal === "diaria" ? "1 registro por dia" : st.nutritionGoal === "tres_por_semana" ? "3 registros por semana" : "Sem meta fixa";
-  const greetingName = st.nome.trim().toLowerCase() === "você" ? "Oi" : `Oi, ${st.nome}`;
   const displayName = st.nome.replace(/^(oi|olá|ola)[,\s]*/i, "").trim() || "você";
   const syncLabel = authenticated ? "Dados sincronizados na conta." : "Dados salvos neste aparelho.";
   const hasProfileBasics = st.nome.trim().toLowerCase() !== "você" && st.medicamento.trim() !== "Medicamento" && st.dose.trim() !== "Dose atual";
