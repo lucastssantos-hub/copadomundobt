@@ -1170,6 +1170,7 @@ export default function JourneyPage() {
   const nutritionGoalTarget = st.nutritionGoal === "diaria" ? 7 : st.nutritionGoal === "tres_por_semana" ? 3 : 0;
   const nutritionGoalLabel = st.nutritionGoal === "diaria" ? "1 registro por dia" : st.nutritionGoal === "tres_por_semana" ? "3 registros por semana" : "Sem meta fixa";
   const greetingName = st.nome.trim().toLowerCase() === "você" ? "Oi" : `Oi, ${st.nome}`;
+  const displayName = st.nome.replace(/^(oi|olá|ola)[,\s]*/i, "").trim() || "você";
   const syncLabel = authenticated ? "Dados sincronizados na conta." : "Dados salvos neste aparelho.";
   const hasProfileBasics = st.nome.trim().toLowerCase() !== "você" && st.medicamento.trim() !== "Medicamento" && st.dose.trim() !== "Dose atual";
   const hasDoseSchedule = st.lembretesOn && st.reminderWeekday >= 0 && /^\d{2}:\d{2}$/.test(st.reminderTime);
@@ -1577,7 +1578,7 @@ export default function JourneyPage() {
                   <header className="prototype-home-header">
                     <div>
                       <p className="prototype-date">{fmtDate(new Date())}</p>
-                      <h1>Olá, {greetingName}</h1>
+                      <h1>Olá, {displayName}</h1>
                     </div>
                     <div className="prototype-avatar" aria-hidden><MascotBadge size={36} /></div>
                   </header>
@@ -1616,7 +1617,7 @@ export default function JourneyPage() {
                   <div className="today-heading-row">
                     <div>
                       <h1>Como você está hoje?</h1>
-                      <p>{greetingName} · {syncLabel}</p>
+                      <p>{displayName} · {syncLabel}</p>
                     </div>
                     <div className="today-mascot" aria-hidden><MascotBadge size={44} /></div>
                   </div>
