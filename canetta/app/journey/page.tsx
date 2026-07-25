@@ -1606,6 +1606,20 @@ export default function JourneyPage() {
                     <button type="button" onClick={() => set({ tab: "treino" })}><span className="prototype-timeline-dot prototype-dot-green" /><span><strong>Movimento</strong><small>Veja seu treino de hoje</small></span><time>›</time></button>
                   </section>
 
+                  <section className="prototype-nutrition-card" aria-labelledby="nutrition-card-title">
+                    <div className="prototype-nutrition-head">
+                      <div>
+                        <span className="prototype-label">Acompanhamento nutricional</span>
+                        <h2 id="nutrition-card-title">Comer e beber o suficiente para hoje?</h2>
+                      </div>
+                      <span className="prototype-nutrition-count">{nutritionGoalTarget ? `${Math.min(nutritionWeekCount, nutritionGoalTarget)}/${nutritionGoalTarget}` : nutritionWeekCount}</span>
+                    </div>
+                    <p>Registre tolerância, proteína, hidratação e força. O Canetta organiza sinais para você acompanhar com seu profissional.</p>
+                    {nutritionGoalTarget > 0 && <div className="prototype-nutrition-progress" aria-label={`${Math.min(100, (nutritionWeekCount / nutritionGoalTarget) * 100)}% da meta de registros`}><span style={{ width: `${Math.min(100, (nutritionWeekCount / nutritionGoalTarget) * 100)}%` }} /></div>}
+                    <div className="prototype-nutrition-meta">Meta atual: {nutritionGoalLabel}</div>
+                    <button type="button" onClick={() => startFlow("nutricao")}>Fazer check-in nutricional <span>›</span></button>
+                  </section>
+
                   <button type="button" className="prototype-learning-card" onClick={() => set({ tab: "mais", maisSub: "conteudo" })}>
                     <span className="prototype-learning-icon">✦</span><span><strong>Náusea nas primeiras semanas</strong><small>O que observar e quando conversar com seu profissional.</small></span><span>›</span>
                   </button>
