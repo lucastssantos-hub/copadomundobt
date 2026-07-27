@@ -274,6 +274,41 @@ a:focus-visible {
   border-radius: 16px !important;
 }
 
+.canetta-journey .journey-screen,
+.canetta-journey .consultation-screen,
+.canetta-journey .training-screen {
+  background: var(--paper);
+}
+
+.canetta-journey .journey-screen > div:nth-child(2),
+.canetta-journey .consultation-screen > div:nth-child(2),
+.canetta-journey .training-screen > div:nth-child(2) {
+  border: 1px solid var(--line-soft) !important;
+  background: #e9efeb !important;
+  border-radius: 18px !important;
+  padding: 5px !important;
+}
+
+.canetta-journey .journey-screen > div:nth-child(2) button,
+.canetta-journey .consultation-screen > div:nth-child(2) button,
+.canetta-journey .training-screen > div:nth-child(2) button {
+  min-height: 38px;
+  border-radius: 14px !important;
+}
+
+.canetta-journey .consultation-screen > div:not(:first-child):not(:nth-child(2)),
+.canetta-journey .journey-screen > div:not(:first-child):not(:nth-child(2)) {
+  border-radius: 18px;
+}
+
+.canetta-journey .workout-redesign {
+  background: transparent;
+}
+
+.canetta-journey .workout-redesign .workout-session-card {
+  box-shadow: 0 10px 24px rgba(18, 58, 47, .10);
+}
+
 .canetta-journey .today-welcome {
   background: var(--surface) !important;
   border-color: #cdded7 !important;
