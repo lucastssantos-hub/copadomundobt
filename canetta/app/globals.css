@@ -332,6 +332,20 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+.canetta-toast {
+  border: 1px solid rgba(255, 255, 255, .12) !important;
+  border-radius: 16px !important;
+  background: var(--brand-deep) !important;
+  box-shadow: 0 10px 26px rgba(18, 58, 47, .18);
+}
+
+.canetta-journey [role="alert"] {
+  border-radius: 16px !important;
+  padding: 12px 14px;
+  background: #fff7f4;
+  border: 1px solid #e8c7bb;
+}
+
 .canetta-journey .today-welcome {
   background: var(--surface) !important;
   border-color: #cdded7 !important;

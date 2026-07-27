@@ -1310,7 +1310,7 @@ export default function JourneyPage() {
     const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     return (
       <div style={{ ...stage, overflowY: "auto", padding: "22px 22px 28px" }}>
-        {st.toastMsg && <div role="status" aria-live="polite" style={{ position: "sticky", top: 0, zIndex: 4, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 14 }}>{st.toastMsg}</div>}
+        {st.toastMsg && <div className="canetta-toast" role="status" aria-live="polite" style={{ position: "sticky", top: 0, zIndex: 4, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 14 }}>{st.toastMsg}</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <MascotBadge size={46} />
@@ -1380,7 +1380,7 @@ export default function JourneyPage() {
       <style>{`@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}} .j-in:focus,.j-in textarea:focus{outline:none;border-color:#0E6B5C}@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}`}</style>
 
       {st.toastMsg && (
-        <div role="status" aria-live="polite" style={{ position: "absolute", top: 8, left: 20, right: 20, zIndex: 40, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{st.toastMsg}</div>
+        <div className="canetta-toast" role="status" aria-live="polite" style={{ position: "absolute", top: 8, left: 20, right: 20, zIndex: 40, background: "#16302B", color: "#fff", padding: "12px 16px", borderRadius: 12, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{st.toastMsg}</div>
       )}
 
       {/* ================= REGISTER FLOWS ================= */}
