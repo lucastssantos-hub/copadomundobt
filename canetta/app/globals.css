@@ -259,6 +259,21 @@ a:focus-visible {
   background: var(--paper);
 }
 
+/* As abas novas mantêm a mesma linguagem de cartões do protótipo v2 sem
+   alterar os dados, cálculos ou actions do módulo nutricional. */
+.canetta-journey .nutrition-screen {
+  background: var(--paper);
+}
+
+.canetta-journey .nutrition-screen > section {
+  border-radius: 20px !important;
+}
+
+.canetta-journey .nutrition-screen input,
+.canetta-journey .nutrition-screen textarea {
+  border-radius: 16px !important;
+}
+
 .canetta-journey .today-welcome {
   background: var(--surface) !important;
   border-color: #cdded7 !important;
