@@ -2467,7 +2467,7 @@ export default function JourneyPage() {
 
           {/* TAB BAR */}
           <div className="bottom-nav" style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #E2E7E2", display: "flex", alignItems: "center", justifyContent: "space-around", padding: "10px 10px 18px", zIndex: 10 }}>
-            {([["hoje", "HO", "Hoje"], ["diario", "JO", "Jornada"], ["consulta", "CO", "Consulta"], ["nutricao", "NU", "Nutrição"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
+            {([["hoje", "HO", "Hoje"], ["diario", "JO", "Diário"], ["consulta", "CO", "Relatório"], ["nutricao", "NU", "Nutrição"], ["treino", "TR", "Treino"], ["mais", "…", "Mais"]] as const).map(([key, icon, label]) => (
               <button key={key} type="button" aria-label={`Abrir ${label}`} aria-current={st.tab === key ? "page" : undefined} onClick={() => setTab(key)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", width: 64, padding: "5px 4px", background: st.tab === key ? "#EAF5F2" : "transparent", border: "none", borderRadius: 12 }}>
                 <span style={{ minWidth: 28, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", color: st.tab === key ? "#0E6B5C" : "#596E68" }}><IconGlyph name={icon} size={18} /></span><span style={{ fontSize: 10.5, fontWeight: 750, color: st.tab === key ? "#0E6B5C" : "#596E68" }}>{label}</span>
               </button>
