@@ -8,8 +8,8 @@ export type OnboardingPayload = {
   medicamento?: string | null;
   dose?: string | null;
   freq?: string | null;
-  alturaCm?: number;
-  pesoKg?: number;
+  alturaCm?: number | null;
+  pesoKg?: number | null;
   objetivo?: string | null;
   fase?: string | null;
   doseTrend?: string | null;

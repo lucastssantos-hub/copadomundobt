@@ -17,8 +17,8 @@ interface FlowState {
   medicamento: string | null;
   dose: string | null;
   freq: string | null;
-  pesoKg: number;
-  alturaCm: number;
+  pesoKg: number | null;
+  alturaCm: number | null;
   objetivo: string | null;
   fase: string | null;
   doseTrend: string | null;
@@ -35,8 +35,8 @@ const INITIAL: FlowState = {
   medicamento: null,
   dose: null,
   freq: null,
-  pesoKg: 78,
-  alturaCm: 168,
+  pesoKg: null,
+  alturaCm: null,
   objetivo: null,
   fase: null,
   doseTrend: null,
@@ -485,9 +485,9 @@ export default function OnboardingFlowPage() {
           <div style={{ ...subLine, marginBottom: 20 }}>Opcional — apenas um registro, sem julgamento.</div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-              <button onClick={() => set({ pesoKg: Math.max(35, st.pesoKg - 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
-              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.pesoKg}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> kg</span></div>
-              <button onClick={() => set({ pesoKg: Math.min(220, st.pesoKg + 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
+              <button onClick={() => set({ pesoKg: Math.max(35, (st.pesoKg ?? 78) - 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
+              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.pesoKg ?? "—"}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> kg</span></div>
+              <button onClick={() => set({ pesoKg: Math.min(220, (st.pesoKg ?? 78) + 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
             </div>
             <Ruler />
           </div>
@@ -504,9 +504,9 @@ export default function OnboardingFlowPage() {
           <div style={{ ...subLine, marginBottom: 20 }}>Opcional — para organizar seus registros.</div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-              <button onClick={() => set({ alturaCm: Math.max(120, st.alturaCm - 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
-              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.alturaCm}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> cm</span></div>
-              <button onClick={() => set({ alturaCm: Math.min(220, st.alturaCm + 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
+              <button onClick={() => set({ alturaCm: Math.max(120, (st.alturaCm ?? 168) - 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
+              <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 140, textAlign: "center" }}>{st.alturaCm ?? "—"}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> cm</span></div>
+              <button onClick={() => set({ alturaCm: Math.min(220, (st.alturaCm ?? 168) + 1) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
             </div>
             <Ruler />
           </div>
