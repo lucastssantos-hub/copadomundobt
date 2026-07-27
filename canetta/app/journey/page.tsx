@@ -1482,7 +1482,7 @@ export default function JourneyPage() {
 
           {/* SINTOMA */}
           {st.registerFlow === "sintoma" && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
+            <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Registrar sintoma", cancelFlow)}
               <div style={{ ...fieldLabel, marginBottom: 8 }}>QUAL SINTOMA?</div>
               <div style={{ marginBottom: 20 }}><ChipRow options={["Náusea", "Vômitos", "Diarreia", "Constipação", "Refluxo", "Dor abdominal", "Fadiga", "Dor de cabeça", "Outro"]} current={st.draft.tipo} onPick={(v) => setDraft({ tipo: v })} radius={20} wrap /></div>
@@ -1499,7 +1499,7 @@ export default function JourneyPage() {
 
           {/* PESO */}
           {st.registerFlow === "peso" && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
+            <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
               {flowHeader("Registrar peso", cancelFlow)}
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 22 }}>

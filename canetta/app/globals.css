@@ -351,6 +351,16 @@ a:focus-visible {
   padding-bottom: 10px !important;
 }
 
+.canetta-journey .registration-v2 [aria-pressed="true"] {
+  box-shadow: 0 0 0 3px rgba(30, 95, 78, .08);
+}
+
+.canetta-journey .registration-v2 .j-in:focus,
+.canetta-journey .registration-v2 textarea:focus {
+  border-color: var(--brand) !important;
+  box-shadow: var(--focus-ring);
+}
+
 .canetta-journey .prototype-home-header,
 .canetta-journey .prototype-weight-head {
   display: flex;
