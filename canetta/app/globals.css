@@ -309,6 +309,29 @@ a:focus-visible {
   box-shadow: 0 10px 24px rgba(18, 58, 47, .10);
 }
 
+/* Onboarding v2 — mesma sensação de fluxo mobile do protótipo, sem mudar a
+   ordem das perguntas nem o salvamento existente. */
+.onboarding-v2 {
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+}
+
+.onboarding-v2 .flow-input {
+  border-radius: 18px !important;
+  border-color: var(--line) !important;
+  background: var(--surface) !important;
+}
+
+.onboarding-v2 button[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px rgba(30, 95, 78, .08);
+}
+
+.onboarding-v2 button:focus-visible,
+.onboarding-v2 input:focus-visible {
+  outline: 3px solid rgba(34, 179, 154, .28) !important;
+  outline-offset: 2px;
+}
+
 .canetta-journey .today-welcome {
   background: var(--surface) !important;
   border-color: #cdded7 !important;

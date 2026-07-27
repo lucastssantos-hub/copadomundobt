@@ -305,7 +305,7 @@ export default function OnboardingFlowPage() {
   };
 
   return (
-    <div style={stage}>
+    <div className="onboarding-v2" style={stage}>
       <style>{`
         @keyframes confettiFall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(760px) rotate(380deg);opacity:0}}
         @keyframes spin{to{transform:rotate(360deg)}}
