@@ -1389,7 +1389,7 @@ export default function JourneyPage() {
 
           {/* APLICAÇÃO — FORM */}
           {st.registerFlow === "aplicacao" && st.registerStep === "form" && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
+            <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
               {flowHeader("Registrar aplicação", cancelFlow)}
               <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", flex: 1 }}>
                 <div>
@@ -1422,7 +1422,7 @@ export default function JourneyPage() {
 
           {/* APLICAÇÃO — NÃO APLICADA */}
           {st.registerFlow === "aplicacao" && st.registerStep === "missed" && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
+            <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
               {flowHeader("Dose não aplicada", () => set({ registerStep: "form" }))}
               <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", flex: 1 }}>
                 <div>

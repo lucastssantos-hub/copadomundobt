@@ -310,6 +310,47 @@ a:focus-visible {
   padding: 4px 2px 20px;
 }
 
+/* Registro de aplicação — linguagem visual do protótipo v2, mantendo os
+   campos e ações reais do fluxo de produção. */
+.canetta-journey .registration-v2 {
+  background: var(--paper);
+}
+
+.canetta-journey .registration-v2 > .j-in,
+.canetta-journey .registration-v2 input[type="datetime-local"],
+.canetta-journey .registration-v2 textarea {
+  border-radius: 18px !important;
+  border-color: var(--line) !important;
+  background: var(--surface) !important;
+}
+
+.canetta-journey .registration-v2 > div > div > div[style*="background: #EAF5F2"] {
+  border: 1px solid #c9ded6;
+  border-radius: 18px !important;
+  background: #e8f1ed !important;
+  color: var(--brand) !important;
+}
+
+.canetta-journey .registration-v2 .map-point {
+  transition: transform .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+
+.canetta-journey .registration-v2 .map-point[aria-pressed="true"] {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 5px rgba(30, 95, 78, .16), 0 2px 6px rgba(18, 58, 47, .22) !important;
+}
+
+.canetta-journey .registration-v2 > button:first-of-type {
+  border-radius: 18px !important;
+  min-height: 54px;
+  box-shadow: 0 8px 18px rgba(18, 58, 47, .12);
+}
+
+.canetta-journey .registration-v2 > button:last-of-type {
+  padding-top: 14px !important;
+  padding-bottom: 10px !important;
+}
+
 .canetta-journey .prototype-home-header,
 .canetta-journey .prototype-weight-head {
   display: flex;
