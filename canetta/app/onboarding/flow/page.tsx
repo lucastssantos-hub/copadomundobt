@@ -25,6 +25,7 @@ interface FlowState {
   dificuldade: string | null;
   diario: string[];
   sintoma: number;
+  consentTermos: boolean;
 }
 
 const INITIAL: FlowState = {
@@ -43,6 +44,7 @@ const INITIAL: FlowState = {
   dificuldade: null,
   diario: [],
   sintoma: 3,
+  consentTermos: false,
 };
 
 const STEP_MAP: Record<number, number> = {
@@ -392,8 +394,12 @@ export default function OnboardingFlowPage() {
               <p style={{ margin: "12px 0 0", fontSize: 13, color: "#4B5F59", lineHeight: 1.55 }}>Seus registros de saúde são usados para exibir sua jornada, gerar exportações e, quando você entra em uma conta, sincronizar os dados com segurança. Não compartilhe sua senha. Você pode solicitar exportação ou exclusão da conta em Perfil &amp; ajustes.</p>
             </details>
           </div>
+          <button type="button" aria-pressed={st.consentTermos} onClick={() => set({ consentTermos: !st.consentTermos })} style={{ display: "flex", alignItems: "flex-start", gap: 10, width: "100%", padding: "13px 14px", marginTop: 16, textAlign: "left", background: st.consentTermos ? "#EAF5F2" : "#fff", border: `1.5px solid ${st.consentTermos ? "#0E6B5C" : "#E2E7E2"}`, borderRadius: 14, color: "#16302B", cursor: "pointer" }}>
+            <span aria-hidden style={{ fontSize: 17, lineHeight: 1 }}>{st.consentTermos ? "☑️" : "⬜"}</span>
+            <span style={{ fontSize: 12.5, lineHeight: 1.45, fontWeight: 700 }}>Li e entendi os limites do Canetta e como meus registros serão usados.</span>
+          </button>
           <div style={spacer} />
-          <button onClick={next} style={primaryBtn}>Aceitar e continuar</button>
+          <button onClick={next} disabled={!st.consentTermos} style={{ ...primaryBtn, opacity: st.consentTermos ? 1 : 0.45, cursor: st.consentTermos ? "pointer" : "not-allowed" }}>Aceitar e continuar</button>
         </div>
       )}
 
