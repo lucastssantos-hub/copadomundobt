@@ -1177,6 +1177,11 @@ export default function JourneyPage() {
   const mealFatToday = mealsToday.reduce((sum, meal) => sum + meal.fatG, 0);
   const mealFiberToday = mealsToday.reduce((sum, meal) => sum + meal.fiberG, 0);
   const waterToday = st.nutricao.filter((item) => item.data.toISOString().slice(0, 10) === nutritionTodayKey).reduce((sum, item) => sum + Number(item.agua || 0), 0);
+  const nutritionWeekStart = new Date(now); nutritionWeekStart.setDate(nutritionWeekStart.getDate() - 6); nutritionWeekStart.setHours(0, 0, 0, 0);
+  const mealsThisWeek = mealEntries.filter((meal) => meal.loggedAt >= nutritionWeekStart);
+  const nutritionTrackedDays = new Set(mealsThisWeek.map((meal) => meal.loggedAt.toISOString().slice(0, 10))).size;
+  const nutritionAverageCalories = nutritionTrackedDays ? mealsThisWeek.reduce((sum, meal) => sum + meal.calories, 0) / nutritionTrackedDays : 0;
+  const nutritionInsight = !mealsThisWeek.length ? "Ainda não há registros suficientes para observar um padrão." : nutritionTrackedDays < 3 ? "Há poucos dias registrados para interpretar sua semana com confiança." : `Você registrou refeições em ${nutritionTrackedDays} dos últimos 7 dias; essa é uma descrição do seu registro, não uma avaliação da sua alimentação.`;
   const weekStart = startOfWeek(now);
   const weeklyApplied = st.aplicacoes.filter((item) => item.data >= weekStart).length;
   const weeklyMissed = st.dosesNaoAplicadas.filter((item) => item.data >= weekStart).length;
@@ -2013,6 +2018,15 @@ export default function JourneyPage() {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 12, fontSize: 12, color: "#596E68" }}><span>Água registrada</span><strong style={{ color: "#0E6B5C" }}>{waterToday} copo(s)</strong></div>
                   {!mealsToday.length && <div style={{ marginTop: 11, padding: "9px 10px", borderRadius: 10, background: "#FFF8F2", color: "#75443C", fontSize: 11.5, lineHeight: 1.4 }}>Poucos dados para interpretar seu dia. Comece registrando uma refeição.</div>}
+                </section>
+                <section style={{ ...cardWhite, background: "#FFFDF8" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Padrão da semana</div><span style={{ fontSize: 11.5, color: "#596E68" }}>últimos 7 dias</span></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+                    <div style={{ padding: "10px 11px", borderRadius: 11, background: "#fff", border: "1px solid #E2E7E2" }}><div style={{ fontSize: 10, color: "#596E68" }}>Média de calorias</div><div style={{ fontSize: 18, fontWeight: 850, color: "#16302B", marginTop: 4 }}>{nutritionAverageCalories ? nutritionAverageCalories.toFixed(0) : "—"} <small style={{ fontSize: 10, color: "#596E68" }}>kcal/dia</small></div></div>
+                    <div style={{ padding: "10px 11px", borderRadius: 11, background: "#fff", border: "1px solid #E2E7E2" }}><div style={{ fontSize: 10, color: "#596E68" }}>Dias registrados</div><div style={{ fontSize: 18, fontWeight: 850, color: "#16302B", marginTop: 4 }}>{nutritionTrackedDays}/7</div></div>
+                  </div>
+                  <div style={{ marginTop: 12, padding: "10px 11px", borderRadius: 11, background: "#F2F8F6", color: "#315B50", fontSize: 12, lineHeight: 1.45 }}>{nutritionInsight}</div>
+                  <div style={{ fontSize: 11, color: "#596E68", lineHeight: 1.4, marginTop: 9 }}>Este resumo descreve seus registros; não é uma meta nem uma prescrição nutricional.</div>
                 </section>
                 <section style={{ ...cardWhite, background: "#123A2F", color: "#fff", borderColor: "#123A2F" }}>
                   <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#BEE0D6", textTransform: "uppercase" }}>Contador de calorias</div>
