@@ -639,15 +639,15 @@ export default function OnboardingFlowPage() {
         <div style={{ ...screenBase, padding: "24px 26px 26px" }}>
           <button onClick={back} style={backBtn}>←</button>
           <div style={{ ...title, margin: "14px 0 6px" }}>Seu resumo, pronto antes de cada consulta.</div>
-          <div style={{ alignSelf: "flex-start", fontSize: 11, fontWeight: 700, color: "#8DA9E8", background: "#EAF0FC", padding: "4px 10px", borderRadius: 8, marginBottom: 14 }}>EXEMPLO · SEUS DADOS APARECEM AQUI</div>
+          <div style={{ alignSelf: "flex-start", fontSize: 11, fontWeight: 700, color: "#0E6B5C", background: "#EAF5F2", padding: "4px 10px", borderRadius: 8, marginBottom: 14 }}>CONFIGURAÇÃO INICIAL · SEM REGISTROS FICTÍCIOS</div>
           <div style={{ background: "#fff", border: "1.5px solid #E2E7E2", borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 13 }}>
             {[
-              ["Peso inicial → atual", "82,4 kg → 79,1 kg"],
+              ["Peso informado", st.pesoKg ? `${st.pesoKg} kg` : "Ainda não informado"],
               ["Dose atual", doseLabelSafe],
-              ["Aplicações registradas", "6"],
-              ["Sintomas mais frequentes", "Náusea leve (3x)"],
-              ["Rotinas registradas", "4"],
-              ["Perguntas anotadas", "2"],
+              ["Aplicações registradas", "Ainda não há registros"],
+              ["Sintomas", "Ainda não há registros"],
+              ["Rotina", st.diario.includes("Rotina & hábitos") ? "Selecionada para acompanhar" : "Ainda não selecionada"],
+              ["Perguntas anotadas", "Ainda não há registros"],
             ].map(([k, v]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5 }}>
                 <span style={{ color: "#596E68", fontWeight: 600 }}>{k}</span>
