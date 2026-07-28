@@ -1658,49 +1658,48 @@ export default function JourneyPage() {
                   <header className="prototype-home-header">
                     <div>
                       <p className="prototype-date">{fmtDate(new Date())}</p>
-                      <h1>Olá, {displayName}</h1>
+                      <h1>{displayName}, sua jornada hoje</h1>
                     </div>
                     <div className="prototype-avatar" aria-hidden><MascotBadge size={36} /></div>
                   </header>
 
-                  <section className="prototype-focus-card" aria-label="Foco de hoje">
-                    <div>
-                      <span className="prototype-label">Foco de hoje</span>
-                      <p>{st.aplicacoes.length ? "Como você está respondendo ao tratamento?" : "Comece registrando sua primeira aplicação."}</p>
-                      <small>{st.aplicacoes.length ? "Um check-in curto ajuda a manter sua jornada atualizada." : "Depois, você poderá acompanhar sintomas, peso e rotina."}</small>
-                    </div>
-                    <button type="button" onClick={() => startFlow(st.aplicacoes.length ? "sintoma" : "aplicacao")}>
-                      {st.aplicacoes.length ? "Fazer check-in" : "Começar"}
-                    </button>
-                  </section>
-
-                  <section className="prototype-dose-card">
-                    <div>
-                      <span className="prototype-label">Próxima dose</span>
+                  <section className="prototype-dose-card prototype-dose-hero">
+                    <div className="prototype-dose-hero-copy">
+                      <span className="prototype-label">Próxima aplicação</span>
                       <p className="prototype-dose-name">{st.medicamento} · {st.dose}</p>
-                      <p className="prototype-dose-meta">{st.aplicacoes.length ? nextReminderLabel : "Registre sua primeira aplicação"}</p>
+                      <p className="prototype-dose-meta">{st.aplicacoes.length ? nextReminderLabel : "Nenhuma aplicação registrada"}</p>
                     </div>
-                    <button type="button" onClick={() => startFlow("aplicacao")}>Registrar</button>
-                  </section>
-
-                  <section className="prototype-weight-card">
-                    <div className="prototype-weight-head">
-                      <div><span className="prototype-label">Peso atual</span><p className="prototype-weight-value">{pesoAtual ?? "—"} <small>kg</small></p></div>
-                      <span className="prototype-weight-badge">Acompanhar</span>
+                    <div className="prototype-dose-ring" aria-label={st.aplicacoes.length ? nextReminderLabel : "Aguardando primeiro registro"}>
+                      <strong>{st.aplicacoes.length ? "✓" : "—"}</strong>
+                      <span>{st.aplicacoes.length ? "registrada" : "comece aqui"}</span>
                     </div>
-                    <button type="button" onClick={() => startFlow("peso")} className="prototype-text-action">Registrar peso <span>›</span></button>
+                    <button type="button" onClick={() => startFlow("aplicacao")}>Registrar aplicação</button>
                   </section>
 
-                  <div className="prototype-section-label">Hoje</div>
-                  <section className="prototype-timeline">
-                    <button type="button" onClick={() => startFlow("sintoma")}><span className="prototype-timeline-dot" /><span><strong>Como você está se sentindo?</strong><small>Registre sintomas ou energia do dia</small></span><time>›</time></button>
-                    <button type="button" onClick={() => startFlow("nutricao")}><span className="prototype-timeline-dot prototype-dot-amber" /><span><strong>Check-in nutricional</strong><small>Proteína, hidratação e tolerância</small></span><time>›</time></button>
-                    <button type="button" onClick={() => set({ tab: "treino" })}><span className="prototype-timeline-dot prototype-dot-green" /><span><strong>Movimento</strong><small>Veja seu treino de hoje</small></span><time>›</time></button>
+                  <section className="prototype-quick-section">
+                    <h2>Registrar agora</h2>
+                    <div className="prototype-quick-grid">
+                      {([
+                        ["Aplicação", "Registrar dose", "aplicacao" as RegisterFlow],
+                        ["Peso", "Anotar hoje", "peso" as RegisterFlow],
+                        ["Como me sinto", "Sintomas", "sintoma" as RegisterFlow],
+                      ] as const).map(([label, hint, flow]) => (
+                        <button key={label} type="button" onClick={() => startFlow(flow as Exclude<RegisterFlow, null>)}>
+                          <span className="prototype-quick-icon">{label === "Aplicação" ? "✚" : label === "Peso" ? "↕" : "♡"}</span>
+                          <span><strong>{label}</strong><small>{hint}</small></span>
+                        </button>
+                      ))}
+                    </div>
                   </section>
 
-                  <button type="button" className="prototype-learning-card" onClick={() => set({ tab: "mais", maisSub: "conteudo" })}>
-                    <span className="prototype-learning-icon">✦</span><span><strong>Náusea nas primeiras semanas</strong><small>O que observar e quando conversar com seu profissional.</small></span><span>›</span>
-                  </button>
+                  <section className="prototype-summary-section">
+                    <h2>Seu resumo</h2>
+                    <div className="prototype-summary-grid">
+                      <button type="button" onClick={() => startFlow("peso")}><span className="prototype-summary-label">Peso</span><strong>{pesoAtual ? `${pesoAtual} kg` : "—"}</strong><small>{pesoAtual ? "último registro" : "ainda não registrado"}</small></button>
+                      <button type="button" onClick={() => startFlow("sintoma")}><span className="prototype-summary-label">Sintomas</span><strong>{st.sintomas.length ? `${st.sintomas.length} registro(s)` : "Nenhum"}</strong><small>{st.sintomas.length ? "na sua jornada" : "nada registrado hoje"}</small></button>
+                    </div>
+                    <button type="button" className="prototype-week-link" onClick={() => set({ tab: "diario", diarioSub: "registros" })}><span><strong>Diário da semana</strong><small>{st.aplicacoes.length + st.sintomas.length + st.nutricao.length} registro(s) · veja sua linha do tempo</small></span><span>›</span></button>
+                  </section>
                 </div>
 
                 <header className="today-greeting">

@@ -435,6 +435,63 @@ a:focus-visible {
   cursor: pointer;
 }
 
+.canetta-journey .prototype-dose-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "copy ring" "action action";
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+}
+
+.canetta-journey .prototype-dose-hero-copy { grid-area: copy; min-width: 0; }
+.canetta-journey .prototype-dose-hero > button { grid-area: action; width: 100%; }
+
+.canetta-journey .prototype-dose-ring {
+  grid-area: ring;
+  display: flex;
+  width: 84px;
+  height: 84px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 8px solid rgba(190, 224, 214, .34);
+  border-top-color: #22b39a;
+  border-right-color: #22b39a;
+  border-radius: 50%;
+  color: #f4f6f3;
+  text-align: center;
+}
+
+.canetta-journey .prototype-dose-ring strong { font-size: 24px; line-height: 1; }
+.canetta-journey .prototype-dose-ring span { margin-top: 4px; color: #bee0d6; font-size: 9px; font-weight: 700; }
+
+.canetta-journey .prototype-quick-section,
+.canetta-journey .prototype-summary-section { display: flex; flex-direction: column; gap: 10px; }
+.canetta-journey .prototype-quick-section h2,
+.canetta-journey .prototype-summary-section h2 { margin: 0; color: #16302b; font-size: 16px; font-weight: 800; }
+
+.canetta-journey .prototype-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.canetta-journey .prototype-quick-grid button,
+.canetta-journey .prototype-summary-grid button,
+.canetta-journey .prototype-week-link { border: 1.5px solid #e2e7e2; border-radius: 16px; background: #fff; color: #16302b; cursor: pointer; text-align: left; }
+.canetta-journey .prototype-quick-grid button { display: flex; min-height: 102px; flex-direction: column; align-items: flex-start; gap: 10px; padding: 13px 11px; }
+.canetta-journey .prototype-quick-grid strong,
+.canetta-journey .prototype-summary-grid strong,
+.canetta-journey .prototype-week-link strong { display: block; font-size: 12px; font-weight: 800; }
+.canetta-journey .prototype-quick-grid small,
+.canetta-journey .prototype-summary-grid small,
+.canetta-journey .prototype-week-link small { display: block; margin-top: 3px; color: #596e68; font-size: 10.5px; line-height: 1.3; }
+.canetta-journey .prototype-quick-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: #eaf5f2; color: #0e6b5c; font-size: 18px; font-weight: 800; }
+
+.canetta-journey .prototype-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.canetta-journey .prototype-summary-grid button { padding: 14px; }
+.canetta-journey .prototype-summary-grid strong { margin-top: 8px; font-size: 20px; }
+.canetta-journey .prototype-summary-label { color: #0e6b5c; font-size: 11px; font-weight: 800; }
+.canetta-journey .prototype-week-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; }
+.canetta-journey .prototype-week-link > span:last-child { color: #596e68; font-size: 20px; }
+
 /* Registro de aplicação — linguagem visual do protótipo v2, mantendo os
    campos e ações reais do fluxo de produção. */
 .canetta-journey .registration-v2 {
