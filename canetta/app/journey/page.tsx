@@ -2002,12 +2002,12 @@ export default function JourneyPage() {
 
             {/* NUTRIÇÃO */}
             {st.tab === "nutricao" && (
-              <div className="nutrition-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="nutrition-screen nutrition-prototype-mode" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 850, color: "#16302B" }}>Nutrição</div>
                   <div style={{ fontSize: 13, color: "#596E68", lineHeight: 1.45, marginTop: 4 }}>Registre o que come e bebe para acompanhar seu dia com mais clareza.</div>
                 </div>
-                <section style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7" }}>
+                <section className="nutrition-day-summary" style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Resumo de hoje</div><span style={{ fontSize: 11.5, color: "#596E68" }}>{mealsToday.length} refeição(ões)</span></div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 13 }}>
                     {[["Proteína", mealProteinToday, "g"], ["Carboidrato", mealCarbsToday, "g"], ["Gordura", mealFatToday, "g"], ["Fibra", mealFiberToday, "g"]].map(([label, value, unit]) => <div key={String(label)} style={{ padding: "9px 7px", borderRadius: 11, background: "#fff", border: "1px solid #E2E7E2" }}><div style={{ fontSize: 10, color: "#596E68", lineHeight: 1.2 }}>{label}</div><div style={{ fontSize: 14, fontWeight: 850, color: "#16302B", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{Number(value).toFixed(1)}<small style={{ fontSize: 10, fontWeight: 700, color: "#596E68" }}> {unit}</small></div></div>)}
@@ -2024,7 +2024,7 @@ export default function JourneyPage() {
                   <div style={{ marginTop: 12, padding: "10px 11px", borderRadius: 11, background: "#F2F8F6", color: "#315B50", fontSize: 12, lineHeight: 1.45 }}>{nutritionInsight}</div>
                   <div style={{ fontSize: 11, color: "#596E68", lineHeight: 1.4, marginTop: 9 }}>Este resumo descreve seus registros; não é uma meta nem uma prescrição nutricional.</div>
                 </section>
-                <section style={{ ...cardWhite, background: "#123A2F", color: "#fff", borderColor: "#123A2F" }}>
+                <section className="nutrition-calorie-card" style={{ ...cardWhite, background: "#123A2F", color: "#fff", borderColor: "#123A2F" }}>
                   <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "#BEE0D6", textTransform: "uppercase" }}>Contador de calorias</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}><strong style={{ fontSize: 40, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mealCaloriesToday || nutritionCaloriesToday}</strong><span style={{ color: "#DFF0EA", fontSize: 14 }}>kcal registradas hoje</span></div>
                   <div style={{ fontSize: 11.5, color: "#BEE0D6", lineHeight: 1.4, marginTop: 10 }}>A meta é opcional e só deve ser usada se já foi combinada com seu profissional.</div>
@@ -2049,7 +2049,7 @@ export default function JourneyPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Meta diária (opcional)</div><div style={{ fontSize: 12, color: "#596E68", marginTop: 3 }}>Use somente uma meta definida com seu profissional.</div></div><div style={{ fontSize: 14, fontWeight: 850, color: "#0E6B5C" }}>{st.nutritionCalorieTarget ? `${st.nutritionCalorieTarget} kcal` : "Sem meta"}</div></div>
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}><input aria-label="Meta diária de calorias" inputMode="numeric" type="number" min={0} max={10000} value={st.nutritionCalorieTarget || ""} onChange={(event) => set({ nutritionCalorieTarget: Math.max(0, Number(event.target.value) || 0) })} placeholder="Ex.: 1800" style={{ ...inputSt, flex: 1, minWidth: 0, padding: "11px 12px" }} /><button type="button" onClick={() => set({ nutritionCalorieTarget: 0 })} style={{ padding: "10px 12px", border: "1.5px solid #D7E1DC", borderRadius: 12, background: "#fff", color: "#0E6B5C", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Limpar</button></div>
                 </section>
-                <section style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
+                <section className="nutrition-photo-card" style={{ ...cardWhite, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Registrar por foto</div><div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 3 }}>{nutritionPhotoCount} foto(s) registrada(s) hoje</div></div><span style={{ fontSize: 24 }}>📷</span></div>
                   <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45 }}>Fotografe sua refeição para manter um registro visual. O Canetta não estima calorias automaticamente.</div>
                   <label style={{ width: "100%", padding: "12px 14px", borderRadius: 13, background: "#0E6B5C", color: "#fff", fontSize: 13, fontWeight: 850, textAlign: "center", cursor: "pointer" }}>{busyAction === "nutrition-photo" ? "Registrando…" : "Tirar ou escolher foto"}<input aria-label="Tirar ou escolher foto da refeição" type="file" accept="image/*" capture="environment" disabled={busyAction === "nutrition-photo"} onChange={(event) => { void registerNutritionPhoto(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ display: "none" }} /></label>
