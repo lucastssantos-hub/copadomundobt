@@ -2068,7 +2068,7 @@ export default function JourneyPage() {
 
             {/* TREINO */}
             {st.tab === "treino" && (
-              <div className="training-screen" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="training-screen training-prototype-mode" style={{ padding: "20px 22px 0", display: "flex", flexDirection: "column", gap: 14 }}>
                 {st.treinoSub !== "plano" && (
                   <div>
                     <div style={{ fontSize: 20, fontWeight: 800, color: "#16302B" }}>Meu treino</div>
@@ -2081,7 +2081,7 @@ export default function JourneyPage() {
                   ))}
                 </div>
 
-                <div style={{ ...cardWhite, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, background: weeklyWorkouts ? "#EAF5F2" : "#fff" }}>
+                <div className="training-week-card" style={{ ...cardWhite, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, background: weeklyWorkouts ? "#EAF5F2" : "#fff" }}>
                   <div>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: "#16302B" }}>Semana de movimento</div>
                     <div style={{ fontSize: 12, color: "#4B5F59", marginTop: 3 }}>{weeklyWorkouts} treino(s) registrado(s)</div>

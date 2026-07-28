@@ -620,6 +620,15 @@ a:focus-visible {
 .canetta-journey .nutrition-photo-card { border-radius: 20px !important; border-color: #d0e8ee !important; background: #fff !important; }
 .canetta-journey .nutrition-photo-card label { background: #059669 !important; border-radius: 16px !important; }
 .canetta-journey .nutrition-more-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 14px 16px; border: 1px solid #d0e8ee; border-radius: 16px; background: #fff; color: #0891b2; font-size: 13px; font-weight: 800; cursor: pointer; }
+.canetta-journey .training-prototype-mode { background: #eef8fa; font-family: "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.canetta-journey .training-prototype-mode > div:first-child h1,
+.canetta-journey .training-prototype-mode > div:first-child h2 { font-family: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.canetta-journey .training-prototype-mode > div:nth-child(2) { background: #e0f2f6 !important; }
+.canetta-journey .training-prototype-mode > div:nth-child(2) button[aria-pressed="true"] { background: #0c3a44 !important; color: #fff !important; }
+.canetta-journey .training-week-card { border-radius: 24px !important; background: #0c3a44 !important; border-color: #0c3a44 !important; color: #fff; }
+.canetta-journey .training-week-card div,
+.canetta-journey .training-week-card button { color: #fff !important; }
+.canetta-journey .training-week-card button { background: #059669 !important; border-radius: 16px !important; }
 
 .canetta-journey .registration-v2 .j-in:focus,
 .canetta-journey .registration-v2 textarea:focus {
