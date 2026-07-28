@@ -1657,22 +1657,19 @@ export default function JourneyPage() {
                 <div className="today-prototype-view">
                   <header className="prototype-home-header">
                     <div>
-                      <p className="prototype-date">{fmtDate(new Date())}</p>
-                      <h1>{displayName}, sua jornada hoje</h1>
+                      <p className="prototype-date">{new Date().toLocaleDateString("pt-BR", { weekday: "long" }).replace(/^./, (value) => value.toUpperCase())}</p>
+                      <h1>{new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}</h1>
                     </div>
                     <div className="prototype-avatar" aria-hidden><MascotBadge size={36} /></div>
                   </header>
 
                   <section className="prototype-dose-card prototype-dose-hero">
-                    <div className="prototype-dose-hero-copy">
-                      <span className="prototype-label">Próxima aplicação</span>
-                      <p className="prototype-dose-name">{st.medicamento} · {st.dose}</p>
-                      <p className="prototype-dose-meta">{st.aplicacoes.length ? nextReminderLabel : "Nenhuma aplicação registrada"}</p>
-                    </div>
+                    <span className="prototype-label">Próxima aplicação</span>
                     <div className="prototype-dose-ring" aria-label={st.aplicacoes.length ? nextReminderLabel : "Aguardando primeiro registro"}>
                       <strong>{st.aplicacoes.length ? "✓" : "—"}</strong>
                       <span>{st.aplicacoes.length ? "registrada" : "comece aqui"}</span>
                     </div>
+                    <div className="prototype-dose-date">{st.aplicacoes.length ? nextReminderLabel : "Registre sua primeira aplicação"}</div>
                     <button type="button" onClick={() => startFlow("aplicacao")}>Registrar aplicação</button>
                   </section>
 
