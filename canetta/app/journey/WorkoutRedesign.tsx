@@ -186,7 +186,18 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
           </div>
         )}
 
-        {/* Cartão de dose: a decisão do dia num lugar só — check-in, estado e início da sessão. */}
+        {checkinComplete && (
+          <div className="workout-session-compact" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 14px", background: colors.surface, border: `1.5px solid ${colors.line}`, borderRadius: 16 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ ...label, fontSize: 9.5, color: colors.brand }}>Sessão {selectedDay + 1} · check-in concluído</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: colors.ink, marginTop: 3 }}>{dayNames[selectedDay]}</div>
+              <div style={{ ...tabular, fontSize: 11.5, color: colors.soft, marginTop: 2 }}>{completedSets}/{totalSets} séries · ~{sessionMinutes} min</div>
+            </div>
+            <button type="button" onClick={() => startExecution(selectedDay, 0)} style={{ flexShrink: 0, border: "none", borderRadius: 12, background: colors.pine, color: colors.onDark, padding: "11px 13px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{completedSets ? "Continuar" : "Iniciar"}</button>
+          </div>
+        )}
+
+        {/* Cartão de dose: a decisão de segurança do dia fica destacado apenas quando necessário. */}
         <section className={`workout-session-card${checkinComplete ? " workout-session-card--complete" : ""}`} style={{ background: checkinComplete ? colors.mint : colors.pine, borderRadius: 16, padding: checkinComplete ? "14px 16px 12px" : "18px 18px 16px", color: checkinComplete ? colors.ink : colors.onDark }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
             <div style={{ ...label, fontSize: 10, color: checkinComplete ? colors.brand : colors.onDarkSoft }}>Sessão {selectedDay + 1} de {plan.workouts.length} · semana de {weekLabel}</div>
