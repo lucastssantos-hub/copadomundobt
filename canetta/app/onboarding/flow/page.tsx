@@ -155,6 +155,26 @@ export default function OnboardingFlowPage() {
   const back = () => setSt((s) => ({ ...s, i: Math.max(1, s.i - 1) }));
   const goto27 = () => set({ i: 27 });
 
+  // Campos que alimentam o resumo, lembretes e o contexto de segurança.
+  // Mantemos peso/altura e demais registros opcionais, como no protótipo.
+  const stepComplete: Record<number, boolean> = {
+    6: Boolean(st.estagio),
+    7: Boolean(st.medicamento),
+    9: Boolean(st.dose),
+    10: Boolean(st.freq),
+    14: Boolean(st.fase && st.doseTrend),
+    15: Boolean(st.dificuldade),
+  };
+  const canAdvance = stepComplete[st.i] ?? true;
+  const guardedNext = () => {
+    if (canAdvance) next();
+  };
+  const continueStyle = (enabled = canAdvance): CSSProperties => ({
+    ...primaryBtn,
+    opacity: enabled ? 1 : 0.45,
+    cursor: enabled ? "pointer" : "not-allowed",
+  });
+
   const finishToJourney = async () => {
     const payload = {
       nome: st.nome,
@@ -424,7 +444,7 @@ export default function OnboardingFlowPage() {
           <div style={{ ...title, margin: "18px 0 22px" }}>{nomeDisplay}, onde você está na sua jornada GLP-1?</div>
           <ChoiceList options={["Já uso GLP-1", "Quero começar", "Ainda não decidi"]} current={st.estagio} onPick={(v) => set({ estagio: v })} pad="18px" fontSize={15.5} gap={12} />
           <div style={spacer} />
-          <button onClick={next} style={primaryBtn}>Continuar</button>
+          <button onClick={guardedNext} disabled={!canAdvance} style={continueStyle()}>Continuar</button>
         </div>
       )}
 
@@ -440,7 +460,7 @@ export default function OnboardingFlowPage() {
             ))}
           </div>
           <div style={spacer} />
-          <button onClick={next} style={{ ...primaryBtn, marginTop: 14 }}>Continuar</button>
+          <button onClick={guardedNext} disabled={!canAdvance} style={{ ...continueStyle(), marginTop: 14 }}>Continuar</button>
         </div>
       )}
 
@@ -468,7 +488,7 @@ export default function OnboardingFlowPage() {
           <div style={{ ...subLine, marginBottom: 16 }}>{isTirzepatideMedication(st.medicamento) ? "Doses comuns de tirzepatida. O Canetta não valida nem sugere dose." : "O Canetta não valida nem sugere dose."}</div>
           <ChoiceList options={doseOptionsForMedication(st.medicamento)} current={st.dose} onPick={(v) => set({ dose: v })} />
           <div style={spacer} />
-          <button onClick={next} style={primaryBtn}>Continuar</button>
+          <button onClick={guardedNext} disabled={!canAdvance} style={continueStyle()}>Continuar</button>
         </div>
       )}
 
@@ -479,7 +499,7 @@ export default function OnboardingFlowPage() {
           <div style={{ ...title, margin: "18px 0 22px" }}>Com que frequência você aplica?</div>
           <ChoiceList options={["Diária", "Semanal", "Quinzenal", "Mensal", "Ainda não sei"]} current={st.freq} onPick={(v) => set({ freq: v })} />
           <div style={spacer} />
-          <button onClick={next} style={primaryBtn}>Continuar</button>
+          <button onClick={guardedNext} disabled={!canAdvance} style={continueStyle()}>Continuar</button>
         </div>
       )}
 
@@ -549,7 +569,7 @@ export default function OnboardingFlowPage() {
             ))}
           </div>
           <div style={spacer} />
-          <button onClick={next} style={primaryBtn}>Continuar</button>
+          <button onClick={guardedNext} disabled={!canAdvance} style={continueStyle()}>Continuar</button>
         </div>
       )}
 
@@ -580,7 +600,7 @@ export default function OnboardingFlowPage() {
           <div style={{ ...title, margin: "18px 0 20px" }}>Qual sua maior dificuldade hoje?</div>
           <ChoiceList options={["Atividade física e massa magra", "Fome à noite", "Náusea", "Constipação", "Fim de semana", "Esquecimento", "Ainda não sei"]} current={st.dificuldade} onPick={(v) => { set({ dificuldade: v }); setDifficultyInsightOpen(true); }} />
           <div style={spacer} />
-          <button onClick={next} style={primaryBtn}>Continuar</button>
+          <button onClick={guardedNext} disabled={!canAdvance} style={continueStyle()}>Continuar</button>
         </div>
       )}
 
