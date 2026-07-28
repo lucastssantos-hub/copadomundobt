@@ -1392,23 +1392,20 @@ export default function JourneyPage() {
             <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
               {flowHeader("Registrar aplicação", cancelFlow)}
               <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", flex: 1 }}>
-                <div>
-                  <div style={fieldLabel}>DATA E HORA</div>
-                  <input className="j-in" type="datetime-local" value={st.draft.dataHora || ""} onChange={(e) => setDraft({ dataHora: e.target.value })} style={inputSt} />
+                <div className="registration-meta-card">
+                  <span className="registration-meta-icon">◷</span>
+                  <div style={{ flex: 1 }}><div style={fieldLabel}>QUANDO</div><input className="j-in" aria-label="Data e hora da aplicação" type="datetime-local" value={st.draft.dataHora || ""} onChange={(e) => setDraft({ dataHora: e.target.value })} style={{ ...inputSt, padding: "8px 0", border: "none", background: "transparent" }} /></div>
                 </div>
                 <div>
                   <div style={fieldLabel}>MEDICAMENTO E DOSE</div>
                   <div style={{ padding: "14px 16px", borderRadius: 14, background: "#EAF5F2", fontSize: 14.5, fontWeight: 700, color: "#0E6B5C" }}>{st.medicamento} · {st.dose}</div>
                 </div>
-                <div>
-                  <div style={{ ...fieldLabel, marginBottom: 8 }}>LOCAL NO CORPO</div>
-                  <div style={{ position: "relative", width: 150, height: 210, margin: "0 auto" }}>
-                    <div style={{ position: "absolute", top: 0, left: 0 }} dangerouslySetInnerHTML={{ __html: BODY_SVG }} />
-                    {REGION_COORDS.map((r) => (
-                      <button className="map-point" key={r.label} type="button" aria-label={r.label} aria-pressed={st.draft.local === r.label} onClick={() => setDraft({ local: r.label })} style={{ position: "absolute", left: r.left, top: r.top, width: 26, height: 26, minHeight: 26, padding: 0, borderRadius: "50%", background: st.draft.local === r.label ? "#0E6B5C" : "#8DA9A2", border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.2)", cursor: "pointer" }} />
-                    ))}
+                <div className="registration-sites">
+                  <div style={{ ...fieldLabel, marginBottom: 8 }}>ONDE VOCÊ APLICOU?</div>
+                  <div className="registration-site-grid">
+                    {["Abdômen", "Coxa", "Braço"].map((label) => <button key={label} type="button" aria-pressed={st.draft.local === label} onClick={() => setDraft({ local: label })}><span className="registration-site-icon">✚</span><span>{label}</span></button>)}
                   </div>
-                  <div style={{ textAlign: "center", fontSize: 13, fontWeight: 700, color: "#0E6B5C", marginTop: 8 }}>{st.draft.local || "Toque em um ponto do corpo"}</div>
+                  <div className="registration-info-card">ⓘ <span>Alterne o local a cada aplicação para acompanhar sua rotina com mais clareza.</span></div>
                 </div>
                 <div>
                   <div style={fieldLabel}>OBSERVAÇÃO (OPCIONAL)</div>

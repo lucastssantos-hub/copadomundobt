@@ -510,7 +510,8 @@ a:focus-visible {
 /* Registro de aplicação — linguagem visual do protótipo v2, mantendo os
    campos e ações reais do fluxo de produção. */
 .canetta-journey .registration-v2 {
-  background: var(--paper);
+  background: #eef8fa;
+  font-family: "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .canetta-journey .registration-v2 > .j-in,
@@ -551,6 +552,48 @@ a:focus-visible {
 .canetta-journey .registration-v2 [aria-pressed="true"] {
   box-shadow: 0 0 0 3px rgba(30, 95, 78, .08);
 }
+
+.canetta-journey .registration-meta-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #d0e8ee;
+  border-radius: 16px;
+  background: #fff;
+}
+.canetta-journey .registration-meta-icon,
+.canetta-journey .registration-site-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: #e0f2f6;
+  color: #0891b2;
+  font-size: 20px;
+  font-weight: 800;
+}
+.canetta-journey .registration-sites { display: flex; flex-direction: column; }
+.canetta-journey .registration-site-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.canetta-journey .registration-site-grid button {
+  display: flex;
+  min-height: 96px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d0e8ee;
+  border-radius: 16px;
+  background: #fff;
+  color: #0c3a44;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.canetta-journey .registration-site-grid button[aria-pressed="true"] { border-color: #0891b2; background: #e0f2f6; }
+.canetta-journey .registration-site-grid button[aria-pressed="true"] .registration-site-icon { background: #0891b2; color: #fff; }
+.canetta-journey .registration-info-card { display: flex; gap: 8px; margin-top: 10px; padding: 11px 12px; border-radius: 12px; background: #e6f7ef; color: #065f46; font-size: 11.5px; line-height: 1.4; }
 
 .canetta-journey .registration-v2 .j-in:focus,
 .canetta-journey .registration-v2 textarea:focus {
