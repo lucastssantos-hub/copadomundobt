@@ -1488,12 +1488,14 @@ export default function JourneyPage() {
           {st.registerFlow === "peso" && (
             <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px" }}>
               {flowHeader("Registrar peso", cancelFlow)}
+              <div style={{ fontSize: 14, color: "#4F6D76", lineHeight: 1.5, marginBottom: 16 }}>Anote seu peso de hoje — leva 5 segundos.</div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-                  <button onClick={() => setDraft({ pesoKg: (st.draft.pesoKg ?? lastPeso()) - 1 })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>−</button>
-                  <div style={{ fontSize: 44, fontWeight: 800, color: "#16302B", fontVariantNumeric: "tabular-nums", minWidth: 150, textAlign: "center" }}>{st.draft.pesoKg ?? lastPeso()}<span style={{ fontSize: 18, color: "#596E68", fontWeight: 700 }}> kg</span></div>
-                  <button onClick={() => setDraft({ pesoKg: (st.draft.pesoKg ?? lastPeso()) + 1 })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #E2E7E2", fontSize: 22, fontWeight: 700, color: "#0E6B5C", cursor: "pointer" }}>+</button>
+                  <button aria-label="Diminuir peso" onClick={() => setDraft({ pesoKg: Math.max(30, Number(((st.draft.pesoKg ?? lastPeso()) - 0.1).toFixed(1))) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #D0E8EE", fontSize: 22, fontWeight: 700, color: "#0891B2", cursor: "pointer" }}>−</button>
+                  <label style={{ display: "flex", alignItems: "baseline", gap: 6 }}><input aria-label="Peso em quilogramas" type="number" min={30} max={300} step={0.1} value={st.draft.pesoKg ?? lastPeso()} onChange={(event) => setDraft({ pesoKg: Number(event.target.value) })} className="registration-weight-input" /><span style={{ fontSize: 18, color: "#4F6D76", fontWeight: 700 }}>kg</span></label>
+                  <button aria-label="Aumentar peso" onClick={() => setDraft({ pesoKg: Math.min(300, Number(((st.draft.pesoKg ?? lastPeso()) + 0.1).toFixed(1))) })} style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: "1.5px solid #D0E8EE", fontSize: 22, fontWeight: 700, color: "#0891B2", cursor: "pointer" }}>+</button>
                 </div>
+                <div style={{ width: "100%", fontSize: 12, color: "#4F6D76", textAlign: "center" }}>O peso é um dos sinais da sua jornada. O Canetta guarda o histórico sem julgar o número.</div>
                 <div style={{ width: "100%", ...cardWhite, padding: "14px 16px" }}>
                   <div style={{ ...fieldLabel, marginBottom: 8 }}>ESPELHO DE REGISTROS</div>
                   {st.pesos.length ? (

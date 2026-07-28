@@ -594,6 +594,9 @@ a:focus-visible {
 .canetta-journey .registration-site-grid button[aria-pressed="true"] { border-color: #0891b2; background: #e0f2f6; }
 .canetta-journey .registration-site-grid button[aria-pressed="true"] .registration-site-icon { background: #0891b2; color: #fff; }
 .canetta-journey .registration-info-card { display: flex; gap: 8px; margin-top: 10px; padding: 11px 12px; border-radius: 12px; background: #e6f7ef; color: #065f46; font-size: 11.5px; line-height: 1.4; }
+.canetta-journey .registration-weight-input { width: 132px; border: 0; outline: 0; background: transparent; color: #0c3a44; font-size: 48px; font-weight: 800; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.canetta-journey .registration-weight-input::-webkit-inner-spin-button,
+.canetta-journey .registration-weight-input::-webkit-outer-spin-button { margin: 0; }
 
 .canetta-journey .registration-v2 .j-in:focus,
 .canetta-journey .registration-v2 textarea:focus {
