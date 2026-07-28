@@ -93,15 +93,6 @@ const INITIAL: AppState = {
   aplicacoes: [], dosesNaoAplicadas: [], sintomas: [], pesos: [], rotinas: [], medidas: [], nutricao: [], perguntas: [], treinos: [], exercises: [], toastMsg: "",
 };
 
-const REGION_COORDS = [
-  { label: "Abdômen (esq.)", left: "38%", top: "38%" },
-  { label: "Abdômen (dir.)", left: "56%", top: "38%" },
-  { label: "Coxa (esq.)", left: "36%", top: "66%" },
-  { label: "Coxa (dir.)", left: "58%", top: "66%" },
-  { label: "Braço (esq.)", left: "8%", top: "36%" },
-  { label: "Braço (dir.)", left: "82%", top: "36%" },
-];
-
 const fmtDate = (d: Date) => d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
 const fmtDateTime = (d: Date) => d.toLocaleString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const toDatetimeLocal = (d: Date) => {
@@ -211,7 +202,6 @@ const MASCOT_BADGE = `<svg width="36" height="36" viewBox="0 0 32 32" xmlns="htt
 function MascotBadge({ size = 36 }: { size?: number }) {
   return <div style={{ width: size }} dangerouslySetInnerHTML={{ __html: MASCOT_BADGE }} />;
 }
-const BODY_SVG = `<svg width="150" height="210" viewBox="0 0 150 210"><ellipse cx="75" cy="24" rx="18" ry="20" fill="#E2E7E2"/><rect x="45" y="44" width="60" height="90" rx="26" fill="#E2E7E2"/><rect x="18" y="52" width="20" height="80" rx="10" fill="#E2E7E2"/><rect x="112" y="52" width="20" height="80" rx="10" fill="#E2E7E2"/><rect x="52" y="132" width="20" height="70" rx="10" fill="#E2E7E2"/><rect x="78" y="132" width="20" height="70" rx="10" fill="#E2E7E2"/></svg>`;
 
 function IconGlyph({ name, size = 18 }: { name: string; size?: number }) {
   const paths: Record<string, string> = {
