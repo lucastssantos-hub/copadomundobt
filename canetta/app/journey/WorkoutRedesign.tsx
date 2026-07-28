@@ -186,18 +186,22 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
           </div>
         )}
 
-        {checkinComplete && (
-          <div className="workout-session-compact" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 14px", background: colors.surface, border: `1.5px solid ${colors.line}`, borderRadius: 16 }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ ...label, fontSize: 9.5, color: colors.brand }}>Sessão {selectedDay + 1} · check-in concluído</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: colors.ink, marginTop: 3 }}>{dayNames[selectedDay]}</div>
-              <div style={{ ...tabular, fontSize: 11.5, color: colors.soft, marginTop: 2 }}>{completedSets}/{totalSets} séries · ~{sessionMinutes} min</div>
-            </div>
-            <button type="button" onClick={() => startExecution(selectedDay, 0)} style={{ flexShrink: 0, border: "none", borderRadius: 12, background: colors.pine, color: colors.onDark, padding: "11px 13px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{completedSets ? "Continuar" : "Iniciar"}</button>
+        {!checkinToday ? (
+          <button type="button" onClick={onOpenCheckin} style={{ width: "100%", border: `1.5px solid ${colors.mintLine}`, borderRadius: 14, background: colors.mint, color: colors.brand, padding: "13px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", textAlign: "left" }}>
+            Fazer check-in de hoje
+            <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: colors.soft, marginTop: 3 }}>1 minuto · decide se hoje é dia normal, leve ou de pausa</span>
+          </button>
+        ) : isRed ? (
+          <div className="workout-safety-alert" style={{ borderRadius: 14, background: colors.warningBg, border: `1.5px solid ${colors.warningLine}`, padding: "13px 14px", color: colors.warning }}>
+            <div style={{ ...label, marginBottom: 3 }}>Hoje é dia de pausa</div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>{checkinToday.motivos.join(" ") || "O check-in indicou pausa."} Se os sintomas persistirem, procure avaliação.</div>
+            <button type="button" onClick={onOpenCheckin} style={{ marginTop: 8, border: "none", background: "transparent", color: colors.warning, padding: 0, fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Refazer check-in</button>
           </div>
+        ) : (
+          <button type="button" onClick={onOpenCheckin} style={{ width: "100%", border: "none", background: "transparent", color: colors.brand, padding: "4px 2px", fontSize: 11.5, fontWeight: 800, cursor: "pointer", textAlign: "left" }}>Check-in concluído · refazer check-in</button>
         )}
 
-        {/* Cartão de dose: a decisão de segurança do dia fica destacado apenas quando necessário. */}
+        {/* Cartão de dose mantido apenas para os estados de segurança que exigem orientação adicional. */}
         <section className={`workout-session-card${checkinComplete ? " workout-session-card--complete" : ""}`} style={{ background: checkinComplete ? colors.mint : colors.pine, borderRadius: 16, padding: checkinComplete ? "14px 16px 12px" : "18px 18px 16px", color: checkinComplete ? colors.ink : colors.onDark }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
             <div style={{ ...label, fontSize: 10, color: checkinComplete ? colors.brand : colors.onDarkSoft }}>Sessão {selectedDay + 1} de {plan.workouts.length} · semana de {weekLabel}</div>

@@ -631,6 +631,7 @@ a:focus-visible {
 .canetta-journey .training-week-card button { background: #059669 !important; border-radius: 16px !important; }
 .canetta-journey .training-prototype-mode .workout-redesign { color: #0c3a44; }
 .canetta-journey .training-prototype-mode .workout-session-card { background: #0c3a44 !important; border-radius: 24px !important; box-shadow: 0 8px 18px rgba(12, 58, 68, .12); }
+.canetta-journey .training-prototype-mode .workout-session-card { display: none !important; }
 .canetta-journey .training-prototype-mode .workout-session-card.workout-session-card--complete { background: #e3f2ef !important; }
 .canetta-journey .training-prototype-mode .workout-session-card.workout-session-card--complete { display: none !important; }
 .canetta-journey .training-prototype-mode .workout-session-card button { border-radius: 16px !important; }
