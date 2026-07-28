@@ -1575,7 +1575,7 @@ export default function JourneyPage() {
 
           {/* NUTRIÇÃO */}
           {st.registerFlow === "nutricao" && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
+            <div className="nutrition-checkin-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
               {flowHeader("Check-in nutricional", cancelFlow)}
               <div style={{ display: "flex", gap: 5, marginBottom: 18 }} aria-label={`Etapa ${st.nutritionStep + 1} de 6`}>{Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 9, background: i <= st.nutritionStep ? "#0E6B5C" : "#E2E7E2" }} />)}</div>
               <div style={{ ...cardWhite, padding: "14px 16px", fontSize: 12.5, color: "#4B5F59", lineHeight: 1.45, marginBottom: 22 }}><strong style={{ color: "#16302B" }}>{st.nutritionStep === 0 ? "Vamos observar o que importa hoje." : "Cada resposta ajuda a acompanhar sua tolerância e energia."}</strong><br />O Canetta organiza sinais para você conversar com seu profissional. Ele não conclui sozinho se sua ingestão é suficiente nem prescreve calorias.</div>

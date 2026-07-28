@@ -603,6 +603,11 @@ a:focus-visible {
 .canetta-journey .registration-symptom-list strong { display: block; font-size: 13.5px; font-weight: 700; }
 .canetta-journey .registration-symptom-list small { display: block; margin-top: 3px; color: #4f6d76; font-size: 11px; }
 .canetta-journey .registration-symptom-list button > span:last-child { color: #0891b2; font-size: 18px; font-weight: 800; }
+.canetta-journey .nutrition-checkin-v2 { background: #eef8fa; font-family: "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.canetta-journey .nutrition-checkin-v2 .j-in { border-color: #d0e8ee; background: #fff; }
+.canetta-journey .nutrition-checkin-v2 button[style*="#0E6B5C"] { background: #0891b2 !important; }
+.canetta-journey .nutrition-checkin-v2 > div[aria-label^="Etapa"] > div { background: #d0e8ee !important; }
+.canetta-journey .nutrition-checkin-v2 > div[aria-label^="Etapa"] > div[style*="#0E6B5C"] { background: #0891b2 !important; }
 
 .canetta-journey .registration-v2 .j-in:focus,
 .canetta-journey .registration-v2 textarea:focus {
