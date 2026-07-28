@@ -288,6 +288,7 @@ export default function JourneyPage() {
   const [reassessmentDraft, setReassessmentDraft] = useState({ anchorStrength: "", functionLevel: "", painLevel: "", adherence: "", medicationChange: false, note: "" });
   const [mediaPreview, setMediaPreview] = useState<{ url: string; name: string } | null>(null);
   const [calorieInput, setCalorieInput] = useState("");
+  const [nutritionDetailsOpen, setNutritionDetailsOpen] = useState(false);
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [mealName, setMealName] = useState("");
   const [mealFood, setMealFood] = useState("");
@@ -2015,7 +2016,7 @@ export default function JourneyPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 12, fontSize: 12, color: "#596E68" }}><span>Água registrada</span><strong style={{ color: "#0E6B5C" }}>{waterToday} copo(s)</strong></div>
                   {!mealsToday.length && <div style={{ marginTop: 11, padding: "9px 10px", borderRadius: 10, background: "#FFF8F2", color: "#75443C", fontSize: 11.5, lineHeight: 1.4 }}>Poucos dados para interpretar seu dia. Comece registrando uma refeição.</div>}
                 </section>
-                <section style={{ ...cardWhite, background: "#FFFDF8" }}>
+                <section style={{ ...cardWhite, background: "#FFFDF8", display: nutritionDetailsOpen ? "flex" : "none", flexDirection: "column" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Padrão da semana</div><span style={{ fontSize: 11.5, color: "#596E68" }}>últimos 7 dias</span></div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
                     <div style={{ padding: "10px 11px", borderRadius: 11, background: "#fff", border: "1px solid #E2E7E2" }}><div style={{ fontSize: 10, color: "#596E68" }}>Média de calorias</div><div style={{ fontSize: 18, fontWeight: 850, color: "#16302B", marginTop: 4 }}>{nutritionAverageCalories ? nutritionAverageCalories.toFixed(0) : "—"} <small style={{ fontSize: 10, color: "#596E68" }}>kcal/dia</small></div></div>
@@ -2030,7 +2031,7 @@ export default function JourneyPage() {
                   <div style={{ fontSize: 11.5, color: "#BEE0D6", lineHeight: 1.4, marginTop: 10 }}>A meta é opcional e só deve ser usada se já foi combinada com seu profissional.</div>
                   <div style={{ display: "flex", gap: 8, marginTop: 14 }}><input aria-label="Calorias da refeição" inputMode="numeric" type="number" min={1} max={10000} value={calorieInput} onChange={(event) => setCalorieInput(event.target.value)} placeholder="kcal" style={{ ...inputSt, flex: 1, minWidth: 0, background: "#fff", color: "#16302B", border: "none", padding: "11px 12px" }} /><button type="button" onClick={addNutritionCalories} style={{ padding: "10px 13px", border: "none", borderRadius: 12, background: "#E08A5B", color: "#17201C", fontSize: 12.5, fontWeight: 850, cursor: "pointer" }}>Adicionar</button></div>
                 </section>
-                <section style={{ ...cardWhite }}>
+                <section style={{ ...cardWhite, display: nutritionDetailsOpen ? "flex" : "none", flexDirection: "column" }}>
                   <div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Adicionar refeição manual</div>
                   <div style={{ fontSize: 12, color: "#596E68", lineHeight: 1.4, marginTop: 3 }}>Os valores vêm da informação que você confirmar. O cálculo é feito pelo Canetta.</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
@@ -2045,7 +2046,7 @@ export default function JourneyPage() {
                   </div>
                   <button type="button" disabled={busyAction === "meal-save"} onClick={saveManualMeal} style={{ ...primaryBtn, padding: 12, fontSize: 13.5, marginTop: 12, opacity: busyAction === "meal-save" ? 0.6 : 1 }}>{busyAction === "meal-save" ? "Salvando…" : "Salvar refeição"}</button>
                 </section>
-                <section style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7" }}>
+                <section style={{ ...cardWhite, background: "#F8FBF8", borderColor: "#CFE0D7", display: nutritionDetailsOpen ? "flex" : "none", flexDirection: "column" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><div><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Meta diária (opcional)</div><div style={{ fontSize: 12, color: "#596E68", marginTop: 3 }}>Use somente uma meta definida com seu profissional.</div></div><div style={{ fontSize: 14, fontWeight: 850, color: "#0E6B5C" }}>{st.nutritionCalorieTarget ? `${st.nutritionCalorieTarget} kcal` : "Sem meta"}</div></div>
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}><input aria-label="Meta diária de calorias" inputMode="numeric" type="number" min={0} max={10000} value={st.nutritionCalorieTarget || ""} onChange={(event) => set({ nutritionCalorieTarget: Math.max(0, Number(event.target.value) || 0) })} placeholder="Ex.: 1800" style={{ ...inputSt, flex: 1, minWidth: 0, padding: "11px 12px" }} /><button type="button" onClick={() => set({ nutritionCalorieTarget: 0 })} style={{ padding: "10px 12px", border: "1.5px solid #D7E1DC", borderRadius: 12, background: "#fff", color: "#0E6B5C", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Limpar</button></div>
                 </section>
@@ -2054,7 +2055,8 @@ export default function JourneyPage() {
                   <div style={{ fontSize: 12.5, color: "#596E68", lineHeight: 1.45 }}>Fotografe sua refeição para manter um registro visual. O Canetta não estima calorias automaticamente.</div>
                   <label style={{ width: "100%", padding: "12px 14px", borderRadius: 13, background: "#0E6B5C", color: "#fff", fontSize: 13, fontWeight: 850, textAlign: "center", cursor: "pointer" }}>{busyAction === "nutrition-photo" ? "Registrando…" : "Tirar ou escolher foto"}<input aria-label="Tirar ou escolher foto da refeição" type="file" accept="image/*" capture="environment" disabled={busyAction === "nutrition-photo"} onChange={(event) => { void registerNutritionPhoto(event.target.files?.[0]); event.currentTarget.value = ""; }} style={{ display: "none" }} /></label>
                 </section>
-                <section style={{ ...cardWhite }}>
+                <button type="button" className="nutrition-more-toggle" onClick={() => setNutritionDetailsOpen((open) => !open)} aria-expanded={nutritionDetailsOpen}><span>{nutritionDetailsOpen ? "Ocultar detalhes" : "Ver metas, histórico e registro manual"}</span><span>{nutritionDetailsOpen ? "⌃" : "⌄"}</span></button>
+                <section style={{ ...cardWhite, display: nutritionDetailsOpen ? "flex" : "none", flexDirection: "column" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><div style={{ fontSize: 15, fontWeight: 850, color: "#16302B" }}>Refeições recentes</div><span style={{ fontSize: 12, color: "#596E68" }}>{mealEntries.length} registro(s)</span></div>
                   {mealEntries.length ? <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 12 }}>{mealEntries.slice(0, 5).map((meal) => <div key={meal.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingBottom: 9, borderBottom: "1px solid #E9E5DC" }}><div style={{ minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 800, color: "#16302B" }}>{meal.label}</div><div style={{ fontSize: 11.5, color: "#596E68", marginTop: 2 }}>{meal.loggedAt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {meal.proteinG.toFixed(1)} g proteína</div>{meal.label.includes("revisão pendente") && <button type="button" onClick={() => { setPhotoReviewId(meal.id); setMealFood(""); setMealGrams(""); setMealKcal(""); }} style={{ marginTop: 6, border: "none", background: "transparent", padding: 0, color: "#0E6B5C", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>Revisar foto</button>}</div><strong style={{ color: "#0E6B5C", fontSize: 13 }}>{meal.calories.toFixed(0)} kcal</strong></div>)}</div> : <div style={{ fontSize: 12.5, color: "#596E68", marginTop: 10 }}>As refeições confirmadas aparecerão aqui.</div>}
                   {mealEntries.length > 0 && <div style={{ fontSize: 11.5, color: "#596E68", marginTop: 10 }}>Totais calculados a partir dos itens e porções informados.</div>}

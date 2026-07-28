@@ -619,6 +619,7 @@ a:focus-visible {
 .canetta-journey .nutrition-calorie-card button { background: #059669 !important; color: #fff !important; }
 .canetta-journey .nutrition-photo-card { border-radius: 20px !important; border-color: #d0e8ee !important; background: #fff !important; }
 .canetta-journey .nutrition-photo-card label { background: #059669 !important; border-radius: 16px !important; }
+.canetta-journey .nutrition-more-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 14px 16px; border: 1px solid #d0e8ee; border-radius: 16px; background: #fff; color: #0891b2; font-size: 13px; font-weight: 800; cursor: pointer; }
 
 .canetta-journey .registration-v2 .j-in:focus,
 .canetta-journey .registration-v2 textarea:focus {
