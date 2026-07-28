@@ -1470,13 +1470,13 @@ export default function JourneyPage() {
           {/* SINTOMA */}
           {st.registerFlow === "sintoma" && (
             <div className="registration-v2" style={{ flex: 1, display: "flex", flexDirection: "column", padding: "20px 24px 24px", overflowY: "auto" }}>
-              {flowHeader("Registrar sintoma", cancelFlow)}
-              <div style={{ ...fieldLabel, marginBottom: 8 }}>QUAL SINTOMA?</div>
-              <div style={{ marginBottom: 20 }}><ChipRow options={["Náusea", "Vômitos", "Diarreia", "Constipação", "Refluxo", "Dor abdominal", "Fadiga", "Dor de cabeça", "Outro"]} current={st.draft.tipo} onPick={(v) => setDraft({ tipo: v })} radius={20} wrap /></div>
-              <div style={{ ...fieldLabel, marginBottom: 8 }}>INTENSIDADE</div>
-              <div style={{ marginBottom: 20 }}><IntensityLevel /></div>
-              <div style={{ ...fieldLabel, marginBottom: 8 }}>QUANTO DUROU?</div>
-              <div style={{ marginBottom: 20 }}><ChipRow options={["<1h", "1–3h", ">3h", "O dia todo"]} current={st.draft.duracao} onPick={(v) => setDraft({ duracao: v })} equal /></div>
+              {flowHeader("Como me sinto", cancelFlow)}
+              <div style={{ fontSize: 14, color: "#4F6D76", lineHeight: 1.5, marginBottom: 16 }}>Como seu corpo está hoje? Isso ajuda nas suas consultas.</div>
+              <div style={{ ...fieldLabel, marginBottom: 8 }}>ESCOLHA UMA OPÇÃO</div>
+              <div className="registration-symptom-list">
+                {["Estou bem hoje", "Náusea", "Constipação", "Cansaço", "Azia / refluxo"].map((label) => { const selected = st.draft.tipo === label || (label === "Estou bem hoje" && st.draft.tipo === "Sem sintomas"); return <button key={label} type="button" aria-pressed={selected} onClick={() => setDraft({ tipo: label === "Estou bem hoje" ? "Sem sintomas" : label, intensidade: label === "Estou bem hoje" ? 0 : st.draft.intensidade })}><span><strong>{label}</strong>{label === "Estou bem hoje" && <small>Sem sintomas para registrar</small>}</span><span aria-hidden>{selected ? "✓" : ""}</span></button>; })}
+              </div>
+              {st.draft.tipo && st.draft.tipo !== "Sem sintomas" && <><div style={{ ...fieldLabel, margin: "18px 0 8px" }}>QUAL A INTENSIDADE, DE 0 A 10?</div><div style={{ marginBottom: 20 }}><IntensityLevel /></div><div style={{ ...fieldLabel, marginBottom: 8 }}>QUANTO DUROU?</div><div style={{ marginBottom: 20 }}><ChipRow options={["<1h", "1–3h", ">3h", "O dia todo"]} current={st.draft.duracao} onPick={(v) => setDraft({ duracao: v })} equal /></div></>}
               <div style={{ ...fieldLabel, marginBottom: 8 }}>OBSERVAÇÃO <span style={{ fontWeight: 600, color: "#859891" }}>(opcional)</span></div>
               <textarea className="j-in" value={st.draft.nota || ""} onChange={(e) => setDraft({ nota: e.target.value })} placeholder="Ex.: começou depois da refeição" style={{ ...textareaSt, minHeight: 60, fontSize: 13.5, marginBottom: 14 }} />
               <div style={{ fontSize: 11.5, color: "#859891", lineHeight: 1.5, marginBottom: 4 }}>O Canetta organiza o que você registra e não interpreta sintomas. Procure seu médico para orientações.</div>

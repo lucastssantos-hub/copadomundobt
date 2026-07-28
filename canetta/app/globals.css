@@ -597,6 +597,12 @@ a:focus-visible {
 .canetta-journey .registration-weight-input { width: 132px; border: 0; outline: 0; background: transparent; color: #0c3a44; font-size: 48px; font-weight: 800; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
 .canetta-journey .registration-weight-input::-webkit-inner-spin-button,
 .canetta-journey .registration-weight-input::-webkit-outer-spin-button { margin: 0; }
+.canetta-journey .registration-symptom-list { display: flex; flex-direction: column; gap: 9px; }
+.canetta-journey .registration-symptom-list button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 54px; padding: 13px 15px; border: 1px solid #d0e8ee; border-radius: 14px; background: #fff; color: #0c3a44; text-align: left; cursor: pointer; }
+.canetta-journey .registration-symptom-list button[aria-pressed="true"] { border-color: #0891b2; background: #e0f2f6; }
+.canetta-journey .registration-symptom-list strong { display: block; font-size: 13.5px; font-weight: 700; }
+.canetta-journey .registration-symptom-list small { display: block; margin-top: 3px; color: #4f6d76; font-size: 11px; }
+.canetta-journey .registration-symptom-list button > span:last-child { color: #0891b2; font-size: 18px; font-weight: 800; }
 
 .canetta-journey .registration-v2 .j-in:focus,
 .canetta-journey .registration-v2 textarea:focus {
