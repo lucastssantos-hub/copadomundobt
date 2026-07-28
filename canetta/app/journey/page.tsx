@@ -1663,6 +1663,17 @@ export default function JourneyPage() {
                     <div className="prototype-avatar" aria-hidden><MascotBadge size={36} /></div>
                   </header>
 
+                  <section className="prototype-focus-card" aria-label="Foco de hoje">
+                    <div>
+                      <span className="prototype-label">Foco de hoje</span>
+                      <p>{st.aplicacoes.length ? "Como você está respondendo ao tratamento?" : "Comece registrando sua primeira aplicação."}</p>
+                      <small>{st.aplicacoes.length ? "Um check-in curto ajuda a manter sua jornada atualizada." : "Depois, você poderá acompanhar sintomas, peso e rotina."}</small>
+                    </div>
+                    <button type="button" onClick={() => startFlow(st.aplicacoes.length ? "sintoma" : "aplicacao")}>
+                      {st.aplicacoes.length ? "Fazer check-in" : "Começar"}
+                    </button>
+                  </section>
+
                   <section className="prototype-dose-card">
                     <div>
                       <span className="prototype-label">Próxima dose</span>
