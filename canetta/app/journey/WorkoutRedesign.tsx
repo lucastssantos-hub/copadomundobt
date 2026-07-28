@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { AiWorkoutPlanRow, TrainingProfileRow } from "./actions";
 
 type Workout = AiWorkoutPlanRow["workouts"][number];
@@ -90,7 +90,7 @@ function DoseDial({ total, filled, onDark = false }: { total: number; filled: nu
   );
 }
 
-export default function WorkoutRedesign({ plan, training, onGenerate, generating, onOpenAnamnese, onOpenTriage, onOpenReassessment, onOpenMedia, onRecordExercise, checkin, onOpenCheckin, isYellow }: Props) {
+export default function WorkoutRedesign({ plan, onGenerate, generating, onOpenAnamnese, onOpenTriage, onOpenReassessment, onOpenMedia, onRecordExercise, checkin, onOpenCheckin, isYellow }: Props) {
   const [selectedDay, setSelectedDay] = useState(0);
   const [showWhy, setShowWhy] = useState(false);
   const [execution, setExecution] = useState<{ day: number; exercise: number } | null>(null);
@@ -101,8 +101,6 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
   const exercises = workout?.exercises ?? [];
   const executionWorkout = execution ? plan.workouts[execution.day] : null;
   const executionExercise = execution && executionWorkout ? executionWorkout.exercises[execution.exercise] : undefined;
-
-  const dayNames = useMemo(() => plan.workouts.map((item) => item.day.replace("Treino ", "")), [plan.workouts]);
 
   useEffect(() => {
     if (!rest) return;
