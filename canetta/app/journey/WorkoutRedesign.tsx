@@ -249,31 +249,13 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
           </div>
         )}
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <div style={{ ...label, color: colors.soft }}>Prévia dos exercícios</div>
-          <div style={{ fontSize: 11, color: colors.muted }}>toque para abrir</div>
-        </div>
-        <div className="workout-exercise-strip" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
-          {exercises.map((exercise, index) => {
-            const media = exercise.gif_url || exercise.image_url;
-            return (
-              <button key={`${exercise.name}-${index}`} type="button" onClick={() => media ? onOpenMedia({ url: media, name: exerciseLabel(exercise) }) : startExecution(selectedDay, index)} style={{ flex: "0 0 86px", border: "none", background: "transparent", padding: 0, textAlign: "left", cursor: "pointer" }}>
-                <div style={{ width: 86, height: 86, borderRadius: 16, overflow: "hidden", background: colors.mint, border: `1.5px solid ${colors.mintLine}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {media ? <img src={media} alt={`Abrir demonstração de ${exerciseLabel(exercise)}`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: colors.brand, fontSize: 24 }}>↗</span>}
-                </div>
-                <div style={{ fontSize: 11.5, lineHeight: 1.25, color: colors.ink, fontWeight: 700, marginTop: 6 }}>{exerciseLabel(exercise)}</div>
-              </button>
-            );
-          })}
-        </div>
-
         <div style={{ ...label, color: colors.soft }}>Acompanhamento</div>
         <div style={{ background: colors.surface, border: `1.5px solid ${colors.line}`, borderRadius: 16, overflow: "hidden" }}>
           {exercises.map((exercise, index) => {
             const count = completed[`${selectedDay}:${exercise.name}`] ?? 0;
             const done = count >= exercise.sets;
             return (
-              <button key={`${exercise.name}-check-${index}`} type="button" onClick={() => startExecution(selectedDay, index)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", border: "none", borderBottom: index === exercises.length - 1 ? "none" : `1px solid ${colors.line}`, background: "transparent", textAlign: "left", cursor: "pointer" }}>
+              <button key={`${exercise.name}-check-${index}`} type="button" onClick={() => { const media = exercise.gif_url || exercise.image_url; media ? onOpenMedia({ url: media, name: exerciseLabel(exercise) }) : startExecution(selectedDay, index); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", border: "none", borderBottom: index === exercises.length - 1 ? "none" : `1px solid ${colors.line}`, background: "transparent", textAlign: "left", cursor: "pointer" }}>
                 <span style={{ width: 22, height: 22, borderRadius: "50%", border: `1.5px solid ${done ? colors.brand : colors.line}`, background: done ? colors.brand : colors.surface, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{done ? "✓" : ""}</span>
                 <span className="workout-exercise-name" style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: colors.ink }}>{exerciseLabel(exercise)}</span>
                 <span style={{ ...tabular, fontSize: 12, fontWeight: 800, color: done ? colors.brand : colors.soft }}>{count}<span style={{ fontWeight: 600, color: colors.muted }}>/{exercise.sets}</span></span>
