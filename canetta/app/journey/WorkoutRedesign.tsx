@@ -101,10 +101,6 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
   const exercises = workout?.exercises ?? [];
   const executionWorkout = execution ? plan.workouts[execution.day] : null;
   const executionExercise = execution && executionWorkout ? executionWorkout.exercises[execution.exercise] : undefined;
-  const totalSets = exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
-  const completedSets = exercises.reduce((sum, exercise) => sum + Math.min(exercise.sets, completed[`${selectedDay}:${exercise.name}`] ?? 0), 0);
-  const sessionMinutes = training?.minutes_per_session ?? 30;
-  const weekLabel = new Date(`${plan.week_start}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
   const dayNames = useMemo(() => plan.workouts.map((item) => item.day.replace("Treino ", "")), [plan.workouts]);
 
@@ -154,7 +150,6 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
   const checkinToday = checkin;
   const isRed = checkinToday?.status === "vermelho";
   const isLightDay = checkinToday?.status === "amarelo";
-  const checkinComplete = Boolean(checkinToday && !isRed && !isLightDay);
 
   return (
     <>
@@ -162,7 +157,7 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: colors.ink }}>Meu treino</div>
-            <div style={{ fontSize: 13, color: colors.soft, marginTop: 4 }}>Movimento no mesmo ritmo do tratamento: uma sessão por vez.</div>
+            <div style={{ fontSize: 13, color: colors.soft, marginTop: 4 }}>No mesmo ritmo do tratamento — uma sessão por vez.</div>
           </div>
           <button type="button" onClick={onGenerate} disabled={generating} style={{ border: `1.5px solid ${colors.line}`, background: colors.surface, color: colors.brand, borderRadius: 12, padding: "8px 10px", fontSize: 12, fontWeight: 800, cursor: generating ? "wait" : "pointer", opacity: generating ? 0.6 : 1 }}>{generating ? "Gerando…" : "Atualizar"}</button>
         </div>
@@ -201,46 +196,6 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
           <button type="button" onClick={onOpenCheckin} style={{ width: "100%", border: "none", background: "transparent", color: colors.brand, padding: "4px 2px", fontSize: 11.5, fontWeight: 800, cursor: "pointer", textAlign: "left" }}>Check-in concluído · refazer check-in</button>
         )}
 
-        {/* Cartão de dose mantido apenas para os estados de segurança que exigem orientação adicional. */}
-        <section className={`workout-session-card${checkinComplete ? " workout-session-card--complete" : ""}`} style={{ background: checkinComplete ? colors.mint : colors.pine, borderRadius: 16, padding: checkinComplete ? "14px 16px 12px" : "18px 18px 16px", color: checkinComplete ? colors.ink : colors.onDark }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-            <div style={{ ...label, fontSize: 10, color: checkinComplete ? colors.brand : colors.onDarkSoft }}>Sessão {selectedDay + 1} de {plan.workouts.length} · semana de {weekLabel}</div>
-            {checkinToday && (
-              <div style={{ ...label, fontSize: 10, color: isRed ? "#F2B8A8" : isLightDay ? colors.amberOnDark : colors.brand }}>
-                {isRed ? "Pausa hoje" : isLightDay ? "Modo leve" : "Liberado"}
-              </div>
-            )}
-          </div>
-          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", marginTop: 6 }}>{dayNames[selectedDay]}</div>
-          <div style={{ fontSize: 13, color: checkinComplete ? colors.soft : colors.onDarkSoft, lineHeight: 1.45, marginTop: 3 }}>{workout.focus}</div>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, margin: "16px 0 14px" }} aria-label={`${completedSets} de ${totalSets} séries concluídas`}>
-            <DoseDial total={totalSets} filled={completedSets} onDark={!checkinComplete} />
-            <div style={{ ...tabular, fontSize: 12.5, fontWeight: 800, whiteSpace: "nowrap" }}>{completedSets}<span style={{ color: checkinComplete ? colors.soft : colors.onDarkSoft, fontWeight: 600 }}>/{totalSets} séries</span></div>
-          </div>
-
-          {!checkinToday && (
-            <button type="button" onClick={onOpenCheckin} style={{ width: "100%", border: "none", borderRadius: 14, background: colors.onDark, color: colors.pine, padding: 14, fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>
-              Fazer check-in de hoje
-              <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: colors.pine, opacity: 0.66, marginTop: 3 }}>1 minuto · decide se hoje é dia normal, leve ou de pausa</span>
-            </button>
-          )}
-          {checkinToday && !isRed && (
-            <button type="button" onClick={() => startExecution(selectedDay, 0)} style={{ width: "100%", border: "none", borderRadius: 14, background: checkinComplete ? colors.pine : colors.onDark, color: checkinComplete ? colors.onDark : colors.pine, padding: 14, fontSize: 14.5, fontWeight: 800, cursor: "pointer" }}>
-              {completedSets ? "Continuar sessão" : isLightDay ? "Iniciar sessão leve" : "Iniciar treino"}
-              <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: checkinComplete ? colors.onDarkSoft : colors.pine, opacity: 0.66, marginTop: 3 }}>~{sessionMinutes} min · {exercises.length} exercícios{isLightDay ? " · pegue mais leve hoje" : ""}</span>
-            </button>
-          )}
-          {isRed && (
-            <div style={{ borderRadius: 14, background: "rgba(242,250,247,0.1)", border: `1.5px solid ${colors.tickOff}`, padding: "13px 14px" }}>
-              <div style={{ fontSize: 13.5, fontWeight: 800 }}>Hoje é dia de pausa</div>
-              <div style={{ fontSize: 12, color: colors.onDarkSoft, lineHeight: 1.5, marginTop: 3 }}>{checkinToday?.motivos.join(" ") || "O check-in indicou pausa."} Se os sintomas persistirem, procure avaliação.</div>
-            </div>
-          )}
-          <button type="button" onClick={onOpenCheckin} style={{ width: "100%", marginTop: 8, border: "none", background: "transparent", color: checkinComplete ? colors.brand : colors.onDarkSoft, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 4 }}>
-            {checkinToday ? "Refazer check-in do dia" : "Já fiz check-in? Atualize aqui"}
-          </button>
-        </section>
-
         {isLightDay && checkinToday?.motivos.length ? (
           <div style={{ fontSize: 12, color: colors.soft, lineHeight: 1.5, padding: "0 4px" }}>{checkinToday.motivos.join(" ")}</div>
         ) : null}
@@ -265,20 +220,20 @@ export default function WorkoutRedesign({ plan, training, onGenerate, generating
           </div>
         )}
 
-        <div style={{ ...label, color: colors.soft }}>Acompanhamento</div>
-        <div style={{ background: colors.surface, border: `1.5px solid ${colors.line}`, borderRadius: 16, overflow: "hidden" }}>
+        <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: colors.ink }}>Exercícios de hoje</div>
           {exercises.map((exercise, index) => {
             const count = completed[`${selectedDay}:${exercise.name}`] ?? 0;
             const done = count >= exercise.sets;
             return (
-              <button key={`${exercise.name}-check-${index}`} type="button" onClick={() => { const media = exercise.gif_url || exercise.image_url; if (media) { onOpenMedia({ url: media, name: exerciseLabel(exercise) }); } else { startExecution(selectedDay, index); } }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "13px 15px", border: "none", borderBottom: index === exercises.length - 1 ? "none" : `1px solid ${colors.line}`, background: "transparent", textAlign: "left", cursor: "pointer" }}>
-                <span style={{ width: 22, height: 22, borderRadius: "50%", border: `1.5px solid ${done ? colors.brand : colors.line}`, background: done ? colors.brand : colors.surface, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{done ? "✓" : ""}</span>
-                <span className="workout-exercise-name" style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: colors.ink }}>{exerciseLabel(exercise)}</span>
-                <span style={{ ...tabular, fontSize: 12, fontWeight: 800, color: done ? colors.brand : colors.soft }}>{count}<span style={{ fontWeight: 600, color: colors.muted }}>/{exercise.sets}</span></span>
+              <button key={`${exercise.name}-check-${index}`} type="button" onClick={() => { const media = exercise.gif_url || exercise.image_url; if (media) { onOpenMedia({ url: media, name: exerciseLabel(exercise) }); } else { startExecution(selectedDay, index); } }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: 12, border: `1.5px solid ${colors.line}`, borderRadius: 16, background: colors.surface, textAlign: "left", cursor: "pointer" }}>
+                <span style={{ width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg, #5eead4, #22d3ee)", color: "#0c3a44", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 23, fontWeight: 800, flexShrink: 0 }}>{done ? "✓" : "✦"}</span>
+                <span className="workout-exercise-name" style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 13, fontWeight: 800, color: colors.ink }}>{exerciseLabel(exercise)}</span><span style={{ display: "block", fontSize: 11.5, color: done ? colors.brand : colors.soft, marginTop: 3 }}>{count}/{exercise.sets} séries · {exercise.reps} repetições</span></span>
+                <span style={{ color: colors.soft, fontSize: 24, lineHeight: 1 }}>›</span>
               </button>
             );
           })}
-        </div>
+        </section>
 
         {plan.nutrition_advice && (
           <div style={{ borderTop: `1px solid ${colors.line}`, paddingTop: 12 }}>
