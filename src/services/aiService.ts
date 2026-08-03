@@ -1,4 +1,5 @@
-import { AISuggestion, ScoutEvent } from '../types';
+import { AISuggestion, Analysis, AnalysisReport, ScoutEvent, TacticalInsight } from '../types';
+import { claudeService, ClaudeNotConfiguredError } from './claudeService';
 
 function randomDelay(min = 300, max = 1200): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, min + Math.random() * (max - min)));
@@ -67,6 +68,36 @@ export const aiService = {
     }
 
     return suggestions;
+  },
+
+  /**
+   * Gera insights táticos usando o Claude (Anthropic Cookbook). Se a API não
+   * estiver configurada ou falhar, retorna os insights calculados localmente,
+   * garantindo degradação graciosa (o relatório nunca fica vazio por erro de IA).
+   */
+  async getTacticalInsights(
+    analysis: Analysis,
+    report: AnalysisReport,
+  ): Promise<{ insights: TacticalInsight[]; source: 'claude' | 'local'; error?: string }> {
+    if (!claudeService.isConfigured()) {
+      return { insights: report.tacticalInsights, source: 'local' };
+    }
+    try {
+      const insights = await claudeService.generateTacticalInsights(analysis, report);
+      if (insights.length === 0) {
+        return { insights: report.tacticalInsights, source: 'local' };
+      }
+      return { insights, source: 'claude' };
+    } catch (err) {
+      if (err instanceof ClaudeNotConfiguredError) {
+        return { insights: report.tacticalInsights, source: 'local' };
+      }
+      return {
+        insights: report.tacticalInsights,
+        source: 'local',
+        error: (err as Error).message,
+      };
+    }
   },
 
   async analyzeVideo(videoUri: string): Promise<{ suggestions: AISuggestion[]; ralliesDetected: number }> {

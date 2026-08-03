@@ -10,9 +10,10 @@ import { StatCard } from '../components/reports/StatCard';
 import { InsightCard } from '../components/reports/InsightCard';
 import { generateReport } from '../utils/analytics';
 import { pdfService } from '../services/pdfService';
+import { aiService } from '../services/aiService';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { formatDuration } from '../utils/formatters';
-import { SCOUT_EVENT_CONFIG } from '../types';
+import { SCOUT_EVENT_CONFIG, TacticalInsight } from '../types';
 
 type RouteParams = { analysisId: string };
 
@@ -21,6 +22,9 @@ export function ReportScreen() {
   const route = useRoute<RouteProp<{ params: RouteParams }, 'params'>>();
   const { activeAnalysis, loadAnalysis } = useAnalysisStore();
   const [exporting, setExporting] = useState(false);
+  const [aiInsights, setAiInsights] = useState<TacticalInsight[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [insightSource, setInsightSource] = useState<'claude' | 'local'>('local');
 
   useEffect(() => {
     loadAnalysis(route.params.analysisId);
@@ -30,6 +34,34 @@ export function ReportScreen() {
     if (!activeAnalysis) return null;
     return generateReport(activeAnalysis);
   }, [activeAnalysis]);
+
+  // Reinicia os insights de IA ao trocar de análise.
+  useEffect(() => {
+    setAiInsights(null);
+    setInsightSource('local');
+  }, [route.params.analysisId]);
+
+  async function handleClaudeAnalysis() {
+    if (!activeAnalysis || !report) return;
+    setAiLoading(true);
+    try {
+      const result = await aiService.getTacticalInsights(activeAnalysis, report);
+      setAiInsights(result.insights);
+      setInsightSource(result.source);
+      if (result.source === 'local' && result.error) {
+        Alert.alert('Não foi possível usar o Claude', `${result.error}\n\nExibindo a análise local.`);
+      } else if (result.source === 'local') {
+        Alert.alert(
+          'Claude não configurado',
+          'Defina EXPO_PUBLIC_ANTHROPIC_API_KEY no seu .env para gerar insights com IA. Exibindo a análise local.',
+        );
+      }
+    } catch (err) {
+      Alert.alert('Erro', 'Falha ao gerar a análise. Tente novamente.');
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   async function handleExport() {
     if (!activeAnalysis || !report) return;
@@ -215,17 +247,50 @@ export function ReportScreen() {
         )}
 
         {/* Tactical insights */}
-        {report.tacticalInsights.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.insightHeader}>
-              <Ionicons name="sparkles" size={16} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Insights Táticos</Text>
+        {(() => {
+          const displayedInsights = aiInsights ?? report.tacticalInsights;
+          if (displayedInsights.length === 0) return null;
+          return (
+            <View style={styles.section}>
+              <View style={styles.insightHeader}>
+                <Ionicons name="sparkles" size={16} color={colors.primary} />
+                <Text style={styles.sectionTitle}>Insights Táticos</Text>
+                {insightSource === 'claude' && (
+                  <View style={styles.aiBadge}>
+                    <Ionicons name="sparkles" size={10} color={colors.primary} />
+                    <Text style={styles.aiBadgeText}>Claude</Text>
+                  </View>
+                )}
+              </View>
+
+              {activeAnalysis.events.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.claudeBtn, aiLoading && styles.exportBtnDisabled]}
+                  onPress={handleClaudeAnalysis}
+                  disabled={aiLoading}
+                  activeOpacity={0.85}
+                >
+                  {aiLoading ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+                  )}
+                  <Text style={styles.claudeBtnText}>
+                    {aiLoading
+                      ? 'Analisando com Claude...'
+                      : aiInsights
+                        ? 'Gerar nova análise com Claude'
+                        : 'Analisar com Claude'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {displayedInsights.map(insight => (
+                <InsightCard key={insight.id} insight={insight} />
+              ))}
             </View>
-            {report.tacticalInsights.map(insight => (
-              <InsightCard key={insight.id} insight={insight} />
-            ))}
-          </View>
-        )}
+          );
+        })()}
 
         {report.tacticalInsights.length === 0 && activeAnalysis.events.length === 0 && (
           <View style={styles.emptyInsights}>
@@ -323,6 +388,30 @@ const styles = StyleSheet.create({
   section: { marginTop: 16, marginBottom: 8 },
   sectionTitle: { ...typography.h4, color: colors.text, marginBottom: 12 },
   insightHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  aiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${colors.primary}22`,
+  },
+  aiBadgeText: { fontSize: 10, fontWeight: '700', color: colors.primary },
+  claudeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    marginBottom: 14,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}14`,
+  },
+  claudeBtnText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
 
   shotList: { gap: 8 },
   shotRow: {
