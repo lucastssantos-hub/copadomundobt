@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
+import React from 'react';
+import { Text, StyleSheet, View } from 'react-native';
 import { ScoutEventType, SCOUT_EVENT_CONFIG } from '../../types';
 import { colors, borderRadius } from '../../theme';
+import { PressableScale } from '../common/PressableScale';
 
 interface ScoutButtonProps {
   type: ScoutEventType;
@@ -12,22 +13,19 @@ interface ScoutButtonProps {
 
 export function ScoutButton({ type, onPress, count = 0, disabled = false }: ScoutButtonProps) {
   const config = SCOUT_EVENT_CONFIG[type];
-  const scale = useRef(new Animated.Value(1)).current;
-
-  function handlePress() {
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.88, duration: 80, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 8 }),
-    ]).start();
-    onPress();
-  }
 
   return (
-    <Animated.View style={[styles.wrapper, { transform: [{ scale }] }]}>
-      <TouchableOpacity
-        onPress={handlePress}
-        disabled={disabled}
-        activeOpacity={0.85}
+    <PressableScale
+      onPress={onPress}
+      disabled={disabled}
+      // Deeper press for a big, glanceable live-scout target — the analyst is
+      // watching the court, not the button, so the feedback has to be felt.
+      scaleTo={0.93}
+      hitSlop={6}
+      accessibilityLabel={config.label}
+      style={styles.wrapper}
+    >
+      <View
         style={[
           styles.button,
           { borderColor: config.color, backgroundColor: `${config.color}18` },
@@ -42,8 +40,8 @@ export function ScoutButton({ type, onPress, count = 0, disabled = false }: Scou
             <Text style={styles.badgeText}>{count}</Text>
           </View>
         )}
-      </TouchableOpacity>
-    </Animated.View>
+      </View>
+    </PressableScale>
   );
 }
 
@@ -67,6 +65,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
+    // Small text wants a touch of positive tracking for legibility (§15).
     letterSpacing: 0.3,
   },
   disabled: {

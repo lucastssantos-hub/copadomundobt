@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Analysis } from '../../types';
 import { Badge } from '../common/Badge';
+import { PressableScale } from '../common/PressableScale';
 import { colors, spacing, borderRadius, typography, shadows } from '../../theme';
 import { formatRelativeDate, formatDuration, getAnalysisTypeLabel, getAnalysisTypeColor } from '../../utils/formatters';
 
@@ -20,10 +21,13 @@ export function AnalysisCard({ analysis, onPress, onLongPress }: AnalysisCardPro
   const rallyCount = analysis.rallies.length;
 
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
       onLongPress={onLongPress}
-      activeOpacity={0.8}
+      // A card is a large surface — keep the press restrained (§1 feedback,
+      // §4 no overshoot) so it reads as a settle, not a bounce.
+      scaleTo={0.98}
+      accessibilityLabel={analysis.title}
       style={styles.container}
     >
       <View style={[styles.accent, { backgroundColor: typeColor }]} />
@@ -78,7 +82,7 @@ export function AnalysisCard({ analysis, onPress, onLongPress }: AnalysisCardPro
       </View>
 
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.arrow} />
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

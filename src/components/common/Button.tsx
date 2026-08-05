@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { colors, borderRadius, typography } from '../../theme';
+import { Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { colors, borderRadius } from '../../theme';
+import { PressableScale } from './PressableScale';
 
 interface ButtonProps {
   label: string;
@@ -28,10 +29,10 @@ export function Button({
   const isDisabled = disabled || loading;
 
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.75}
+      accessibilityLabel={label}
       style={[
         styles.base,
         styles[variant],
@@ -51,7 +52,7 @@ export function Button({
           {label}
         </Text>
       )}
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

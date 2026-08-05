@@ -40,15 +40,19 @@ export const borderRadius = {
   full: 9999,
 };
 
+// Tracking (letterSpacing) is size-specific, never one fixed value (apple-design §15):
+// large display text tightens with negative tracking, body stays near 0, and small
+// text gets a touch of positive tracking for legibility. Leading tracks size
+// inversely — tighter on headings, looser on body.
 export const typography = {
-  h1: { fontSize: 28, fontWeight: '700' as const, lineHeight: 36 },
-  h2: { fontSize: 22, fontWeight: '700' as const, lineHeight: 30 },
-  h3: { fontSize: 18, fontWeight: '600' as const, lineHeight: 26 },
-  h4: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24 },
-  body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 22 },
-  bodySmall: { fontSize: 12, fontWeight: '400' as const, lineHeight: 18 },
-  caption: { fontSize: 11, fontWeight: '400' as const, lineHeight: 16 },
-  label: { fontSize: 13, fontWeight: '500' as const, lineHeight: 20 },
+  h1: { fontSize: 28, fontWeight: '700' as const, lineHeight: 34, letterSpacing: -0.4 },
+  h2: { fontSize: 22, fontWeight: '700' as const, lineHeight: 28, letterSpacing: -0.3 },
+  h3: { fontSize: 18, fontWeight: '600' as const, lineHeight: 24, letterSpacing: -0.2 },
+  h4: { fontSize: 16, fontWeight: '600' as const, lineHeight: 22, letterSpacing: -0.1 },
+  body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 22, letterSpacing: 0 },
+  bodySmall: { fontSize: 12, fontWeight: '400' as const, lineHeight: 18, letterSpacing: 0.1 },
+  caption: { fontSize: 11, fontWeight: '400' as const, lineHeight: 16, letterSpacing: 0.2 },
+  label: { fontSize: 13, fontWeight: '500' as const, lineHeight: 20, letterSpacing: 0.1 },
 };
 
 export const shadows = {
